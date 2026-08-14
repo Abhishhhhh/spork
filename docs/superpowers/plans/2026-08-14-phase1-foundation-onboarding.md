@@ -40,6 +40,7 @@ Two things only a human can do — no coding step can substitute for these. Do t
 - Create: `index.html`
 - Create: `vite.config.ts`
 - Create: `src/index.css`
+- Create: `src/vite-env.d.ts`
 - Create: `src/main.tsx`
 - Create: `src/App.tsx`
 - Create: `src/lib/queryClient.ts`
@@ -165,10 +166,16 @@ export default defineConfig({
 })
 ```
 
-- [ ] **Step 7: Write `src/index.css`**
+- [ ] **Step 7: Write `src/index.css` and `src/vite-env.d.ts`**
 
+`src/index.css`:
 ```css
 @import "tailwindcss";
+```
+
+`src/vite-env.d.ts` (provides the `ImportMeta.env` typing used in Task 3, and ambient module declarations for CSS imports like the one in `main.tsx` below):
+```ts
+/// <reference types="vite/client" />
 ```
 
 - [ ] **Step 8: Write `src/lib/queryClient.ts`**
@@ -321,6 +328,7 @@ dist
 dist-ssr
 .env.local
 *.local
+*.tsbuildinfo
 ```
 
 - [ ] **Step 15: Manually verify the dev server**
