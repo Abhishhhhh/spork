@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import Welcome from './screens/onboarding/Welcome'
 import SignIn from './screens/onboarding/SignIn'
 import ProfileSetup from './screens/onboarding/ProfileSetup'
+import CalorieGoal from './screens/onboarding/CalorieGoal'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { RequireNotOnboarded } from './components/RequireNotOnboarded'
 
@@ -26,7 +27,17 @@ export default function App() {
           element={
             <ProtectedRoute>
               <RequireNotOnboarded>
-                <div className="p-6 text-center text-neutral-400">Calorie goal — coming in the next task</div>
+                <CalorieGoal />
+              </RequireNotOnboarded>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/onboarding/privacy"
+          element={
+            <ProtectedRoute>
+              <RequireNotOnboarded>
+                <div className="p-6 text-center text-neutral-400">Privacy — coming in the next task</div>
               </RequireNotOnboarded>
             </ProtectedRoute>
           }
