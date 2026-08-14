@@ -394,9 +394,15 @@ create table friendships (
   recipient_id uuid not null references users(id) on delete cascade,
   status text not null default 'pending' check (status in ('pending','accepted')),
   created_at timestamptz not null default now(),
-  constraint friendships_no_self_friend check (requester_id <> recipient_id),
-  constraint friendships_unique_pair unique (least(requester_id, recipient_id), greatest(requester_id, recipient_id))
+  constraint friendships_no_self_friend check (requester_id <> recipient_id)
 );
+
+-- A plain table-level UNIQUE constraint only accepts column names, not
+-- expressions — least()/greatest() need an expression index instead.
+-- This still guarantees at most one friendship row per pair, regardless
+-- of which side is requester vs. recipient.
+create unique index friendships_unique_pair
+  on friendships (least(requester_id, recipient_id), greatest(requester_id, recipient_id));
 
 alter table friendships enable row level security;
 

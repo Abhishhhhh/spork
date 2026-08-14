@@ -74,9 +74,12 @@ friendships (
   recipient_id uuid references users(id) not null,
   status text check (status in ('pending','accepted')) default 'pending',
   created_at timestamptz default now(),
-  check (requester_id <> recipient_id),
-  unique (least(requester_id, recipient_id), greatest(requester_id, recipient_id))
+  check (requester_id <> recipient_id)
 )
+-- Uniqueness on the unordered pair is enforced by a separate expression
+-- index (unique(least(...), greatest(...)) isn't valid as a table-level
+-- constraint, since those only accept column names, not expressions):
+-- create unique index on friendships (least(requester_id, recipient_id), greatest(requester_id, recipient_id));
 -- RLS: readable/updatable by requester_id or recipient_id.
 -- Only recipient_id may transition status from 'pending' to 'accepted'.
 
