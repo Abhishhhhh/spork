@@ -3,7 +3,7 @@ import { BottomTabBar } from '../../components/BottomTabBar'
 
 export function HomeShell() {
   return (
-    <div className="pb-16">
+    <div className="pb-20">
       <Outlet />
       <BottomTabBar />
     </div>
