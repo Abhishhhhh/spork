@@ -6,7 +6,7 @@ import CalorieGoal from './screens/onboarding/CalorieGoal'
 import PrivacyDefault from './screens/onboarding/PrivacyDefault'
 import AddFirstFriends from './screens/onboarding/AddFirstFriends'
 import Feed from './screens/feed/Feed'
-import LogPlaceholder from './screens/log/LogPlaceholder'
+import LogFlow from './screens/log/LogFlow'
 import RewardsPlaceholder from './screens/rewards/RewardsPlaceholder'
 import ProfileScreen from './screens/profile/ProfileScreen'
 import Friends from './screens/friends/Friends'
@@ -75,7 +75,7 @@ export default function App() {
           }
         >
           <Route path="feed" element={<Feed />} />
-          <Route path="log" element={<LogPlaceholder />} />
+          <Route path="log" element={<LogFlow />} />
           <Route path="rewards" element={<RewardsPlaceholder />} />
           <Route path="friends" element={<Friends />} />
           <Route path="friend/:username" element={<FriendProfile />} />
