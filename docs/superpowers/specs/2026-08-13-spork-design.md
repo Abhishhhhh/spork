@@ -1,20 +1,39 @@
 # Spork — Design Spec
 
-**Date:** 2026-08-13
-**Status:** Approved, pending implementation plan
+**Date:** 2026-08-13 (visual design system and navigation revised 2026-08-15 — see §2 and §10)
+**Status:** Approved, Phase 1 implemented and merged; visual/nav retrofit approved, pending implementation plan
 
 ## 1. Concept
 
 Spork is a social-first calorie & nutrition tracker — "Hevy, but for food." Users log meals via photo, get an AI-generated calorie/macro estimate, and post publicly to a friend feed or keep the log private. Daily logging streaks are the retention loop; streak milestones unlock partner reward offers.
 
-Mobile-first web app, iOS-styled UI, installable as a PWA. Ship as a web app first — no native App Store distribution in this phase (see §9, Platform Decision).
+Mobile-first web app, iOS-styled UI, installable as a PWA. Ship as a web app first — no native App Store distribution in this phase (see §10, Platform Decision).
 
-## 2. Tech Stack & Project Structure
+## 2. Visual Design System
+
+Adopted 2026-08-15 from a reference design the user provided, replacing the original generic "Hevy-style, lots of white space" direction with concrete tokens. Fully neutral palette — no accent color anywhere (including the streak flame), by explicit choice over keeping a warm accent.
+
+| Token | Value | Usage |
+|---|---|---|
+| `background` | `#FAF7F0` | App background |
+| `primary` | `#231815` | Buttons, active tab, selected states, filled elements |
+| `text` | `#231815` | Body text |
+| `muted` | `#8B8680` | Secondary text, placeholders, unselected tab icons/labels |
+| `border` | `#E8E2D8` | Card borders, input outlines |
+| `error` | `#C0392B` | Error/validation text |
+
+- **Typography:** system font stack (no external web font) — avoids an extra network request for a PWA; close enough to the reference's clean geometric sans.
+- **Shape language:** buttons are fully pill-shaped (`rounded-full`), not the original `rounded-2xl`.
+- **Logo:** a small custom inline SVG fork mark in a rounded-square badge, replacing the 🍴 emoji everywhere the wordmark appears (Welcome, Sign In).
+- **Copy:** Welcome and Sign In adopt the reference's copy — Welcome gets the tagline "Track food like you train." plus three feature bullets (photo-first logging, daily streaks, a friend feed) with icons; Sign In becomes "Create your account" / "Email and password for now — phone sign-in is coming." with a single "Continue" button whose label doesn't change between sign-up/sign-in modes.
+- **Explicitly deferred:** a "Forgot password?" link appears in the reference design but is **not** being built now — real password reset (email delivery + reset-confirmation screen) is new functionality, not a visual change, and is scoped as its own future addition rather than bundled into this retrofit.
+
+## 3. Tech Stack & Project Structure
 
 - **React + Vite + TypeScript + Tailwind CSS** — SPA, not Next.js. No SEO/SSR need for an auth-gated app; Vite keeps the build simple.
-- **Vite PWA plugin** — manifest + service worker so the app is installable via "Add to Home Screen," with iOS status-bar/splash-screen meta tags.
+- **Vite PWA plugin** — manifest + service worker so the app is installable via "Add to Home Screen," with iOS status-bar/splash-screen meta tags. PWA manifest `theme_color` matches the `primary` token in §2.
 - **React Router** — bottom tab bar navigation + stack-style pushes for detail screens (e.g. Feed → Meal Detail).
-- **Supabase** — Auth (email only for this phase — see §9), Postgres, Storage (meal/profile photos), Edge Functions (AI proxy).
+- **Supabase** — Auth (email only for this phase — see §10), Postgres, Storage (meal/profile photos), Edge Functions (AI proxy).
 - **TanStack Query** — server state/caching (logs, friends, feed, rewards).
 - **Zustand** — the one piece of client-only state: the in-progress log-flow draft (photo → estimate → edits before posting).
 - **Folder structure:**
@@ -23,7 +42,7 @@ Mobile-first web app, iOS-styled UI, installable as a PWA. Ship as a web app fir
   - `src/lib/*` — supabase client, calorie-estimate client, streak logic
   - `src/hooks/*` — data-fetching hooks per entity
 
-## 3. Data Model
+## 4. Data Model
 
 Two independent privacy layers:
 
@@ -42,7 +61,7 @@ users (
   privacy_default text check (privacy_default in ('public','private')) default 'public',
   streak_count int default 0,
   streak_last_log_date date,
-  reminder_time time,              -- UI-only preference, no real push notification (see §9)
+  reminder_time time,              -- UI-only preference, no real push notification (see §10)
   created_at timestamptz default now()
 )
 
@@ -105,7 +124,7 @@ redemptions (
 
 **Redemption is a server-side Postgres RPC**, not a plain client insert: `redeem_reward(reward_id)` checks the caller's `streak_count` against the reward's `milestone_required` *in the database* before generating a code and inserting the redemption row. This prevents a client from faking eligibility by calling insert directly.
 
-A redemption row is only ever created at the moment of redemption, so it's inserted with status `'redeemed'` directly — there's no separate "code generated but not yet redeemed" step in this flow. `'expired'` is a **derived display state**, computed by comparing the reward's `expiry_date` to the current date at read time, the same no-cron pattern used for streaks (§3) — no background job flips the stored status.
+A redemption row is only ever created at the moment of redemption, so it's inserted with status `'redeemed'` directly — there's no separate "code generated but not yet redeemed" step in this flow. `'expired'` is a **derived display state**, computed by comparing the reward's `expiry_date` to the current date at read time, the same no-cron pattern used for streaks (§4) — no background job flips the stored status.
 
 **Photo storage**: a **private** Supabase Storage bucket (not public), with storage policies mirroring the `logs` RLS — object paths encode `user_id`, and a photo is only fetchable by its owner or by an accepted friend when the corresponding log is public. This is belt-and-suspenders: even a leaked URL doesn't work without passing the same policy check.
 
@@ -118,82 +137,88 @@ A redemption row is only ever created at the moment of redemption, so it's inser
 
 To *display* a broken streak before the user's next log (there's no background job to proactively zero it out), the UI derives an "effective streak" from `streak_last_log_date` at read time: if it's today or yesterday, show the stored count; if older, show 0. The stored value gets corrected to 0 lazily on the next `log_meal()` call.
 
-## 4. Screens & Navigation
+## 5. Screens & Navigation
 
-Bottom tab bar, 4 tabs: **Feed / Log (center action) / Streaks & Rewards / Profile**.
+Bottom tab bar, **5 items: Feed / Streaks / Log (center, raised, unlabeled "+" button) / Friends / Profile**. The center button is visually distinct — a filled circle with no label — and always opens the Log flow; `Feed`, `Streaks`, `Friends`, and `Profile` keep icon+label. (Revised 2026-08-15 from the original 4-tab layout — Friends is now a first-class tab rather than reached only through onboarding or a Feed icon.)
 
-**Onboarding:** Welcome → Sign in (email) → Profile setup (name, unique username, photo) → Calorie goal (manual input or auto-suggest from height/weight/age/activity, editable) → Privacy default choice ("Public by default" / "Private by default") → Add first friends (skip option).
+**Onboarding:** Welcome → Sign in (email) → Profile setup (name, unique username, photo) → Calorie goal (manual input or auto-suggest from height/weight/age/**sex**/activity, editable) → Privacy default choice ("Public by default" / "Private by default") → Add first friends (skip option).
 
-Height/weight/age/activity are used only to compute the suggested calorie goal client-side at that moment — they are not persisted. Only the resulting `calorie_goal` is stored on the user record; if the user wants to recompute the suggestion later, they re-enter those inputs.
+Height/weight/age/sex/activity are used only to compute the suggested calorie goal client-side at that moment — they are not persisted. Only the resulting `calorie_goal` is stored on the user record; if the user wants to recompute the suggestion later, they re-enter those inputs. The `sex` field (`'male' | 'female'`) selects the correct Mifflin-St Jeor constant (+5 male / −161 female) instead of the sex-neutral approximation used in the initial Phase 1 build — see §10.
 
 **Feed:** Empty state prompts adding friends / logging first meal. Populated state: chronological cards, no algorithm — friend photo/handle, meal photo, calorie count, meal tag, timestamp, flame icon if the friend has an active streak. Tap card → friend profile.
 
-**Log flow (see §5 for detail).**
+**Log flow (see §6 for detail).**
 
 **Meal detail view:** full photo, calories + each macro (estimate vs. final), meal type, timestamp, edit option (own logs only).
 
 **Friend profile:** public logs grid (photo + calories + meal type), current streak, quick stats if permitted (avg daily calories from public logs, most logged meal type) — fully private-default users show no streak/stats to friends at all, regardless of individual public logs.
 
-**Add Friends:** search by username, "Find from Contacts" (mocked, no real contacts access), sent/received request lists, Accept/Decline.
+**Friends (tab):** search by username, "Find from Contacts" (mocked, no real contacts access), sent/received request lists, Accept/Decline, and a suggested-users section for cold-start discovery (per user feedback during Phase 1 testing — see §10). Placeholder only until Phase 2 builds the real functionality; the tab itself exists starting with the Phase 1 visual retrofit.
 
 **Streaks & Rewards:** current streak (big flame + number), progress bar to next milestone (7/30/100 days). Rewards marketplace: grid/list of partner offers, locked (grayed, shows milestone needed) vs. unlocked. Reward detail → Redeem → mock code generated → status becomes "Redeemed" with expiry countdown.
 
 **Profile & Settings:** own stats (daily calorie total vs. goal, progress ring), history as a **calendar view** (tap a day to see that day's log(s) — matches Hevy's proven pattern for streak visualization). Settings: edit profile, privacy default, notification preference (streak-risk reminder time — UI-only, no real push), block/report list.
 
-## 5. Log Flow (core feature)
+## 6. Log Flow (core feature)
 
-1. Tap **+** → camera/upload → photo preview shown.
+1. Tap the center **+** tab → camera/upload → photo preview shown.
 2. Optional text field: *"Add details (improves accuracy)"* — e.g. "3 breads and 5 eggs" or "200g rice, 400g chicken breast with mustard."
 3. Tap **Get Estimate** → one call to a Supabase Edge Function (`estimate-meal`), which holds the Gemini API key server-side (never exposed to the client) and calls **Gemini 2.5 Flash** with the photo + description together. The prompt instructs the model to: identify each food item, prioritize stated quantities over visual guessing when text is given, apply standard per-100g nutrition values, and return structured JSON — per-item breakdown plus totals for calories/protein/carbs/fat, and a confidence level (`low`/`medium`/`high`).
 4. ~3–5s loading state → editable **calories, protein, carbs, fat** fields + meal name + meal type (auto-suggested by time of day, editable) + visibility toggle (defaults to the user's onboarding privacy setting).
 5. **Fallback rule:** if the Edge Function call fails, times out, or returns something unparseable, silently fall back to blank manual-entry fields on the same screen. The log is never blocked by an AI failure.
 6. Disclaimer shown on the first few logs: *"Estimate — tap to adjust."*
-7. Tap **Post** → brief celebratory animation → streak increments per the logic in §3.
+7. Tap **Post** → brief celebratory animation → streak increments per the logic in §4.
 
 **AI provider notes:**
 - Free tier (Google AI Studio key) supports multimodal (photo + text) input at no cost, but has modest rate limits (roughly 10–15 requests/minute, 250–1,500/day depending on model/account — Google has been tightening free-tier terms) and its terms allow content to be used to improve Google's products. Acceptable for this phase (a handful of friends testing); revisit with a paid key if usage grows.
 - The Edge Function is written provider-agnostically (a single `estimateMeal(photo, description)` interface) so swapping to a paid key or a different vision API later is a config change, not a rewrite.
 - Even with precise quantities, this is an LLM approximation, not a lab measurement or database lookup — "close," not certified-accurate, for well-documented foods. The "Estimate — tap to adjust" framing manages this honestly.
 
-## 6. Key Rules (unchanged from original requirements)
+## 7. Key Rules (unchanged from original requirements)
 
 - Private logs must never appear in any friend-facing feed/query, and must never leak into aggregate stats (enforced at the RLS layer, not just app code).
 - Streak increments once per day if the user logs at least one meal (public or private); resets to 0 if a full calendar day passes with no log.
 - No comments/likes — the feed is for visibility/accountability only.
 - No dark patterns on rewards — no paywalled streak-freeze, no manipulative copy.
 
-## 7. Error Handling & Edge Cases
+## 8. Error Handling & Edge Cases
 
-- AI estimate failure → manual entry fallback (§5) — the primary error path called out by the spec.
+- AI estimate failure → manual entry fallback (§6) — the primary error path called out by the spec.
 - Duplicate/invalid usernames at signup → inline validation before submit.
-- Friend request to self, or duplicate pending requests → blocked at the `friendships` unique constraint (§3).
+- Friend request to self, or duplicate pending requests → blocked at the `friendships` unique constraint (§4).
 - Ineligible reward redemption → blocked server-side by `redeem_reward()`, not just hidden in the UI.
 - Photo upload failure (bad network) → retry affordance; the in-progress log draft is preserved in the Zustand store so the user doesn't lose it.
 - Empty states: Feed (no friends / no logs yet), Rewards (nothing unlocked yet).
 
-## 8. Testing Approach
+## 9. Testing Approach
 
 Following the **test-driven-development** skill during implementation:
-- Unit tests for logic that's easy to get subtly wrong: streak lazy-evaluation math, meal-type time-of-day suggestion, parsing calories/macros out of the AI response.
+- Unit tests for logic that's easy to get subtly wrong: streak lazy-evaluation math, meal-type time-of-day suggestion, parsing calories/macros out of the AI response, the calorie-goal formula (both sexes, per §10).
 - RLS policies get their own test queries — verifying a private log truly returns zero rows to a non-owner is the one guarantee the app's entire trust model depends on.
 - No end-to-end browser test suite in this phase — YAGNI for a prototype at this stage.
 
-## 9. Decisions Log
+## 10. Decisions Log
 
 - **Auth:** email-only for this phase. Phone auth needs an SMS provider (Twilio) configured in Supabase — deferred, can be added later without a data model change.
 - **Notifications:** streak-risk reminder time is a UI-only preference stored on the user record. No real push notification delivery (would need a service worker, push subscriptions, VAPID keys, and a scheduled server-side job — out of scope for this phase).
 - **Deployment:** local dev only for now (`npm run dev` against a Supabase project). It's a static SPA build, so deploying to Vercel/Netlify later is straightforward.
 - **Platform:** web app first, installable as a PWA. Native iOS App Store distribution was evaluated and explicitly deferred — it requires an Apple Developer Program account ($99/yr), a Mac + Xcode (or a paid cloud build service), wrapping the React app in a native shell (e.g. Capacitor, since Apple rejects bare "website-in-a-wrapper" submissions), in-app content moderation/account deletion for App Review's user-generated-content requirements, and typically weeks of review-cycle buffer. None of the web app work is wasted if this is revisited — Capacitor wraps the same codebase later.
-- **AI tier:** free-tier Gemini for this phase (see §5 for caveats), with a provider-agnostic interface to ease a future upgrade.
+- **AI tier:** free-tier Gemini for this phase (see §6 for caveats), with a provider-agnostic interface to ease a future upgrade.
+- **Visual design system (2026-08-15):** replaced the original generic "Hevy-style" direction with concrete tokens (§2) drawn from a reference design the user provided, after Phase 1 was already built and merged. Chose the fully neutral palette option over keeping a warm accent color for streaks/rewards.
+- **Navigation restructure (2026-08-15):** Friends promoted to a first-class 5th tab (previously reachable only during onboarding); Log becomes a visually distinct raised, unlabeled center button rather than an equal-weight labeled tab. Triggers a retrofit of all already-built Phase 1 screens to the new tokens and tab structure.
+- **Calorie formula accuracy (2026-08-15):** added a required `sex` field to the calorie-goal calculator, switching from the sex-neutral −78 midpoint approximation (Phase 1's original implementation) to the exact Mifflin-St Jeor constants (+5 male / −161 female).
+- **Forgot password — explicitly deferred (2026-08-15):** the reference design includes a "Forgot password?" link; real password reset is new functionality (email delivery + confirmation screen), not a visual change, and is intentionally left out of the visual/nav retrofit.
+- **Suggested friends in onboarding — deferred to Phase 2 (flagged 2026-08-14):** user feedback during Phase 1 testing asked for the Add Friends screen to proactively recommend users, not just search on demand. No signal to recommend from yet at cold-start (zero mutual friends/activity); Phase 2 seeds mock friends/logs, which is where recommendations become meaningful. The Friends tab's "you might know" section (§5) is the eventual home for this.
 
-## 10. Explicitly Out of Scope
+## 11. Explicitly Out of Scope
 
-Barcode scanning, restaurant menu database, Apple Health/wearable sync, in-app messaging, algorithmic feed ranking, Android-specific anything, real push notifications, native App Store distribution, comments/likes on the feed, an admin UI for managing rewards.
+Barcode scanning, restaurant menu database, Apple Health/wearable sync, in-app messaging, algorithmic feed ranking, Android-specific anything, real push notifications, native App Store distribution, comments/likes on the feed, an admin UI for managing rewards, real password reset (see §10).
 
-## 11. Build Phasing
+## 12. Build Phasing
 
-1. **Foundation + Onboarding/Auth** — project scaffold, Supabase setup, RLS policies, auth + onboarding screens.
-2. **Friends + Feed** — friend search/requests, seeded mock friends/logs, populated feed.
-3. **Log flow** — photo capture, optional description, Gemini estimate via Edge Function, editable fields, post + streak increment.
-4. **Streaks & Rewards** — streak display, rewards marketplace, redemption RPC.
-5. **Profile & Settings polish** — own stats, calendar history, settings screen.
+1. **Foundation + Onboarding/Auth** — project scaffold, Supabase setup, RLS policies, auth + onboarding screens. **Complete, merged to master.**
+2. **Visual & navigation retrofit** — apply §2's design system and §5's 5-tab structure to Phase 1's already-built screens; no backend/schema changes. *(New phase, inserted 2026-08-15 — not part of the original phasing.)*
+3. **Friends + Feed** — friend search/requests/suggestions, seeded mock friends/logs, populated feed.
+4. **Log flow** — photo capture, optional description, Gemini estimate via Edge Function, editable fields, post + streak increment.
+5. **Streaks & Rewards** — streak display, rewards marketplace, redemption RPC.
+6. **Profile & Settings polish** — own stats, calendar history, settings screen.
