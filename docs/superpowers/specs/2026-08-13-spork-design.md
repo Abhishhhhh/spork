@@ -1,7 +1,7 @@
 # Spork — Design Spec
 
-**Date:** 2026-08-13 (visual design system and navigation revised 2026-08-15 — see §2 and §10)
-**Status:** Approved, Phase 1 implemented and merged; visual/nav retrofit approved, pending implementation plan
+**Date:** 2026-08-13 (visual design system and navigation revised 2026-08-15 — see §2 and §10; Phase 3 Friends+Feed scoped 2026-08-15 — see §5, §10, §12)
+**Status:** Approved. Phase 1 (Foundation/Onboarding) and Phase 2 (visual/nav retrofit) implemented and merged. Phase 3 (Friends + Feed) approved, pending implementation plan.
 
 ## 1. Concept
 
@@ -145,15 +145,15 @@ Bottom tab bar, **5 items: Feed / Streaks / Log (center, raised, unlabeled "+" b
 
 Height/weight/age/sex/activity are used only to compute the suggested calorie goal client-side at that moment — they are not persisted. Only the resulting `calorie_goal` is stored on the user record; if the user wants to recompute the suggestion later, they re-enter those inputs. The `sex` field (`'male' | 'female'`) selects the correct Mifflin-St Jeor constant (+5 male / −161 female) instead of the sex-neutral approximation used in the initial Phase 1 build — see §10.
 
-**Feed:** Empty state prompts adding friends / logging first meal. Populated state: chronological cards, no algorithm — friend photo/handle, meal photo, calorie count, meal tag, timestamp, flame icon if the friend has an active streak. Tap card → friend profile.
+**Feed:** Empty state prompts adding friends / logging first meal. Populated state: chronological cards, no algorithm — friend avatar/handle, meal photo (omitted for now if absent — no log flow exists yet to attach one, see §12 Phase 3 seeding notes), calorie count, meal tag, timestamp, flame icon if the friend's `streak_count > 0`. Feed shows friends' logs only, not the viewer's own (their own history lives on Profile). Tap card → friend profile. Query: `logs` joined to `users`, filtered to `user_id <> auth.uid()`, ordered by `created_at desc` — RLS (§4) transparently returns only what's permitted, so the feed can never over-fetch a private log.
 
 **Log flow (see §6 for detail).**
 
 **Meal detail view:** full photo, calories + each macro (estimate vs. final), meal type, timestamp, edit option (own logs only).
 
-**Friend profile:** public logs grid (photo + calories + meal type), current streak, quick stats if permitted (avg daily calories from public logs, most logged meal type) — fully private-default users show no streak/stats to friends at all, regardless of individual public logs.
+**Friend profile:** public logs grid (photo + calories + meal type), current streak (`users.streak_count`), quick stats if permitted (avg daily calories from public logs, most logged meal type — both computed client-side from the same RLS-filtered query the feed uses, so a private log is excluded by construction, not by a second rule that could drift out of sync) — fully private-default users show no streak/stats to friends at all, regardless of individual public logs.
 
-**Friends (tab):** search by username, "Find from Contacts" (mocked, no real contacts access), sent/received request lists, Accept/Decline, and a suggested-users section for cold-start discovery (per user feedback during Phase 1 testing — see §10). Placeholder only until Phase 3 builds the real functionality; the tab itself exists starting with the Phase 2 visual retrofit.
+**Friends (tab):** search by username, "Your Circle" (accepted friends list), incoming/outgoing pending request sections with Accept/Decline. "Find from Contacts" (mocked, no real contacts access — spec'd for this tab originally, not built in Phase 3, revisit if it becomes a priority) and the suggested-users section for cold-start discovery (per user feedback during Phase 1 testing — see §10) remain deferred; Phase 3 seeds enough real friend data that suggestions could be revisited, but weren't scoped into this pass. Placeholder until Phase 3 builds the real functionality; the tab itself exists starting with the Phase 2 visual retrofit.
 
 **Streaks & Rewards:** current streak (big flame + number), progress bar to next milestone (7/30/100 days). Rewards marketplace: grid/list of partner offers, locked (grayed, shows milestone needed) vs. unlocked. Reward detail → Redeem → mock code generated → status becomes "Redeemed" with expiry countdown.
 
@@ -209,6 +209,9 @@ Following the **test-driven-development** skill during implementation:
 - **Calorie formula accuracy (2026-08-15):** added a required `sex` field to the calorie-goal calculator, switching from the sex-neutral −78 midpoint approximation (Phase 1's original implementation) to the exact Mifflin-St Jeor constants (+5 male / −161 female).
 - **Forgot password — explicitly deferred (2026-08-15):** the reference design includes a "Forgot password?" link; real password reset is new functionality (email delivery + confirmation screen), not a visual change, and is intentionally left out of the visual/nav retrofit.
 - **Suggested friends in onboarding — deferred to Phase 3 (flagged 2026-08-14):** user feedback during Phase 1 testing asked for the Add Friends screen to proactively recommend users, not just search on demand. No signal to recommend from yet at cold-start (zero mutual friends/activity); Phase 3 seeds mock friends/logs, which is where recommendations become meaningful. The Friends tab's "you might know" section (§5) is the eventual home for this.
+- **Mock friend seeding approach (2026-08-15):** `users.id references auth.users`, so a seeded "friend" needs a real Supabase Auth account behind it, not just a database row. Rather than scripting this via the Supabase Admin API (which needs the more sensitive service-role key), 5 real test accounts are signed up through the app itself — same as Phase 1's own testing — then backfilled with realistic profile/log/streak data via a one-time SQL seed script once their real user IDs are known. These 5 accounts are explicitly throwaway/demo data, to be deleted later.
+- **Seed data shape (2026-08-15):** 3 accepted friends with varying streak counts (0, 3, 15) and a private log each (to exercise the privacy guarantee, not just the happy path), 1 pending incoming request (exercises Accept/Decline), 1 unconnected user (exercises search-and-discover). Avatars use the existing colored-initial fallback; seeded logs omit `photo_url` (nullable, matches a photo-less manual entry) since no image assets are available in this environment.
+- **Friends tab and Friend Profile scope (2026-08-15):** Phase 3 builds the full Friends tab (search, Your Circle, incoming/outgoing requests, Accept/Decline) and a real Friend Profile screen powered by seeded data, rather than deferring either — both were originally scoped for later phases only because Log flow/Streaks didn't exist yet to populate them; seeding sidesteps that dependency.
 
 ## 11. Explicitly Out of Scope
 
@@ -217,8 +220,8 @@ Barcode scanning, restaurant menu database, Apple Health/wearable sync, in-app m
 ## 12. Build Phasing
 
 1. **Foundation + Onboarding/Auth** — project scaffold, Supabase setup, RLS policies, auth + onboarding screens. **Complete, merged to master.**
-2. **Visual & navigation retrofit** — apply §2's design system and §5's 5-tab structure to Phase 1's already-built screens; no backend/schema changes. *(New phase, inserted 2026-08-15 — not part of the original phasing.)*
-3. **Friends + Feed** — friend search/requests/suggestions, seeded mock friends/logs, populated feed.
+2. **Visual & navigation retrofit** — apply §2's design system and §5's 5-tab structure to Phase 1's already-built screens; no backend/schema changes. *(New phase, inserted 2026-08-15 — not part of the original phasing.)* **Complete, merged to master.**
+3. **Friends + Feed** — seed 5 mock friend accounts, full Friends tab (search, Your Circle, requests, Accept/Decline), populated Feed, and a real Friend Profile screen — all backed by the seeded data since Log flow/Streaks don't exist yet to generate it organically.
 4. **Log flow** — photo capture, optional description, Gemini estimate via Edge Function, editable fields, post + streak increment.
 5. **Streaks & Rewards** — streak display, rewards marketplace, redemption RPC.
 6. **Profile & Settings polish** — own stats, calendar history, settings screen.
