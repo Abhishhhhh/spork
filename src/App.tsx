@@ -9,7 +9,7 @@ import Feed from './screens/feed/Feed'
 import LogPlaceholder from './screens/log/LogPlaceholder'
 import RewardsPlaceholder from './screens/rewards/RewardsPlaceholder'
 import ProfileScreen from './screens/profile/ProfileScreen'
-import FriendsPlaceholder from './screens/friends/FriendsPlaceholder'
+import Friends from './screens/friends/Friends'
 import FriendProfile from './screens/friends/FriendProfile'
 import { HomeShell } from './screens/home/HomeShell'
 import { ProtectedRoute } from './components/ProtectedRoute'
@@ -77,7 +77,7 @@ export default function App() {
           <Route path="feed" element={<Feed />} />
           <Route path="log" element={<LogPlaceholder />} />
           <Route path="rewards" element={<RewardsPlaceholder />} />
-          <Route path="friends" element={<FriendsPlaceholder />} />
+          <Route path="friends" element={<Friends />} />
           <Route path="friend/:username" element={<FriendProfile />} />
           <Route path="profile" element={<ProfileScreen />} />
         </Route>
