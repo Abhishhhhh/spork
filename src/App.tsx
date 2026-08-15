@@ -5,7 +5,7 @@ import ProfileSetup from './screens/onboarding/ProfileSetup'
 import CalorieGoal from './screens/onboarding/CalorieGoal'
 import PrivacyDefault from './screens/onboarding/PrivacyDefault'
 import AddFirstFriends from './screens/onboarding/AddFirstFriends'
-import FeedPlaceholder from './screens/feed/FeedPlaceholder'
+import Feed from './screens/feed/Feed'
 import LogPlaceholder from './screens/log/LogPlaceholder'
 import RewardsPlaceholder from './screens/rewards/RewardsPlaceholder'
 import ProfileScreen from './screens/profile/ProfileScreen'
@@ -73,7 +73,7 @@ export default function App() {
             </ProtectedRoute>
           }
         >
-          <Route path="feed" element={<FeedPlaceholder />} />
+          <Route path="feed" element={<Feed />} />
           <Route path="log" element={<LogPlaceholder />} />
           <Route path="rewards" element={<RewardsPlaceholder />} />
           <Route path="friends" element={<FriendsPlaceholder />} />
