@@ -100,6 +100,9 @@ export default function FriendProfile() {
         <ul className="grid grid-cols-3 gap-2">
           {logs.map((log) => (
             <li key={log.id} className="flex flex-col items-center gap-1 rounded-2xl border border-border p-3">
+              {log.photoSignedUrl && (
+                <img src={log.photoSignedUrl} alt="" className="h-20 w-full rounded-xl object-cover" />
+              )}
               <span className="text-lg font-bold text-primary">{log.calories_final ?? log.calories_estimate ?? '—'}</span>
               <span className="text-xs capitalize text-muted">{log.meal_type}</span>
             </li>

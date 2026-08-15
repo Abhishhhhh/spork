@@ -9,6 +9,7 @@ type UserRow = Database['public']['Tables']['users']['Row']
 export interface FeedItem {
   log: LogRow
   author: Pick<UserRow, 'id' | 'name' | 'username' | 'photo_url' | 'streak_count' | 'streak_last_log_date'>
+  photoSignedUrl: string | null
 }
 
 /**
@@ -52,10 +53,24 @@ export function useFeed() {
 
       const authorsById = new Map((authors ?? []).map((author) => [author.id, author]))
 
+      const photoPaths = logs.filter((log) => log.photo_url).map((log) => log.photo_url as string)
+      const signedUrlByPath = new Map<string, string>()
+      if (photoPaths.length > 0) {
+        const { data: signedUrls } = await supabase.storage.from('meal-photos').createSignedUrls(photoPaths, 3600)
+        for (const entry of signedUrls ?? []) {
+          if (entry.signedUrl && entry.path) signedUrlByPath.set(entry.path, entry.signedUrl)
+        }
+      }
+
       return logs
         .map((log) => {
           const author = authorsById.get(log.user_id)
-          return author ? { log, author } : null
+          if (!author) return null
+          return {
+            log,
+            author,
+            photoSignedUrl: log.photo_url ? (signedUrlByPath.get(log.photo_url) ?? null) : null,
+          }
         })
         .filter((item): item is FeedItem => item !== null)
     },

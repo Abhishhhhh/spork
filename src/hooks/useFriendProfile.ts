@@ -6,9 +6,13 @@ import type { Database } from '../lib/database.types'
 type UserRow = Database['public']['Tables']['users']['Row']
 type LogRow = Database['public']['Tables']['logs']['Row']
 
+export interface FriendProfileLog extends LogRow {
+  photoSignedUrl: string | null
+}
+
 export interface FriendProfileData {
   user: UserRow
-  logs: LogRow[]
+  logs: FriendProfileLog[]
 }
 
 /**
@@ -44,7 +48,23 @@ export function useFriendProfile(username: string | undefined) {
 
       if (logsError) throw logsError
 
-      return { user, logs: logs ?? [] }
+      const rows = logs ?? []
+      const photoPaths = rows.filter((log) => log.photo_url).map((log) => log.photo_url as string)
+      const signedUrlByPath = new Map<string, string>()
+      if (photoPaths.length > 0) {
+        const { data: signedUrls } = await supabase.storage.from('meal-photos').createSignedUrls(photoPaths, 3600)
+        for (const entry of signedUrls ?? []) {
+          if (entry.signedUrl && entry.path) signedUrlByPath.set(entry.path, entry.signedUrl)
+        }
+      }
+
+      return {
+        user,
+        logs: rows.map((log) => ({
+          ...log,
+          photoSignedUrl: log.photo_url ? (signedUrlByPath.get(log.photo_url) ?? null) : null,
+        })),
+      }
     },
     enabled: Boolean(username) && Boolean(viewerId),
   })

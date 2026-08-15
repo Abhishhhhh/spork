@@ -47,7 +47,7 @@ export default function Feed() {
 
   return (
     <div className="flex flex-col gap-3 px-4 py-6">
-      {items.map(({ log, author }) => {
+      {items.map(({ log, author, photoSignedUrl }) => {
         const effectiveStreak = getEffectiveStreak(author.streak_count, author.streak_last_log_date, new Date())
         return (
           <button
@@ -55,6 +55,9 @@ export default function Feed() {
             onClick={() => navigate(`/home/friend/${author.username}`)}
             className="flex flex-col gap-2 rounded-2xl border border-border p-4 text-left"
           >
+            {photoSignedUrl && (
+              <img src={photoSignedUrl} alt="" className="h-40 w-full rounded-xl object-cover" />
+            )}
             <div className="flex items-center gap-2">
               {author.photo_url ? (
                 <img src={author.photo_url} alt={author.name} className="h-8 w-8 rounded-full object-cover" />
