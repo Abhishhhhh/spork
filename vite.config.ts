@@ -14,8 +14,8 @@ export default defineConfig({
         name: 'Spork',
         short_name: 'Spork',
         description: 'Social calorie & nutrition tracker',
-        theme_color: '#FF6B35',
-        background_color: '#FFFFFF',
+        theme_color: '#231815',
+        background_color: '#FAF7F0',
         display: 'standalone',
         icons: [
           { src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' },

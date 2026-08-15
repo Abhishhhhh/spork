@@ -54,7 +54,7 @@ function solidColorPng(size, [r, g, b]) {
   return Buffer.concat([signature, chunk('IHDR', ihdr), chunk('IDAT', idat), chunk('IEND', Buffer.alloc(0))])
 }
 
-const FLAME_ORANGE = [255, 107, 53]
-writeFileSync('public/pwa-192x192.png', solidColorPng(192, FLAME_ORANGE))
-writeFileSync('public/pwa-512x512.png', solidColorPng(512, FLAME_ORANGE))
+const BRAND_PRIMARY = [0x23, 0x18, 0x15]
+writeFileSync('public/pwa-192x192.png', solidColorPng(192, BRAND_PRIMARY))
+writeFileSync('public/pwa-512x512.png', solidColorPng(512, BRAND_PRIMARY))
 console.log('Generated placeholder PWA icons (solid color) in public/')
