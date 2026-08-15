@@ -6,12 +6,26 @@ import { getEffectiveStreak } from '../../lib/streak'
 export default function FriendProfile() {
   const { username } = useParams<{ username: string }>()
   const navigate = useNavigate()
-  const { data, isLoading } = useFriendProfile(username)
+  const { data, isLoading, isError } = useFriendProfile(username)
 
   if (isLoading) {
     return (
       <div className="flex min-h-[calc(100vh-5rem)] items-center justify-center">
         <p className="text-muted">Loading…</p>
+      </div>
+    )
+  }
+
+  if (isError) {
+    return (
+      <div className="flex min-h-[calc(100vh-5rem)] flex-col items-center justify-center gap-4 px-6 text-center">
+        <p className="text-muted">Something went wrong loading this profile.</p>
+        <button
+          onClick={() => navigate(-1)}
+          className="rounded-full bg-primary px-6 py-3 text-base font-semibold text-background"
+        >
+          Go back
+        </button>
       </div>
     )
   }
@@ -41,7 +55,7 @@ export default function FriendProfile() {
   const mostLoggedMealType = computeMostLoggedMealType(logs)
 
   return (
-    <div className="flex min-h-screen flex-col px-6 py-8">
+    <div className="flex min-h-[calc(100vh-5rem)] flex-col px-6 py-8">
       <button
         onClick={() => navigate(-1)}
         aria-label="Back"

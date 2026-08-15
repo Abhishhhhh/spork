@@ -7,6 +7,7 @@ import {
   useFriendships,
   useSendFriendRequest,
 } from '../../hooks/useFriendships'
+import { useSession } from '../../hooks/useSession'
 
 interface FoundUser {
   id: string
@@ -17,7 +18,8 @@ interface FoundUser {
 
 export default function Friends() {
   const navigate = useNavigate()
-  const { data, isLoading } = useFriendships()
+  const { session } = useSession()
+  const { data, isLoading, isError } = useFriendships()
   const acceptMutation = useAcceptFriendRequest()
   const declineMutation = useDeclineFriendRequest()
   const sendMutation = useSendFriendRequest()
@@ -38,6 +40,7 @@ export default function Friends() {
       .from('users')
       .select('id, username, name, photo_url')
       .ilike('username', `%${term}%`)
+      .neq('id', session?.user.id ?? '')
       .limit(10)
 
     if (searchError) {
@@ -72,6 +75,9 @@ export default function Friends() {
       </div>
 
       {error && <p className="text-sm text-error">{error}</p>}
+      {sendMutation.isError && <p className="text-sm text-error">Couldn't send that request. Try again.</p>}
+      {acceptMutation.isError && <p className="text-sm text-error">Couldn't accept that request. Try again.</p>}
+      {declineMutation.isError && <p className="text-sm text-error">Couldn't decline that request. Try again.</p>}
 
       {results.length > 0 && (
         <ul className="flex flex-col gap-2">
@@ -95,6 +101,8 @@ export default function Friends() {
 
       {isLoading ? (
         <p className="text-sm text-muted">Loading…</p>
+      ) : isError ? (
+        <p className="text-sm text-error">Couldn't load your friends. Try refreshing.</p>
       ) : (
         <>
           {data && data.incoming.length > 0 && (

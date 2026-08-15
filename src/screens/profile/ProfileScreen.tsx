@@ -1,8 +1,10 @@
+import { useQueryClient } from '@tanstack/react-query'
 import { useCurrentUser } from '../../hooks/useCurrentUser'
 import { supabase } from '../../lib/supabase'
 
 export default function ProfileScreen() {
   const { data: user, isLoading } = useCurrentUser()
+  const queryClient = useQueryClient()
 
   if (isLoading) {
     return (
@@ -13,6 +15,11 @@ export default function ProfileScreen() {
   }
 
   if (!user) return null
+
+  async function handleSignOut() {
+    await supabase.auth.signOut()
+    queryClient.clear()
+  }
 
   return (
     <div className="flex flex-col items-center gap-4 px-6 pt-10">
@@ -31,7 +38,7 @@ export default function ProfileScreen() {
         <p className="text-3xl font-bold text-primary">{user.calorie_goal ?? '—'}</p>
         <p className="text-xs text-muted">daily calorie goal</p>
       </div>
-      <button onClick={() => supabase.auth.signOut()} className="mt-4 text-sm text-error">
+      <button onClick={handleSignOut} className="mt-4 text-sm text-error">
         Sign out
       </button>
     </div>

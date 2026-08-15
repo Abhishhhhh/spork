@@ -4,12 +4,20 @@ import { getEffectiveStreak } from '../../lib/streak'
 
 export default function Feed() {
   const navigate = useNavigate()
-  const { data: items, isLoading } = useFeed()
+  const { data: items, isLoading, isError } = useFeed()
 
   if (isLoading) {
     return (
       <div className="flex min-h-[calc(100vh-5rem)] items-center justify-center">
         <p className="text-muted">Loading…</p>
+      </div>
+    )
+  }
+
+  if (isError) {
+    return (
+      <div className="flex min-h-[calc(100vh-5rem)] items-center justify-center px-6 text-center">
+        <p className="text-muted">Something went wrong loading your feed. Try refreshing.</p>
       </div>
     )
   }

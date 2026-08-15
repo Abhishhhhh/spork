@@ -26,10 +26,10 @@ export interface FeedItem {
  * log-safe. That's RLS's job (see supabase/migrations/0001_init.sql).
  */
 export function useFeed() {
-  const { session } = useSession()
+  const { session, loading: sessionLoading } = useSession()
   const userId = session?.user.id
 
-  return useQuery({
+  const query = useQuery({
     queryKey: ['feed', userId],
     queryFn: async (): Promise<FeedItem[]> => {
       const { data: logs, error: logsError } = await supabase
@@ -61,4 +61,14 @@ export function useFeed() {
     },
     enabled: Boolean(userId),
   })
+
+  // Same session-race guard as useCurrentUser.ts — a disabled query (no
+  // userId yet because useSession() hasn't resolved) reports isLoading:
+  // false in TanStack Query v5, so without this callers briefly see
+  // isLoading: false + data: undefined and mistake "session not yet known"
+  // for "confirmed: empty feed."
+  return {
+    ...query,
+    isLoading: sessionLoading || (Boolean(userId) && query.isLoading),
+  }
 }

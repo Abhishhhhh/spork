@@ -19,10 +19,10 @@ export interface FriendshipsData {
  * reasoning as useFeed and useFriendProfile.
  */
 export function useFriendships() {
-  const { session } = useSession()
+  const { session, loading: sessionLoading } = useSession()
   const userId = session?.user.id
 
-  return useQuery({
+  const query = useQuery({
     queryKey: ['friendships', userId],
     queryFn: async (): Promise<FriendshipsData> => {
       const { data: friendships, error: friendshipsError } = await supabase.from('friendships').select('*')
@@ -68,6 +68,11 @@ export function useFriendships() {
     },
     enabled: Boolean(userId),
   })
+
+  return {
+    ...query,
+    isLoading: sessionLoading || (Boolean(userId) && query.isLoading),
+  }
 }
 
 export function useAcceptFriendRequest() {
@@ -79,6 +84,8 @@ export function useAcceptFriendRequest() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['friendships'] })
+      queryClient.invalidateQueries({ queryKey: ['feed'] })
+      queryClient.invalidateQueries({ queryKey: ['friendProfile'] })
     },
   })
 }
