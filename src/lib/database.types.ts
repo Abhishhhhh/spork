@@ -22,7 +22,17 @@ export interface Database {
           calorie_goal?: number | null
           privacy_default?: 'public' | 'private'
         }
-        Update: Partial<Database['public']['Tables']['users']['Insert']>
+        Update: {
+          id?: string
+          username?: string
+          name?: string
+          photo_url?: string | null
+          calorie_goal?: number | null
+          privacy_default?: 'public' | 'private'
+          streak_count?: number
+          streak_last_log_date?: string | null
+          reminder_time?: string | null
+        }
         Relationships: []
       }
       friendships: {
