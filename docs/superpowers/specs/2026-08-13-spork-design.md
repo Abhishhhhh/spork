@@ -141,7 +141,7 @@ To *display* a broken streak before the user's next log (there's no background j
 
 Bottom tab bar, **5 items: Feed / Streaks / Log (center, raised, unlabeled "+" button) / Friends / Profile**. The center button is visually distinct — a filled circle with no label — and always opens the Log flow; `Feed`, `Streaks`, `Friends`, and `Profile` keep icon+label. (Revised 2026-08-15 from the original 4-tab layout — Friends is now a first-class tab rather than reached only through onboarding or a Feed icon.)
 
-**Onboarding:** Welcome → Sign in (email) → Profile setup (name, unique username, photo) → Calorie goal (manual input or auto-suggest from height/weight/age/**sex**/activity, editable) → Privacy default choice ("Public by default" / "Private by default") → Add first friends (skip option).
+**Onboarding:** Welcome → Sign in (email) → Profile setup (name, unique username, photo) → Calorie goal (manual input or auto-suggest from height/weight/age/**sex**/activity, editable; defaults to 2000 kcal as a starting point) → Privacy default choice ("Public by default" / "Private by default") → Add first friends (skip option).
 
 Height/weight/age/sex/activity are used only to compute the suggested calorie goal client-side at that moment — they are not persisted. Only the resulting `calorie_goal` is stored on the user record; if the user wants to recompute the suggestion later, they re-enter those inputs. The `sex` field (`'male' | 'female'`) selects the correct Mifflin-St Jeor constant (+5 male / −161 female) instead of the sex-neutral approximation used in the initial Phase 1 build — see §10.
 
@@ -153,7 +153,7 @@ Height/weight/age/sex/activity are used only to compute the suggested calorie go
 
 **Friend profile:** public logs grid (photo + calories + meal type), current streak, quick stats if permitted (avg daily calories from public logs, most logged meal type) — fully private-default users show no streak/stats to friends at all, regardless of individual public logs.
 
-**Friends (tab):** search by username, "Find from Contacts" (mocked, no real contacts access), sent/received request lists, Accept/Decline, and a suggested-users section for cold-start discovery (per user feedback during Phase 1 testing — see §10). Placeholder only until Phase 2 builds the real functionality; the tab itself exists starting with the Phase 1 visual retrofit.
+**Friends (tab):** search by username, "Find from Contacts" (mocked, no real contacts access), sent/received request lists, Accept/Decline, and a suggested-users section for cold-start discovery (per user feedback during Phase 1 testing — see §10). Placeholder only until Phase 3 builds the real functionality; the tab itself exists starting with the Phase 2 visual retrofit.
 
 **Streaks & Rewards:** current streak (big flame + number), progress bar to next milestone (7/30/100 days). Rewards marketplace: grid/list of partner offers, locked (grayed, shows milestone needed) vs. unlocked. Reward detail → Redeem → mock code generated → status becomes "Redeemed" with expiry countdown.
 
@@ -208,7 +208,7 @@ Following the **test-driven-development** skill during implementation:
 - **Navigation restructure (2026-08-15):** Friends promoted to a first-class 5th tab (previously reachable only during onboarding); Log becomes a visually distinct raised, unlabeled center button rather than an equal-weight labeled tab. Triggers a retrofit of all already-built Phase 1 screens to the new tokens and tab structure.
 - **Calorie formula accuracy (2026-08-15):** added a required `sex` field to the calorie-goal calculator, switching from the sex-neutral −78 midpoint approximation (Phase 1's original implementation) to the exact Mifflin-St Jeor constants (+5 male / −161 female).
 - **Forgot password — explicitly deferred (2026-08-15):** the reference design includes a "Forgot password?" link; real password reset is new functionality (email delivery + confirmation screen), not a visual change, and is intentionally left out of the visual/nav retrofit.
-- **Suggested friends in onboarding — deferred to Phase 2 (flagged 2026-08-14):** user feedback during Phase 1 testing asked for the Add Friends screen to proactively recommend users, not just search on demand. No signal to recommend from yet at cold-start (zero mutual friends/activity); Phase 2 seeds mock friends/logs, which is where recommendations become meaningful. The Friends tab's "you might know" section (§5) is the eventual home for this.
+- **Suggested friends in onboarding — deferred to Phase 3 (flagged 2026-08-14):** user feedback during Phase 1 testing asked for the Add Friends screen to proactively recommend users, not just search on demand. No signal to recommend from yet at cold-start (zero mutual friends/activity); Phase 3 seeds mock friends/logs, which is where recommendations become meaningful. The Friends tab's "you might know" section (§5) is the eventual home for this.
 
 ## 11. Explicitly Out of Scope
 

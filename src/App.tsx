@@ -17,7 +17,7 @@ import { RequireNotOnboarded } from './components/RequireNotOnboarded'
 
 export default function App() {
   return (
-    <div className="mx-auto min-h-screen max-w-[430px] bg-white">
+    <div className="mx-auto min-h-screen max-w-[430px] bg-background">
       <Routes>
         <Route path="/welcome" element={<Welcome />} />
         <Route path="/sign-in" element={<SignIn />} />

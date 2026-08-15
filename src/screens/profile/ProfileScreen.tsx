@@ -6,7 +6,7 @@ export default function ProfileScreen() {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
+      <div className="flex min-h-[calc(100vh-5rem)] items-center justify-center">
         <p className="text-muted">Loading…</p>
       </div>
     )

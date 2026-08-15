@@ -83,7 +83,7 @@ export default function ProfileSetup() {
           <input
             type="file"
             accept="image/*"
-            className="hidden"
+            className="sr-only"
             onChange={(e) => setAvatarFile(e.target.files?.[0] ?? null)}
           />
         </label>

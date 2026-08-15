@@ -9,7 +9,7 @@ export function RequireNotOnboarded({ children }: { children: ReactNode }) {
   if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <p className="text-neutral-400">Loading…</p>
+        <p className="text-muted">Loading…</p>
       </div>
     )
   }

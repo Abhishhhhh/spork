@@ -89,8 +89,9 @@ export default function CalorieGoal() {
           <div className="flex flex-col gap-3 rounded-2xl border border-border p-4">
             <div className="grid grid-cols-3 gap-2">
               <div>
-                <label className="text-xs text-muted">Height cm</label>
+                <label htmlFor="calorie-height" className="text-xs text-muted">Height cm</label>
                 <input
+                  id="calorie-height"
                   inputMode="decimal"
                   value={heightCm}
                   onChange={(e) => setHeightCm(e.target.value)}
@@ -98,8 +99,9 @@ export default function CalorieGoal() {
                 />
               </div>
               <div>
-                <label className="text-xs text-muted">Weight kg</label>
+                <label htmlFor="calorie-weight" className="text-xs text-muted">Weight kg</label>
                 <input
+                  id="calorie-weight"
                   inputMode="decimal"
                   value={weightKg}
                   onChange={(e) => setWeightKg(e.target.value)}
@@ -107,8 +109,9 @@ export default function CalorieGoal() {
                 />
               </div>
               <div>
-                <label className="text-xs text-muted">Age</label>
+                <label htmlFor="calorie-age" className="text-xs text-muted">Age</label>
                 <input
+                  id="calorie-age"
                   inputMode="numeric"
                   value={age}
                   onChange={(e) => setAge(e.target.value)}
