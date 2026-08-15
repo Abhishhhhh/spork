@@ -5,7 +5,13 @@ import ProfileSetup from './screens/onboarding/ProfileSetup'
 import CalorieGoal from './screens/onboarding/CalorieGoal'
 import PrivacyDefault from './screens/onboarding/PrivacyDefault'
 import AddFirstFriends from './screens/onboarding/AddFirstFriends'
+import FeedPlaceholder from './screens/feed/FeedPlaceholder'
+import LogPlaceholder from './screens/log/LogPlaceholder'
+import RewardsPlaceholder from './screens/rewards/RewardsPlaceholder'
+import ProfileScreen from './screens/profile/ProfileScreen'
+import { HomeShell } from './screens/home/HomeShell'
 import { ProtectedRoute } from './components/ProtectedRoute'
+import { RequireOnboarded } from './components/RequireOnboarded'
 import { RequireNotOnboarded } from './components/RequireNotOnboarded'
 
 export default function App() {
@@ -14,6 +20,7 @@ export default function App() {
       <Routes>
         <Route path="/welcome" element={<Welcome />} />
         <Route path="/sign-in" element={<SignIn />} />
+
         <Route
           path="/onboarding/profile"
           element={
@@ -54,14 +61,23 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+
         <Route
-          path="/home/feed"
+          path="/home"
           element={
             <ProtectedRoute>
-              <div className="p-6 text-center text-neutral-400">Welcome! Home shell coming in the next task.</div>
+              <RequireOnboarded>
+                <HomeShell />
+              </RequireOnboarded>
             </ProtectedRoute>
           }
-        />
+        >
+          <Route path="feed" element={<FeedPlaceholder />} />
+          <Route path="log" element={<LogPlaceholder />} />
+          <Route path="rewards" element={<RewardsPlaceholder />} />
+          <Route path="profile" element={<ProfileScreen />} />
+        </Route>
+
         <Route path="*" element={<Navigate to="/welcome" replace />} />
       </Routes>
     </div>

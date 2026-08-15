@@ -117,8 +117,10 @@ npm install -D vite @vitejs/plugin-react typescript @types/react @types/react-do
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <link rel="icon" type="image/png" href="/pwa-192x192.png" />
     <link rel="apple-touch-icon" href="/pwa-192x192.png" />
     <title>Spork</title>
   </head>
@@ -800,10 +802,10 @@ import { useSession } from './useSession'
 export type UserRow = Database['public']['Tables']['users']['Row']
 
 export function useCurrentUser() {
-  const { session } = useSession()
+  const { session, loading: sessionLoading } = useSession()
   const userId = session?.user.id
 
-  return useQuery({
+  const query = useQuery({
     queryKey: ['currentUser', userId],
     queryFn: async (): Promise<UserRow | null> => {
       const { data, error } = await supabase.from('users').select('*').eq('id', userId!).maybeSingle()
@@ -813,6 +815,20 @@ export function useCurrentUser() {
     },
     enabled: Boolean(userId),
   })
+
+  // A disabled query (no userId yet, because useSession() hasn't resolved)
+  // reports isLoading: false in TanStack Query v5 — "loading" specifically
+  // means "actively fetching," and a disabled query never fetches. Without
+  // folding in sessionLoading here, callers (RequireOnboarded,
+  // RequireNotOnboarded in Task 8) see isLoading: false and data: undefined
+  // simultaneously during that window and mistake "session not yet known"
+  // for "confirmed: no user," which fires a premature redirect on every
+  // fresh sign-in — visible as a flash through the wrong screen before
+  // landing on the correct one.
+  return {
+    ...query,
+    isLoading: sessionLoading || (Boolean(userId) && query.isLoading),
+  }
 }
 ```
 
@@ -901,7 +917,12 @@ import { supabase } from '../../lib/supabase'
 
 export default function SignIn() {
   const navigate = useNavigate()
-  const [mode, setMode] = useState<'sign-up' | 'sign-in'>('sign-up')
+  // Defaults to sign-in: after the very first signup, nearly every visit
+  // to this screen is an existing user signing back in. Signing up with an
+  // email that already exists returns a visible "already registered"
+  // error rather than silently succeeding, so defaulting to sign-up would
+  // make the common case (returning user) hit that error every time.
+  const [mode, setMode] = useState<'sign-up' | 'sign-in'>('sign-in')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -912,19 +933,29 @@ export default function SignIn() {
     setError(null)
     setSubmitting(true)
 
-    const { error: authError } =
+    const { data, error: authError } =
       mode === 'sign-up'
         ? await supabase.auth.signUp({ email, password })
         : await supabase.auth.signInWithPassword({ email, password })
 
-    setSubmitting(false)
-
     if (authError) {
+      setSubmitting(false)
       setError(authError.message)
       return
     }
 
-    navigate('/onboarding/profile')
+    // Route straight to the feed for an already-onboarded returning user,
+    // instead of always landing on /onboarding/profile and relying on the
+    // RequireNotOnboarded guard (added in Task 8) to redirect onward — that
+    // guard still works as defense-in-depth, but checking here avoids ever
+    // mounting the onboarding screens for a user who doesn't need them.
+    const userId = data.user?.id
+    const { data: existingProfile } = userId
+      ? await supabase.from('users').select('id').eq('id', userId).maybeSingle()
+      : { data: null }
+
+    setSubmitting(false)
+    navigate(existingProfile ? '/home/feed' : '/onboarding/profile')
   }
 
   return (

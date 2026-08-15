@@ -4,7 +4,12 @@ import { supabase } from '../../lib/supabase'
 
 export default function SignIn() {
   const navigate = useNavigate()
-  const [mode, setMode] = useState<'sign-up' | 'sign-in'>('sign-up')
+  // Defaults to sign-in: after the very first signup, nearly every visit
+  // to this screen is an existing user signing back in. Signing up with an
+  // email that already exists returns a visible "already registered"
+  // error rather than silently succeeding, so defaulting to sign-up would
+  // make the common case (returning user) hit that error every time.
+  const [mode, setMode] = useState<'sign-up' | 'sign-in'>('sign-in')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -15,19 +20,29 @@ export default function SignIn() {
     setError(null)
     setSubmitting(true)
 
-    const { error: authError } =
+    const { data, error: authError } =
       mode === 'sign-up'
         ? await supabase.auth.signUp({ email, password })
         : await supabase.auth.signInWithPassword({ email, password })
 
-    setSubmitting(false)
-
     if (authError) {
+      setSubmitting(false)
       setError(authError.message)
       return
     }
 
-    navigate('/onboarding/profile')
+    // Route straight to the feed for an already-onboarded returning user,
+    // instead of always landing on /onboarding/profile and relying on the
+    // RequireNotOnboarded guard to redirect onward — that guard still
+    // works as defense-in-depth, but doing this check here avoids ever
+    // mounting the onboarding screens for a user who doesn't need them.
+    const userId = data.user?.id
+    const { data: existingProfile } = userId
+      ? await supabase.from('users').select('id').eq('id', userId).maybeSingle()
+      : { data: null }
+
+    setSubmitting(false)
+    navigate(existingProfile ? '/home/feed' : '/onboarding/profile')
   }
 
   return (
