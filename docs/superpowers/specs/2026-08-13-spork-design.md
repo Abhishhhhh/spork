@@ -1,7 +1,7 @@
 # Spork — Design Spec
 
-**Date:** 2026-08-13 (visual design system and navigation revised 2026-08-15 — see §2 and §10; Phase 3 Friends+Feed scoped 2026-08-15 — see §5, §10, §12)
-**Status:** Approved. Phase 1 (Foundation/Onboarding), Phase 2 (visual/nav retrofit), and Phase 3 (Friends + Feed) implemented and merged.
+**Date:** 2026-08-13 (visual design system and navigation revised 2026-08-15 — see §2 and §10; Phase 3 Friends+Feed scoped 2026-08-15 — see §5, §10, §12; Phase 4 Log flow scoped 2026-08-16 — see §6, §10, §12)
+**Status:** Approved. Phase 1 (Foundation/Onboarding), Phase 2 (visual/nav retrofit), and Phase 3 (Friends + Feed) implemented and merged. Phase 4 (Log flow) approved, pending implementation plan.
 
 ## 1. Concept
 
@@ -161,18 +161,26 @@ Height/weight/age/sex/activity are used only to compute the suggested calorie go
 
 ## 6. Log Flow (core feature)
 
-1. Tap the center **+** tab → camera/upload → photo preview shown.
-2. Optional text field: *"Add details (improves accuracy)"* — e.g. "3 breads and 5 eggs" or "200g rice, 400g chicken breast with mustard."
-3. Tap **Get Estimate** → one call to a Supabase Edge Function (`estimate-meal`), which holds the Gemini API key server-side (never exposed to the client) and calls **Gemini 2.5 Flash** with the photo + description together. The prompt instructs the model to: identify each food item, prioritize stated quantities over visual guessing when text is given, apply standard per-100g nutrition values, and return structured JSON — per-item breakdown plus totals for calories/protein/carbs/fat, and a confidence level (`low`/`medium`/`high`).
-4. ~3–5s loading state → editable **calories, protein, carbs, fat** fields + meal name + meal type (auto-suggested by time of day, editable) + visibility toggle (defaults to the user's onboarding privacy setting).
-5. **Fallback rule:** if the Edge Function call fails, times out, or returns something unparseable, silently fall back to blank manual-entry fields on the same screen. The log is never blocked by an AI failure.
-6. Disclaimer shown on the first few logs: *"Estimate — tap to adjust."*
-7. Tap **Post** → brief celebratory animation → streak increments per the logic in §4.
+Replaces the Phase 2 placeholder at `src/screens/log/LogPlaceholder.tsx` (route `/home/log`, reached via the raised center tab). One flow, three steps, backed by a Zustand draft store (`src/store/logDraft.ts`) so the in-progress photo/description/edits survive a network hiccup or an accidental navigation:
+
+1. **Capture** — `<input type="file" accept="image/*" capture="environment">` opens the phone's camera directly (falls back to a plain file picker on desktop) → photo preview shown. Optional text field: *"Add details (improves accuracy)"* — e.g. "3 breads and 5 eggs" or "200g rice, 400g chicken breast with mustard."
+2. **Estimating** — tap **Get Estimate** → the photo is resized/compressed client-side (max ~1024px longest edge, JPEG ~80% quality — keeps the request small/reliable and matches Gemini's own guidance that oversized images don't improve accuracy) → one call to a Supabase Edge Function (`estimate-meal`), which holds the Gemini API key server-side (never exposed to the client) and calls **Gemini 2.5 Flash** with the photo + description together. The prompt instructs the model to: identify each food item, prioritize stated quantities over visual guessing when text is given, apply standard per-100g nutrition values, and return structured JSON — per-item breakdown plus totals for calories/protein/carbs/fat, and a confidence level (`low`/`medium`/`high`). The function requires a valid user JWT (Supabase's default `verify_jwt`, left on) so the free-tier Gemini quota can't be hit by non-users. ~3–5s loading state while this runs.
+3. **Edit & Post** — editable **calories, protein, carbs, fat** fields + meal name + meal type (auto-suggested by time of day — see boundaries below — editable) + visibility toggle (defaults to the user's onboarding privacy setting). Disclaimer shown on the first few logs: *"Estimate — tap to adjust."* Tap **Post**:
+   1. Upload the photo to the private `meal-photos` Storage bucket at `{user_id}/{log_id}.jpg` — this is the *first* point anything is actually persisted; backing out of the flow before this leaves no orphaned data.
+   2. Insert the `logs` row (photo path, description, meal type, visibility, final macros, `ai_confidence`, `ai_raw_response`).
+   3. Compute the new streak via `computeNextStreak(currentStreak, streakLastLogDate, today)` (`src/lib/streak.ts`, sibling to Phase 3's `getEffectiveStreak`, same TDD treatment) and write it via the existing `users_update_own` RLS path — already logged today → no change; last log was yesterday → `+1`; any earlier gap → reset to `1`.
+   4. Brief celebratory animation → navigate to Feed.
+
+**Fallback rule:** if the Edge Function call fails, times out, or `parseEstimateResponse` (a pure function validating/normalizing the raw Gemini JSON) can't make sense of the response, silently fall back to blank manual-entry fields on the same screen. The log is never blocked by an AI failure.
+
+**Meal-type auto-suggestion boundaries** (`suggestMealType(now: Date)`, pure function): breakfast 5:00–10:59, lunch 11:00–14:59, dinner 17:00–21:59, snack otherwise (covers the late-morning gap, the afternoon gap, and late night).
 
 **AI provider notes:**
 - Free tier (Google AI Studio key) supports multimodal (photo + text) input at no cost, but has modest rate limits (roughly 10–15 requests/minute, 250–1,500/day depending on model/account — Google has been tightening free-tier terms) and its terms allow content to be used to improve Google's products. Acceptable for this phase (a handful of friends testing); revisit with a paid key if usage grows.
 - The Edge Function is written provider-agnostically (a single `estimateMeal(photo, description)` interface) so swapping to a paid key or a different vision API later is a config change, not a rewrite.
 - Even with precise quantities, this is an LLM approximation, not a lab measurement or database lookup — "close," not certified-accurate, for well-documented foods. The "Estimate — tap to adjust" framing manages this honestly.
+
+**Storage:** new private `meal-photos` Storage bucket, policies mirroring `logs_select_own_or_public_friend` (owner always; an accepted friend only if the corresponding log is public) — the same "belt-and-suspenders" reasoning as §4's photo-storage note. Ships as a new migration file, `supabase/migrations/0002_meal_photos.sql` — `0001_init.sql` is not edited.
 
 ## 7. Key Rules (unchanged from original requirements)
 
@@ -212,6 +220,11 @@ Following the **test-driven-development** skill during implementation:
 - **Mock friend seeding approach (2026-08-15):** `users.id references auth.users`, so a seeded "friend" needs a real Supabase Auth account behind it, not just a database row. Rather than scripting this via the Supabase Admin API (which needs the more sensitive service-role key), 5 real test accounts are signed up through the app itself — same as Phase 1's own testing — then backfilled with realistic profile/log/streak data via a one-time SQL seed script once their real user IDs are known. These 5 accounts are explicitly throwaway/demo data, to be deleted later.
 - **Seed data shape (2026-08-15):** 3 accepted friends with varying streak counts (0, 3, 15) and a private log each (to exercise the privacy guarantee, not just the happy path), 1 pending incoming request (exercises Accept/Decline), 1 unconnected user (exercises search-and-discover). Avatars use the existing colored-initial fallback; seeded logs omit `photo_url` (nullable, matches a photo-less manual entry) since no image assets are available in this environment.
 - **Friends tab and Friend Profile scope (2026-08-15):** Phase 3 builds the full Friends tab (search, Your Circle, incoming/outgoing requests, Accept/Decline) and a real Friend Profile screen powered by seeded data, rather than deferring either — both were originally scoped for later phases only because Log flow/Streaks didn't exist yet to populate them; seeding sidesteps that dependency.
+- **Gemini API key (2026-08-16):** not yet provisioned. Implementation pauses at the right point for the user to create a free Google AI Studio key and hand it over to configure as a Supabase secret.
+- **Supabase CLI availability (2026-08-16):** unknown/likely not installed. Implementation will check and install if feasible (same no-admin-rights workaround pattern as the project's Node.js install), falling back to deploying `estimate-meal` via the Supabase Dashboard's Edge Functions editor if the CLI proves impractical.
+- **Camera testing (2026-08-16):** real camera capture only makes sense on a phone, and deployment is still local-dev-only (§10 Deployment). Chose exposing the Vite dev server on the local WiFi network (`--host` flag) so the phone's browser can hit it directly, over deferring to desktop-only file-picker testing or jumping ahead on the deployment decision.
+- **Photo upload timing (2026-08-16):** the captured photo stays in-memory (Zustand draft) through capture and estimation, and is only uploaded to Storage at the moment the user taps Post — chosen over uploading immediately at capture time, since the latter would leave orphaned images in Storage every time someone backs out of the flow, which nothing in this phase cleans up.
+- **Streak increment mechanism (2026-08-16):** a plain TypeScript pure function (`computeNextStreak`, sibling to `getEffectiveStreak`) run client-side after a successful log insert, writing the result via the existing `users_update_own` RLS path — chosen over a Postgres RPC. Consistent with every other convention in this codebase (pure functions, TDD, RLS-protected client writes); a server-side atomic RPC would be more defensive against concurrent posts, but this app has no realistic double-post race (one user, one device, one Log button), so the added complexity of introducing the project's first backend function isn't justified yet.
 
 ## 11. Explicitly Out of Scope
 
