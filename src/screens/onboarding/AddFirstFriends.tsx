@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabase'
 import { useSession } from '../../hooks/useSession'
 import { useOnboardingStore } from '../../store/onboardingStore'
 import { completeOnboarding } from '../../lib/completeOnboarding'
+import { OnboardingProgress } from '../../components/OnboardingProgress'
 
 interface FoundUser {
   id: string
@@ -90,12 +91,12 @@ export default function AddFirstFriends() {
   if (calorieGoal === null) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center">
-        <p className="text-neutral-500">
+        <p className="text-muted">
           Your progress from earlier onboarding steps was lost (e.g. by a page reload). Please restart.
         </p>
         <button
           onClick={() => navigate('/onboarding/profile')}
-          className="rounded-2xl bg-orange-500 px-6 py-3 text-base font-semibold text-white"
+          className="rounded-full bg-primary px-6 py-3 text-base font-semibold text-background"
         >
           Restart onboarding
         </button>
@@ -104,36 +105,41 @@ export default function AddFirstFriends() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col px-6 py-10">
-      <h1 className="mb-2 text-2xl font-bold text-neutral-900">Add friends</h1>
-      <p className="mb-6 text-sm text-neutral-500">Optional — you can always do this later.</p>
+    <div className="flex min-h-screen flex-col px-6 py-8">
+      <button
+        onClick={() => navigate(-1)}
+        aria-label="Back"
+        className="mb-6 flex h-9 w-9 items-center justify-center rounded-full border border-border text-primary"
+      >
+        ←
+      </button>
+      <OnboardingProgress step={4} total={4} />
+
+      <h1 className="mb-2 text-2xl font-bold text-primary">Add your first friends</h1>
+      <p className="mb-6 text-sm text-muted">A feed is better with people in it.</p>
 
       <div className="mb-4 flex gap-2">
         <input
           placeholder="Search by username"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="flex-1 rounded-2xl border border-neutral-200 px-4 py-2 text-base"
+          className="flex-1 rounded-full bg-border/60 px-5 py-2 text-base text-primary placeholder:text-muted"
         />
-        <button onClick={handleSearch} className="rounded-2xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white">
+        <button onClick={handleSearch} className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-background">
           Search
         </button>
       </div>
-
-      <button className="mb-4 rounded-2xl bg-neutral-100 py-2 text-sm text-neutral-500" disabled>
-        Find from Contacts (coming soon)
-      </button>
 
       <ul className="mb-6 flex flex-col gap-2">
         {results.map((user) => {
           const alreadyAdded = friendUsernamesToRequest.includes(user.username)
           return (
-            <li key={user.id} className="flex items-center justify-between rounded-xl border border-neutral-100 p-3">
-              <span className="font-medium text-neutral-900">@{user.username}</span>
+            <li key={user.id} className="flex items-center justify-between rounded-full border border-border px-4 py-2">
+              <span className="font-medium text-primary">@{user.username}</span>
               <button
                 disabled={alreadyAdded}
                 onClick={() => addFriendUsername(user.username)}
-                className="rounded-lg bg-orange-500 px-3 py-1 text-sm font-semibold text-white disabled:opacity-40"
+                className="rounded-full bg-primary px-3 py-1 text-sm font-semibold text-background disabled:opacity-40"
               >
                 {alreadyAdded ? 'Added' : 'Add'}
               </button>
@@ -142,14 +148,14 @@ export default function AddFirstFriends() {
         })}
       </ul>
 
-      {error && <p className="mb-4 text-sm text-red-600">{error}</p>}
+      {error && <p className="mb-4 text-sm text-error">{error}</p>}
 
       <button
         onClick={finish}
         disabled={submitting}
-        className="rounded-2xl bg-orange-500 py-3 text-base font-semibold text-white disabled:opacity-50"
+        className="rounded-full bg-primary py-3 text-base font-semibold text-background disabled:opacity-50"
       >
-        {submitting ? 'Finishing…' : friendUsernamesToRequest.length > 0 ? 'Finish' : 'Skip & Finish'}
+        {submitting ? 'Finishing…' : friendUsernamesToRequest.length > 0 ? 'Finish' : 'Skip for now'}
       </button>
     </div>
   )
