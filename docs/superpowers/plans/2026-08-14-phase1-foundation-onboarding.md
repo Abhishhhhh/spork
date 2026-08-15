@@ -595,6 +595,12 @@ Copy `.env.example` to `.env.local` and fill in the Project URL and anon public 
 - [ ] **Step 3: Write `src/lib/database.types.ts`**
 
 ```ts
+// Every table includes `Relationships: []` and the schema includes empty
+// `Views`/`Functions` maps — @supabase/postgrest-js's GenericTable/GenericSchema
+// constraints require this exact shape. Omitting them doesn't error at the
+// `Database` declaration itself, but silently degrades `.insert()`'s type
+// inference to `never` at each call site, while `.select()`/`.eq()` calls
+// keep working — so the gap hides until the first insert.
 export interface Database {
   public: {
     Tables: {
@@ -620,6 +626,7 @@ export interface Database {
           privacy_default?: 'public' | 'private'
         }
         Update: Partial<Database['public']['Tables']['users']['Insert']>
+        Relationships: []
       }
       friendships: {
         Row: {
@@ -636,6 +643,7 @@ export interface Database {
         Update: {
           status?: 'pending' | 'accepted'
         }
+        Relationships: []
       }
       logs: {
         Row: {
@@ -663,6 +671,7 @@ export interface Database {
           visibility: 'public' | 'private'
         }
         Update: Partial<Database['public']['Tables']['logs']['Row']>
+        Relationships: []
       }
       rewards: {
         Row: {
@@ -674,6 +683,7 @@ export interface Database {
         }
         Insert: never
         Update: never
+        Relationships: []
       }
       redemptions: {
         Row: {
@@ -690,8 +700,11 @@ export interface Database {
           code: string
         }
         Update: never
+        Relationships: []
       }
     }
+    Views: Record<string, never>
+    Functions: Record<string, never>
   }
 }
 ```
@@ -1640,8 +1653,12 @@ export default function AddFirstFriends() {
   const [error, setError] = useState<string | null>(null)
 
   async function handleSearch() {
+    setError(null)
     const term = searchTerm.trim().toLowerCase()
-    if (!term) return
+    if (!term) {
+      setError('Type a username to search.')
+      return
+    }
 
     const { data, error: searchError } = await supabase
       .from('users')
@@ -1655,9 +1672,16 @@ export default function AddFirstFriends() {
     }
 
     setResults(data ?? [])
+    if ((data ?? []).length === 0) {
+      setError('No users found with that username.')
+    }
   }
 
   async function finish() {
+    // The `calorieGoal === null` case is handled by the early-return render
+    // above (it shows "Restart onboarding" instead of this screen), so this
+    // check only narrows the type for TypeScript — it isn't reachable in
+    // practice once that guard is in place.
     if (!session || calorieGoal === null) return
     setSubmitting(true)
     setError(null)
@@ -1690,6 +1714,27 @@ export default function AddFirstFriends() {
     } finally {
       setSubmitting(false)
     }
+  }
+
+  // The wizard fields (name/username/calorieGoal/...) live only in memory
+  // for this page load — a page reload mid-onboarding wipes them even
+  // though the user's login session and route access are untouched. Detect
+  // that and offer a clear way back in, rather than letting Search/Finish
+  // silently do nothing once calorieGoal is gone.
+  if (calorieGoal === null) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center">
+        <p className="text-neutral-500">
+          Your progress from earlier onboarding steps was lost (e.g. by a page reload). Please restart.
+        </p>
+        <button
+          onClick={() => navigate('/onboarding/profile')}
+          className="rounded-2xl bg-orange-500 px-6 py-3 text-base font-semibold text-white"
+        >
+          Restart onboarding
+        </button>
+      </div>
+    )
   }
 
   return (

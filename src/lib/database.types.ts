@@ -23,6 +23,7 @@ export interface Database {
           privacy_default?: 'public' | 'private'
         }
         Update: Partial<Database['public']['Tables']['users']['Insert']>
+        Relationships: []
       }
       friendships: {
         Row: {
@@ -39,6 +40,7 @@ export interface Database {
         Update: {
           status?: 'pending' | 'accepted'
         }
+        Relationships: []
       }
       logs: {
         Row: {
@@ -66,6 +68,7 @@ export interface Database {
           visibility: 'public' | 'private'
         }
         Update: Partial<Database['public']['Tables']['logs']['Row']>
+        Relationships: []
       }
       rewards: {
         Row: {
@@ -77,6 +80,7 @@ export interface Database {
         }
         Insert: never
         Update: never
+        Relationships: []
       }
       redemptions: {
         Row: {
@@ -93,7 +97,10 @@ export interface Database {
           code: string
         }
         Update: never
+        Relationships: []
       }
     }
+    Views: Record<string, never>
+    Functions: Record<string, never>
   }
 }
