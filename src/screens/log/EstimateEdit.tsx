@@ -1,3 +1,4 @@
+import { useEffect, useMemo } from 'react'
 import { useLogDraftStore, type MealType } from '../../store/logDraft'
 
 const MEAL_TYPES: MealType[] = ['breakfast', 'lunch', 'dinner', 'snack']
@@ -10,6 +11,7 @@ interface EstimateEditProps {
 }
 
 export default function EstimateEdit({ onBack, onPost, posting, postError }: EstimateEditProps) {
+  const photoFile = useLogDraftStore((s) => s.photoFile)
   const mealName = useLogDraftStore((s) => s.mealName)
   const calories = useLogDraftStore((s) => s.calories)
   const proteinG = useLogDraftStore((s) => s.proteinG)
@@ -22,6 +24,13 @@ export default function EstimateEdit({ onBack, onPost, posting, postError }: Est
   const setField = useLogDraftStore((s) => s.setField)
   const setMealType = useLogDraftStore((s) => s.setMealType)
   const setVisibility = useLogDraftStore((s) => s.setVisibility)
+
+  const previewUrl = useMemo(() => (photoFile ? URL.createObjectURL(photoFile) : null), [photoFile])
+
+  useEffect(() => {
+    if (!previewUrl) return
+    return () => URL.revokeObjectURL(previewUrl)
+  }, [previewUrl])
 
   return (
     <div className="flex min-h-[calc(100vh-5rem)] flex-col px-6 py-8">
@@ -39,6 +48,10 @@ export default function EstimateEdit({ onBack, onPost, posting, postError }: Est
       <p className="mb-6 text-sm text-muted">
         {estimate ? 'Estimate — tap to adjust.' : 'Enter the details manually.'}
       </p>
+
+      {previewUrl && (
+        <img src={previewUrl} alt="" className="mb-4 aspect-square w-full rounded-2xl object-cover" />
+      )}
 
       <label className="mb-2 text-sm font-semibold text-muted" htmlFor="mealName">
         Meal name
