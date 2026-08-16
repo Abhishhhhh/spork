@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import Capture from './Capture'
@@ -17,10 +17,17 @@ export default function LogFlow() {
   const queryClient = useQueryClient()
   const { session } = useSession()
   const { data: user } = useCurrentUser()
-  const [step, setStep] = useState<Step>('capture')
+  const [step, setStep] = useState<Step>(() => (useLogDraftStore.getState().estimate ? 'edit' : 'capture'))
   const [posting, setPosting] = useState(false)
   const [postError, setPostError] = useState<string | null>(null)
   const [celebrating, setCelebrating] = useState(false)
+  const celebrationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    return () => {
+      if (celebrationTimeoutRef.current) clearTimeout(celebrationTimeoutRef.current)
+    }
+  }, [])
 
   const photoFile = useLogDraftStore((s) => s.photoFile)
   const applyEstimate = useLogDraftStore((s) => s.applyEstimate)
@@ -58,6 +65,7 @@ export default function LogFlow() {
 
       queryClient.invalidateQueries({ queryKey: ['currentUser'] })
       queryClient.invalidateQueries({ queryKey: ['feed'] })
+      queryClient.invalidateQueries({ queryKey: ['friendProfile'] })
 
       // Only clear the draft on success — a failed attempt leaves
       // everything in place so the retry (Post button, re-enabled below)
@@ -65,7 +73,7 @@ export default function LogFlow() {
       // draft must survive a failed post).
       reset()
       setCelebrating(true)
-      setTimeout(() => navigate('/home/feed'), 700)
+      celebrationTimeoutRef.current = setTimeout(() => navigate('/home/feed'), 700)
     } catch {
       setPostError("Couldn't post — check your connection and try again.")
     } finally {
@@ -86,8 +94,17 @@ export default function LogFlow() {
 
   if (step === 'loading') {
     return (
-      <div className="flex min-h-[calc(100vh-5rem)] items-center justify-center">
+      <div className="flex min-h-[calc(100vh-5rem)] flex-col items-center justify-center gap-4 px-6">
         <p className="text-muted">Estimating…</p>
+        <button
+          onClick={() => {
+            applyEstimate(null, suggestMealType(new Date()), user?.privacy_default ?? 'public')
+            setStep('edit')
+          }}
+          className="text-sm font-semibold text-primary underline"
+        >
+          Skip — enter manually
+        </button>
       </div>
     )
   }

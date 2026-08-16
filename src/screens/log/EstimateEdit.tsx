@@ -34,6 +34,8 @@ export default function EstimateEdit({ onPost, posting, postError }: EstimateEdi
           <span className="text-xs text-muted">Calories</span>
           <input
             type="number"
+            min="0"
+            step="1"
             value={calories ?? ''}
             onChange={(e) => setField('calories', e.target.value === '' ? null : Number(e.target.value))}
             className="rounded-full bg-border/60 px-4 py-2 text-base text-primary"
@@ -43,6 +45,8 @@ export default function EstimateEdit({ onPost, posting, postError }: EstimateEdi
           <span className="text-xs text-muted">Protein (g)</span>
           <input
             type="number"
+            min="0"
+            step="1"
             value={proteinG ?? ''}
             onChange={(e) => setField('proteinG', e.target.value === '' ? null : Number(e.target.value))}
             className="rounded-full bg-border/60 px-4 py-2 text-base text-primary"
@@ -52,6 +56,8 @@ export default function EstimateEdit({ onPost, posting, postError }: EstimateEdi
           <span className="text-xs text-muted">Carbs (g)</span>
           <input
             type="number"
+            min="0"
+            step="1"
             value={carbsG ?? ''}
             onChange={(e) => setField('carbsG', e.target.value === '' ? null : Number(e.target.value))}
             className="rounded-full bg-border/60 px-4 py-2 text-base text-primary"
@@ -61,6 +67,8 @@ export default function EstimateEdit({ onPost, posting, postError }: EstimateEdi
           <span className="text-xs text-muted">Fat (g)</span>
           <input
             type="number"
+            min="0"
+            step="1"
             value={fatG ?? ''}
             onChange={(e) => setField('fatG', e.target.value === '' ? null : Number(e.target.value))}
             className="rounded-full bg-border/60 px-4 py-2 text-base text-primary"

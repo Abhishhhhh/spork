@@ -1,6 +1,8 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useCurrentUser } from '../../hooks/useCurrentUser'
 import { supabase } from '../../lib/supabase'
+import { useLogDraftStore } from '../../store/logDraft'
+import { useOnboardingStore } from '../../store/onboardingStore'
 
 export default function ProfileScreen() {
   const { data: user, isLoading } = useCurrentUser()
@@ -19,6 +21,8 @@ export default function ProfileScreen() {
   async function handleSignOut() {
     await supabase.auth.signOut()
     queryClient.clear()
+    useLogDraftStore.getState().reset()
+    useOnboardingStore.getState().reset()
   }
 
   return (

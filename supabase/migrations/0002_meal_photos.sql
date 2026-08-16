@@ -29,6 +29,7 @@ create policy "meal_photos_select_own_or_public_friend"
             or (f.recipient_id = auth.uid() and f.requester_id = l.user_id)
           )
         where l.photo_url = storage.objects.name
+          and l.user_id::text = (storage.foldername(storage.objects.name))[1]
           and l.visibility = 'public'
       )
     )
@@ -38,6 +39,14 @@ create policy "meal_photos_insert_own_folder"
   on storage.objects for insert
   to authenticated
   with check (
+    bucket_id = 'meal-photos'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+create policy "meal_photos_delete_own_folder"
+  on storage.objects for delete
+  to authenticated
+  using (
     bucket_id = 'meal-photos'
     and (storage.foldername(name))[1] = auth.uid()::text
   );

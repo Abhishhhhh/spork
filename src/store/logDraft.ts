@@ -54,7 +54,7 @@ export const useLogDraftStore = create<LogDraftState>((set) => ({
       carbsG: estimate?.parsed.carbs_g ?? null,
       fatG: estimate?.parsed.fat_g ?? null,
     }),
-  setField: (field, value) => set({ [field]: value }),
+  setField: (field, value) => set({ [field]: value === null ? null : Math.max(0, Math.round(value)) }),
   setMealType: (value) => set({ mealType: value }),
   setVisibility: (value) => set({ visibility: value }),
   reset: () => set(initialState),

@@ -51,9 +51,14 @@ export async function estimateMeal(photo: File, description: string): Promise<Es
     const resized = await resizeImage(photo)
     const photoBase64 = await blobToBase64(resized)
 
-    const { data, error } = await supabase.functions.invoke('estimate-meal', {
+    const invokePromise = supabase.functions.invoke('estimate-meal', {
       body: { photoBase64, description },
     })
+    const timeoutPromise = new Promise<{ data: null; error: Error }>((resolve) =>
+      setTimeout(() => resolve({ data: null, error: new Error('estimate-meal timed out') }), 30_000),
+    )
+
+    const { data, error } = await Promise.race([invokePromise, timeoutPromise])
 
     if (error) return null
 

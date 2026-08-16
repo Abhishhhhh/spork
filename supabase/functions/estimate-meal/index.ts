@@ -1,7 +1,10 @@
 // Deno runtime — deployed via `supabase functions deploy estimate-meal`
-// (Task 4). Requires a valid user JWT (Supabase's default verify_jwt,
-// left on) so this can't be hit by non-users, protecting the free-tier
-// Gemini quota (spec §6 AI provider notes).
+// (Task 4). Supabase's default verify_jwt only checks that the request
+// carries ANY validly-signed JWT — the public anon key satisfies that,
+// so it does NOT by itself restrict this to real signed-in users. The
+// explicit claims check below (role === 'authenticated' AND a subject)
+// is what actually protects the free-tier Gemini quota (spec §6 AI
+// provider notes) from being hit by anyone who reads the client bundle.
 
 const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY')
 const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent'
@@ -46,9 +49,10 @@ class EstimateFailure extends Error {
 /**
  * The single provider-specific function (spec §6/§10) — swapping to a
  * paid Gemini key, a different model, or an entirely different vision
- * API later means changing only this function's body. Everything above
- * and below it (HTTP parsing, CORS, response formatting) is
- * provider-agnostic and doesn't change.
+ * API later means changing this function's body (and the GEMINI_URL/
+ * PROMPT constants above it, which are Gemini-specific by nature).
+ * Everything else — HTTP parsing, CORS, response formatting, the
+ * Deno.serve handler — is provider-agnostic and doesn't change.
  */
 async function estimateMeal(photoBase64: string, description?: string): Promise<unknown> {
   if (!GEMINI_API_KEY) {
@@ -60,12 +64,15 @@ async function estimateMeal(photoBase64: string, description?: string): Promise<
     { text: description ? `${PROMPT}\n\nUser's description: ${description}` : PROMPT },
   ]
 
-  const geminiRes = await fetch(`${GEMINI_URL}?key=${GEMINI_API_KEY}`, {
+  const geminiRes = await fetch(GEMINI_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', 'x-goog-api-key': GEMINI_API_KEY },
     body: JSON.stringify({
       contents: [{ parts }],
-      generationConfig: { responseMimeType: 'application/json' },
+      generationConfig: {
+        responseMimeType: 'application/json',
+        thinkingConfig: { thinkingBudget: 0 },
+      },
     }),
   })
 
@@ -92,6 +99,17 @@ Deno.serve(async (req: Request) => {
     return new Response('ok', { headers: CORS_HEADERS })
   }
 
+  const jwt = req.headers.get('authorization')?.replace('Bearer ', '')
+  let claims: { role?: string; sub?: string } | null = null
+  try {
+    claims = jwt ? JSON.parse(atob(jwt.split('.')[1])) : null
+  } catch {
+    claims = null
+  }
+  if (!claims || claims.role !== 'authenticated' || !claims.sub) {
+    return jsonResponse({ error: 'Unauthorized' }, 401)
+  }
+
   try {
     const body: EstimateMealRequestBody = await req.json()
 
@@ -105,6 +123,7 @@ Deno.serve(async (req: Request) => {
     if (err instanceof EstimateFailure) {
       return jsonResponse({ error: err.message }, err.status)
     }
-    return jsonResponse({ error: String(err) }, 500)
+    console.error('estimate-meal unexpected error:', err)
+    return jsonResponse({ error: 'Internal server error' }, 500)
   }
 })
