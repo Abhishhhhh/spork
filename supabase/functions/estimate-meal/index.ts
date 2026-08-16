@@ -7,7 +7,7 @@
 // provider notes) from being hit by anyone who reads the client bundle.
 
 const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY')
-const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent'
+const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent'
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -77,6 +77,7 @@ async function estimateMeal(photoBase64: string, description?: string): Promise<
   })
 
   if (!geminiRes.ok) {
+    console.error('Gemini call failed:', geminiRes.status, await geminiRes.text())
     throw new EstimateFailure(`Gemini call failed: ${geminiRes.status}`, 502)
   }
 
