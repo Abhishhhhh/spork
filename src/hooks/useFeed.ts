@@ -13,18 +13,20 @@ export interface FeedItem {
 }
 
 /**
- * Fetches friends' logs, then their authors, as two separate queries
- * rather than one embedded Supabase `.select('*, users(...)')` — our
- * hand-written Database type doesn't model foreign-key `Relationships`,
- * and past experience in this project (Phase 1) showed embedded-select
- * type inference silently degrading without it. Two plain queries avoid
- * that whole class of bug.
+ * Fetches the viewer's own logs plus their friends', then the authors,
+ * as two separate queries rather than one embedded Supabase
+ * `.select('*, users(...)')` — our hand-written Database type doesn't
+ * model foreign-key `Relationships`, and past experience in this project
+ * (Phase 1) showed embedded-select type inference silently degrading
+ * without it. Two plain queries avoid that whole class of bug.
  *
- * RLS on `logs` already restricts what a plain `select('*')` can return
- * to the caller's own rows or an accepted friend's public rows — the
- * explicit `.neq('user_id', userId)` below only removes the caller's own
- * logs from an already-safe result set, it isn't what makes this private-
- * log-safe. That's RLS's job (see supabase/migrations/0001_init.sql).
+ * A single reverse-chronological timeline, own posts and friends' posts
+ * interleaved purely by `created_at` — not two separate sections. RLS on
+ * `logs` already restricts what a plain `select('*')` can return to the
+ * caller's own rows (any visibility) or an accepted friend's public rows
+ * — nothing client-side needs to additionally filter by author for this
+ * to be private-log-safe. That's RLS's job (see
+ * supabase/migrations/0001_init.sql).
  */
 export function useFeed() {
   const { session, loading: sessionLoading } = useSession()
@@ -36,7 +38,6 @@ export function useFeed() {
       const { data: logs, error: logsError } = await supabase
         .from('logs')
         .select('*')
-        .neq('user_id', userId!)
         .order('created_at', { ascending: false })
         .limit(50)
 
