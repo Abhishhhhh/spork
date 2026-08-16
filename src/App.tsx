@@ -7,6 +7,7 @@ import PrivacyDefault from './screens/onboarding/PrivacyDefault'
 import AddFirstFriends from './screens/onboarding/AddFirstFriends'
 import Feed from './screens/feed/Feed'
 import LogFlow from './screens/log/LogFlow'
+import MealDetail from './screens/log/MealDetail'
 import RewardsPlaceholder from './screens/rewards/RewardsPlaceholder'
 import ProfileScreen from './screens/profile/ProfileScreen'
 import Friends from './screens/friends/Friends'
@@ -79,6 +80,7 @@ export default function App() {
           <Route path="rewards" element={<RewardsPlaceholder />} />
           <Route path="friends" element={<Friends />} />
           <Route path="friend/:username" element={<FriendProfile />} />
+          <Route path="log/:logId" element={<MealDetail />} />
           <Route path="profile" element={<ProfileScreen />} />
         </Route>
 
