@@ -110,6 +110,61 @@ export interface Database {
         Update: never
         Relationships: []
       }
+      log_likes: {
+        Row: {
+          id: string
+          log_id: string
+          user_id: string
+          created_at: string
+        }
+        Insert: {
+          log_id: string
+          user_id: string
+        }
+        Update: never
+        Relationships: []
+      }
+      log_comments: {
+        Row: {
+          id: string
+          log_id: string
+          user_id: string
+          parent_comment_id: string | null
+          body: string
+          created_at: string
+        }
+        Insert: {
+          log_id: string
+          user_id: string
+          parent_comment_id?: string | null
+          body: string
+        }
+        Update: never
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          id: string
+          recipient_id: string
+          actor_id: string
+          log_id: string
+          type: 'like' | 'comment' | 'reply'
+          comment_id: string | null
+          read_at: string | null
+          created_at: string
+        }
+        Insert: {
+          recipient_id: string
+          actor_id: string
+          log_id: string
+          type: 'like' | 'comment' | 'reply'
+          comment_id?: string | null
+        }
+        Update: {
+          read_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: Record<string, never>
     Functions: Record<string, never>
