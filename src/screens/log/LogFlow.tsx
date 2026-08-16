@@ -32,11 +32,19 @@ export default function LogFlow() {
   const photoFile = useLogDraftStore((s) => s.photoFile)
   const applyEstimate = useLogDraftStore((s) => s.applyEstimate)
   const reset = useLogDraftStore((s) => s.reset)
+  // Guards against the in-flight estimateMeal() call resolving after the
+  // user has already tapped "Skip — enter manually" and started editing
+  // fields by hand — without this, the late result would silently
+  // overwrite whatever they'd already typed (final review re-review
+  // finding, fix wave 1).
+  const estimateRequestIdRef = useRef(0)
 
   async function handleGetEstimate() {
     if (!photoFile) return
+    const requestId = ++estimateRequestIdRef.current
     setStep('loading')
     const result = await estimateMeal(photoFile, useLogDraftStore.getState().description)
+    if (estimateRequestIdRef.current !== requestId) return
     applyEstimate(result, suggestMealType(new Date()), user?.privacy_default ?? 'public')
     setStep('edit')
   }
@@ -98,6 +106,7 @@ export default function LogFlow() {
         <p className="text-muted">Estimating…</p>
         <button
           onClick={() => {
+            estimateRequestIdRef.current++ // invalidate the in-flight handleGetEstimate call, if any
             applyEstimate(null, suggestMealType(new Date()), user?.privacy_default ?? 'public')
             setStep('edit')
           }}
