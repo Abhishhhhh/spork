@@ -134,6 +134,15 @@ Deno.serve(async (req: Request) => {
       return jsonResponse({ error: 'photoBase64 is required' }, 400)
     }
 
+    console.error(
+      'estimate-meal request diagnostics: photoBase64 length',
+      body.photoBase64.length,
+      'first 30 chars',
+      body.photoBase64.slice(0, 30),
+      'description',
+      JSON.stringify(body.description),
+    )
+
     const result = await estimateMeal(body.photoBase64, body.description)
     return jsonResponse(result, 200)
   } catch (err) {
