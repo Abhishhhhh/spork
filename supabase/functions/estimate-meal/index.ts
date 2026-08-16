@@ -64,9 +64,9 @@ async function estimateMeal(photoBase64: string, description?: string): Promise<
     { text: description ? `${PROMPT}\n\nUser's description: ${description}` : PROMPT },
   ]
 
-  const geminiRes = await fetch(GEMINI_URL, {
+  const geminiRes = await fetch(`${GEMINI_URL}?key=${GEMINI_API_KEY}`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'x-goog-api-key': GEMINI_API_KEY },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       contents: [{ parts }],
       generationConfig: {
