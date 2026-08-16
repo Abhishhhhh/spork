@@ -68,7 +68,6 @@ async function estimateMeal(photoBase64: string, description?: string): Promise<
     contents: [{ parts }],
     generationConfig: {
       responseMimeType: 'application/json',
-      thinkingConfig: { thinkingBudget: 0 },
     },
   })
 
