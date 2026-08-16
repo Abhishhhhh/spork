@@ -12,6 +12,7 @@ import RewardsPlaceholder from './screens/rewards/RewardsPlaceholder'
 import ProfileScreen from './screens/profile/ProfileScreen'
 import Friends from './screens/friends/Friends'
 import FriendProfile from './screens/friends/FriendProfile'
+import NotificationsInbox from './screens/notifications/NotificationsInbox'
 import { HomeShell } from './screens/home/HomeShell'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { RequireOnboarded } from './components/RequireOnboarded'
@@ -81,6 +82,7 @@ export default function App() {
           <Route path="friends" element={<Friends />} />
           <Route path="friend/:username" element={<FriendProfile />} />
           <Route path="log/:logId" element={<MealDetail />} />
+          <Route path="notifications" element={<NotificationsInbox />} />
           <Route path="profile" element={<ProfileScreen />} />
         </Route>
 
