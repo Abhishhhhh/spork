@@ -72,6 +72,7 @@ export default function Feed() {
                 {new Date(log.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
               </span>
             </div>
+            {log.name && <p className="font-semibold text-primary">{log.name}</p>}
             <div className="flex items-center justify-between">
               <span className="text-xs capitalize text-muted">{log.meal_type}</span>
               <span className="text-lg font-bold text-primary">

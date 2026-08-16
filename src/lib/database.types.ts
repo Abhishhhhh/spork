@@ -57,6 +57,7 @@ export interface Database {
           id: string
           user_id: string
           photo_url: string | null
+          name: string | null
           description: string | null
           meal_type: 'breakfast' | 'lunch' | 'dinner' | 'snack'
           visibility: 'public' | 'private'

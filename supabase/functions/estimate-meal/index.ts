@@ -64,17 +64,33 @@ async function estimateMeal(photoBase64: string, description?: string): Promise<
     { text: description ? `${PROMPT}\n\nUser's description: ${description}` : PROMPT },
   ]
 
-  const geminiRes = await fetch(`${GEMINI_URL}?key=${GEMINI_API_KEY}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents: [{ parts }],
-      generationConfig: {
-        responseMimeType: 'application/json',
-        thinkingConfig: { thinkingBudget: 0 },
-      },
-    }),
+  const requestBody = JSON.stringify({
+    contents: [{ parts }],
+    generationConfig: {
+      responseMimeType: 'application/json',
+      thinkingConfig: { thinkingBudget: 0 },
+    },
   })
+
+  // Gemini's free tier occasionally returns 503 ("high demand") or 429
+  // (rate limit) — both transient, both known/expected (spec §6 AI
+  // provider notes) — that typically clear within a second or two.
+  // Retry those specifically before giving up to manual entry, rather
+  // than treating every momentary blip as a hard failure.
+  const RETRYABLE_STATUSES = new Set([429, 503])
+  const MAX_ATTEMPTS = 3
+  let geminiRes: Response
+  let attempt = 1
+  for (;;) {
+    geminiRes = await fetch(`${GEMINI_URL}?key=${GEMINI_API_KEY}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: requestBody,
+    })
+    if (geminiRes.ok || !RETRYABLE_STATUSES.has(geminiRes.status) || attempt >= MAX_ATTEMPTS) break
+    await new Promise((resolve) => setTimeout(resolve, 1000 * attempt))
+    attempt++
+  }
 
   if (!geminiRes.ok) {
     console.error('Gemini call failed:', geminiRes.status, await geminiRes.text())

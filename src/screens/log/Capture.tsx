@@ -1,4 +1,5 @@
 import { useEffect, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useLogDraftStore } from '../../store/logDraft'
 
 interface CaptureProps {
@@ -6,6 +7,7 @@ interface CaptureProps {
 }
 
 export default function Capture({ onGetEstimate }: CaptureProps) {
+  const navigate = useNavigate()
   const photoFile = useLogDraftStore((s) => s.photoFile)
   const description = useLogDraftStore((s) => s.description)
   const setPhoto = useLogDraftStore((s) => s.setPhoto)
@@ -20,6 +22,13 @@ export default function Capture({ onGetEstimate }: CaptureProps) {
 
   return (
     <div className="flex min-h-[calc(100vh-5rem)] flex-col px-6 py-8">
+      <button
+        onClick={() => navigate('/home/feed')}
+        aria-label="Back"
+        className="mb-6 flex h-9 w-9 items-center justify-center rounded-full border border-border text-primary"
+      >
+        ←
+      </button>
       <h1 className="mb-6 text-2xl font-bold text-primary">Log a meal</h1>
 
       <label className="mb-4 flex aspect-square w-full cursor-pointer items-center justify-center overflow-hidden rounded-2xl border border-border bg-border/60 text-center text-sm text-muted">

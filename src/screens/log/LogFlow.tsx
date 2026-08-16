@@ -59,6 +59,7 @@ export default function LogFlow() {
       await postLog({
         userId: session.user.id,
         photoFile,
+        mealName: draft.mealName,
         description: draft.description,
         mealType: draft.mealType,
         visibility: draft.visibility,
@@ -118,5 +119,7 @@ export default function LogFlow() {
     )
   }
 
-  return <EstimateEdit onPost={handlePost} posting={posting} postError={postError} />
+  return (
+    <EstimateEdit onBack={() => setStep('capture')} onPost={handlePost} posting={posting} postError={postError} />
+  )
 }

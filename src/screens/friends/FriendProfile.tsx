@@ -103,6 +103,7 @@ export default function FriendProfile() {
               {log.photoSignedUrl && (
                 <img src={log.photoSignedUrl} alt="" className="h-20 w-full rounded-xl object-cover" />
               )}
+              {log.name && <span className="w-full truncate text-xs font-semibold text-primary">{log.name}</span>}
               <span className="text-lg font-bold text-primary">{log.calories_final ?? log.calories_estimate ?? '—'}</span>
               <span className="text-xs capitalize text-muted">{log.meal_type}</span>
             </li>

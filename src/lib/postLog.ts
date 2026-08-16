@@ -5,6 +5,7 @@ import type { EstimateResult, MealType, Visibility } from '../store/logDraft'
 export interface PostLogInput {
   userId: string
   photoFile: File | null
+  mealName: string
   description: string
   mealType: MealType
   visibility: Visibility
@@ -44,6 +45,7 @@ export async function postLog(input: PostLogInput): Promise<void> {
     id: logId,
     user_id: input.userId,
     photo_url: photoPath,
+    name: input.mealName || null,
     description: input.description || null,
     meal_type: input.mealType,
     visibility: input.visibility,

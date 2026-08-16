@@ -3,12 +3,14 @@ import { useLogDraftStore, type MealType } from '../../store/logDraft'
 const MEAL_TYPES: MealType[] = ['breakfast', 'lunch', 'dinner', 'snack']
 
 interface EstimateEditProps {
+  onBack: () => void
   onPost: () => void
   posting: boolean
   postError: string | null
 }
 
-export default function EstimateEdit({ onPost, posting, postError }: EstimateEditProps) {
+export default function EstimateEdit({ onBack, onPost, posting, postError }: EstimateEditProps) {
+  const mealName = useLogDraftStore((s) => s.mealName)
   const calories = useLogDraftStore((s) => s.calories)
   const proteinG = useLogDraftStore((s) => s.proteinG)
   const carbsG = useLogDraftStore((s) => s.carbsG)
@@ -16,18 +18,38 @@ export default function EstimateEdit({ onPost, posting, postError }: EstimateEdi
   const mealType = useLogDraftStore((s) => s.mealType)
   const visibility = useLogDraftStore((s) => s.visibility)
   const estimate = useLogDraftStore((s) => s.estimate)
+  const setMealName = useLogDraftStore((s) => s.setMealName)
   const setField = useLogDraftStore((s) => s.setField)
   const setMealType = useLogDraftStore((s) => s.setMealType)
   const setVisibility = useLogDraftStore((s) => s.setVisibility)
 
   return (
     <div className="flex min-h-[calc(100vh-5rem)] flex-col px-6 py-8">
+      <button
+        onClick={onBack}
+        aria-label="Back"
+        className="mb-6 flex h-9 w-9 items-center justify-center rounded-full border border-border text-primary"
+      >
+        ←
+      </button>
+
       <h1 className="mb-2 text-2xl font-bold text-primary">
         {estimate ? 'Review your estimate' : "Couldn't get an estimate"}
       </h1>
       <p className="mb-6 text-sm text-muted">
         {estimate ? 'Estimate — tap to adjust.' : 'Enter the details manually.'}
       </p>
+
+      <label className="mb-2 text-sm font-semibold text-muted" htmlFor="mealName">
+        Meal name
+      </label>
+      <input
+        id="mealName"
+        placeholder="e.g. Greek yoghurt & berries"
+        value={mealName}
+        onChange={(e) => setMealName(e.target.value)}
+        className="mb-4 rounded-full bg-border/60 px-5 py-3 text-base text-primary placeholder:text-muted"
+      />
 
       <div className="mb-4 grid grid-cols-2 gap-3">
         <label className="flex flex-col gap-1">
