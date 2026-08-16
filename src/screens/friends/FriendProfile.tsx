@@ -9,6 +9,8 @@ export default function FriendProfile() {
   const { username } = useParams<{ username: string }>()
   const navigate = useNavigate()
   const { data, isLoading, isError } = useFriendProfile(username)
+  const toggleLike = useToggleLike()
+  const [optimisticLikes, setOptimisticLikes] = useState<Record<string, boolean>>({})
 
   if (isLoading) {
     return (
@@ -47,8 +49,6 @@ export default function FriendProfile() {
   }
 
   const { user, logs } = data
-  const toggleLike = useToggleLike()
-  const [optimisticLikes, setOptimisticLikes] = useState<Record<string, boolean>>({})
   // Streak/quick-stats are hidden for a private-default user even if some
   // of their individual logs are public — this is a UI-level rule on top
   // of RLS (see spec §5), not a substitute for it: the logs grid below
