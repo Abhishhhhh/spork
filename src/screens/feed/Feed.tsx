@@ -1,12 +1,16 @@
 import { useNavigate } from 'react-router-dom'
+import { useState } from 'react'
 import { useFeed } from '../../hooks/useFeed'
 import { useNotifications } from '../../hooks/useNotifications'
 import { getEffectiveStreak } from '../../lib/streak'
+import { useToggleLike } from '../../hooks/useMealDetail'
 
 export default function Feed() {
   const navigate = useNavigate()
   const { data: items, isLoading, isError } = useFeed()
   const { unreadCount } = useNotifications()
+  const toggleLike = useToggleLike()
+  const [optimisticLikes, setOptimisticLikes] = useState<Record<string, boolean>>({})
 
   if (isLoading) {
     return (
@@ -60,12 +64,12 @@ export default function Feed() {
     <>
       <FeedHeader unreadCount={unreadCount} onBellClick={() => navigate('/home/notifications')} />
       <div className="flex flex-col gap-3 px-4 py-6">
-        {items.map(({ log, author, photoSignedUrl }) => {
+        {items.map(({ log, author, photoSignedUrl, likeCount, likedByViewer, commentCount }) => {
           const effectiveStreak = getEffectiveStreak(author.streak_count, author.streak_last_log_date, new Date())
           return (
             <button
               key={log.id}
-              onClick={() => navigate(`/home/friend/${author.username}`)}
+              onClick={() => navigate(`/home/log/${log.id}`)}
               className="flex flex-col gap-2 rounded-2xl border border-border p-4 text-left"
             >
               {photoSignedUrl && (
@@ -90,6 +94,32 @@ export default function Feed() {
                 <span className="text-xs capitalize text-muted">{log.meal_type}</span>
                 <span className="text-lg font-bold text-primary">
                   {log.calories_final ?? log.calories_estimate ?? '—'} kcal
+                </span>
+              </div>
+              <div className="flex items-center gap-4 pt-1">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    const displayLiked = optimisticLikes[log.id] ?? likedByViewer
+                    setOptimisticLikes((prev) => ({ ...prev, [log.id]: !displayLiked }))
+                    toggleLike.mutate(
+                      { logId: log.id, logOwnerId: log.user_id, currentlyLiked: displayLiked },
+                      {
+                        onError: () =>
+                          setOptimisticLikes((prev) => ({ ...prev, [log.id]: displayLiked })),
+                      },
+                    )
+                  }}
+                  className="flex items-center gap-1 text-sm text-muted"
+                >
+                  <span>{(optimisticLikes[log.id] ?? likedByViewer) ? '🔥' : '🤍'}</span>
+                  <span>
+                    {likeCount + (optimisticLikes[log.id] === undefined ? 0 : optimisticLikes[log.id] === likedByViewer ? 0 : optimisticLikes[log.id] ? 1 : -1)}
+                  </span>
+                </button>
+                <span className="flex items-center gap-1 text-sm text-muted">
+                  <span>💬</span>
+                  <span>{commentCount}</span>
                 </span>
               </div>
             </button>

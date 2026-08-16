@@ -1,7 +1,9 @@
 import { useNavigate, useParams } from 'react-router-dom'
+import { useState } from 'react'
 import { useFriendProfile } from '../../hooks/useFriendProfile'
 import { computeAverageCalories, computeMostLoggedMealType } from '../../lib/friendStats'
 import { getEffectiveStreak } from '../../lib/streak'
+import { useToggleLike } from '../../hooks/useMealDetail'
 
 export default function FriendProfile() {
   const { username } = useParams<{ username: string }>()
@@ -45,6 +47,8 @@ export default function FriendProfile() {
   }
 
   const { user, logs } = data
+  const toggleLike = useToggleLike()
+  const [optimisticLikes, setOptimisticLikes] = useState<Record<string, boolean>>({})
   // Streak/quick-stats are hidden for a private-default user even if some
   // of their individual logs are public — this is a UI-level rule on top
   // of RLS (see spec §5), not a substitute for it: the logs grid below
@@ -98,16 +102,44 @@ export default function FriendProfile() {
         <p className="text-sm text-muted">No logs to show yet.</p>
       ) : (
         <ul className="grid grid-cols-3 gap-2">
-          {logs.map((log) => (
-            <li key={log.id} className="flex flex-col items-center gap-1 rounded-2xl border border-border p-3">
-              {log.photoSignedUrl && (
-                <img src={log.photoSignedUrl} alt="" className="h-20 w-full rounded-xl object-cover" />
-              )}
-              {log.name && <span className="w-full truncate text-xs font-semibold text-primary">{log.name}</span>}
-              <span className="text-lg font-bold text-primary">{log.calories_final ?? log.calories_estimate ?? '—'}</span>
-              <span className="text-xs capitalize text-muted">{log.meal_type}</span>
-            </li>
-          ))}
+          {logs.map((log) => {
+            const displayLiked = optimisticLikes[log.id] ?? log.likedByViewer
+            const displayLikeCount =
+              log.likeCount + (optimisticLikes[log.id] === undefined ? 0 : optimisticLikes[log.id] === log.likedByViewer ? 0 : optimisticLikes[log.id] ? 1 : -1)
+            return (
+              <li key={log.id} className="flex flex-col items-center gap-1 rounded-2xl border border-border p-3">
+                <button onClick={() => navigate(`/home/log/${log.id}`)} className="flex w-full flex-col items-center gap-1">
+                  {log.photoSignedUrl && (
+                    <img src={log.photoSignedUrl} alt="" className="h-20 w-full rounded-xl object-cover" />
+                  )}
+                  {log.name && <span className="w-full truncate text-xs font-semibold text-primary">{log.name}</span>}
+                  <span className="text-lg font-bold text-primary">
+                    {log.calories_final ?? log.calories_estimate ?? '—'}
+                  </span>
+                  <span className="text-xs capitalize text-muted">{log.meal_type}</span>
+                </button>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => {
+                      setOptimisticLikes((prev) => ({ ...prev, [log.id]: !displayLiked }))
+                      toggleLike.mutate(
+                        { logId: log.id, logOwnerId: user.id, currentlyLiked: displayLiked },
+                        { onError: () => setOptimisticLikes((prev) => ({ ...prev, [log.id]: displayLiked })) },
+                      )
+                    }}
+                    className="flex items-center gap-1 text-xs text-muted"
+                  >
+                    <span>{displayLiked ? '🔥' : '🤍'}</span>
+                    <span>{displayLikeCount}</span>
+                  </button>
+                  <span className="flex items-center gap-1 text-xs text-muted">
+                    <span>💬</span>
+                    <span>{log.commentCount}</span>
+                  </span>
+                </div>
+              </li>
+            )
+          })}
         </ul>
       )}
     </div>
