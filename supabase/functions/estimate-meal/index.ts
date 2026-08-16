@@ -7,7 +7,7 @@
 // provider notes) from being hit by anyone who reads the client bundle.
 
 const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY')
-const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent'
+const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-lite-latest:generateContent'
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
