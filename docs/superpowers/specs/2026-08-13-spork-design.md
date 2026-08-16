@@ -1,7 +1,7 @@
 # Spork — Design Spec
 
-**Date:** 2026-08-13 (visual design system and navigation revised 2026-08-15 — see §2 and §10; Phase 3 Friends+Feed scoped 2026-08-15 — see §5, §10, §12; Phase 4 Log flow scoped 2026-08-16 — see §6, §10, §12)
-**Status:** Approved. Phase 1 (Foundation/Onboarding), Phase 2 (visual/nav retrofit), and Phase 3 (Friends + Feed) implemented and merged. Phase 4 (Log flow) approved, pending implementation plan.
+**Date:** 2026-08-13 (visual design system and navigation revised 2026-08-15 — see §2 and §10; Phase 3 Friends+Feed scoped 2026-08-15 — see §5, §10, §12; Phase 4 Log flow scoped 2026-08-16 — see §6, §10, §12; Likes & Comments scoped 2026-08-16 — see §4, §5, §7, §10, §12)
+**Status:** Approved. Phase 1 (Foundation/Onboarding), Phase 2 (visual/nav retrofit), Phase 3 (Friends + Feed), and Phase 4 (Log flow) implemented and merged. Likes & Comments approved, pending implementation plan.
 
 ## 1. Concept
 
@@ -120,6 +120,54 @@ redemptions (
   redeemed_at timestamptz default now()
 )
 -- RLS: readable/insertable only by the owning user.
+
+log_likes (
+  id uuid primary key default gen_random_uuid(),
+  log_id uuid references logs(id) on delete cascade not null,
+  user_id uuid references users(id) on delete cascade not null,
+  created_at timestamptz default now(),
+  unique (log_id, user_id)          -- one like per user per log; toggling is insert/delete, not update
+)
+-- RLS: same select/insert shape as logs itself (owner always, accepted
+-- friend only if the log is public) — the same EXISTS-subquery pattern
+-- meal-photos already uses, not a new mechanism. Delete: the like's own
+-- user_id, or the log's owner (added 2026-08-16, see §10).
+
+log_comments (
+  id uuid primary key default gen_random_uuid(),
+  log_id uuid references logs(id) on delete cascade not null,
+  user_id uuid references users(id) on delete cascade not null,
+  parent_comment_id uuid references log_comments(id) on delete cascade,  -- null = top-level; set = a reply
+  body text not null,
+  created_at timestamptz default now()
+)
+-- RLS: same select/insert shape as logs (owner or accepted-friend-if-
+-- public). The insert policy additionally rejects a reply-to-a-reply —
+-- one level of threading only (2026-08-16, see §10) — by requiring
+-- parent_comment_id, when set, to reference a row whose OWN
+-- parent_comment_id is null. Delete: the comment's own user_id, or the
+-- log's owner.
+
+notifications (
+  id uuid primary key default gen_random_uuid(),
+  recipient_id uuid references users(id) on delete cascade not null,  -- always the log's owner — even for a reply (2026-08-16, see §10), never the parent comment's author
+  actor_id uuid references users(id) on delete cascade not null,
+  log_id uuid references logs(id) on delete cascade not null,
+  type text check (type in ('like','comment','reply')) not null,
+  comment_id uuid references log_comments(id) on delete cascade,  -- set for 'comment'/'reply', null for 'like'
+  read_at timestamptz,
+  created_at timestamptz default now()
+)
+-- RLS: select/update (marking read) restricted to recipient_id = auth.uid().
+-- Insert policy computes recipient_id itself from the referenced log
+-- (recipient_id = (select user_id from logs where id = log_id)) rather
+-- than trusting the client's value — this is what stops a client from
+-- spoofing a notification to the wrong user, and the added
+-- actor_id <> recipient_id check is what suppresses a self-notification
+-- when liking/commenting your own post. No trigger creates these rows —
+-- the acting client inserts the like/comment row and the notification
+-- row as two sequential inserts, the same non-transactional shape
+-- already accepted for postLog (§6/§10).
 ```
 
 **Redemption is a server-side Postgres RPC**, not a plain client insert: `redeem_reward(reward_id)` checks the caller's `streak_count` against the reward's `milestone_required` *in the database* before generating a code and inserting the redemption row. This prevents a client from faking eligibility by calling insert directly.
@@ -145,11 +193,13 @@ Bottom tab bar, **5 items: Feed / Streaks / Log (center, raised, unlabeled "+" b
 
 Height/weight/age/sex/activity are used only to compute the suggested calorie goal client-side at that moment — they are not persisted. Only the resulting `calorie_goal` is stored on the user record; if the user wants to recompute the suggestion later, they re-enter those inputs. The `sex` field (`'male' | 'female'`) selects the correct Mifflin-St Jeor constant (+5 male / −161 female) instead of the sex-neutral approximation used in the initial Phase 1 build — see §10.
 
-**Feed:** Empty state prompts adding friends / logging first meal. Populated state: chronological cards, no algorithm — avatar/handle, meal photo (rendered via a signed URL from the private `meal-photos` bucket once Log flow exists to attach one, see §12 Phase 4), calorie count, meal tag, timestamp, flame icon if the author's effective streak is > 0 (streak is treated as broken once a day is missed, even before `streak_count` itself is next updated — see `getEffectiveStreak` in §4/§10). **Feed includes the viewer's own logs, interleaved with friends' purely by timestamp** — one reverse-chronological timeline, not two sections (changed 2026-08-16 from the original "friends only" design during Phase 4's live walkthrough — a single continuous timeline reads more naturally than requiring a separate own-history view before Phase 6 builds one). Tap card → that author's profile (works the same for the viewer's own username as any friend's). Query: `logs` joined to `users`, ordered by `created_at desc`, no author filter — RLS (§4) transparently returns only what's permitted (the caller's own rows at any visibility, or an accepted friend's public rows), so the feed can never over-fetch a private log.
+**Feed:** Empty state prompts adding friends / logging first meal. Populated state: chronological cards, no algorithm — avatar/handle, meal photo (rendered via a signed URL from the private `meal-photos` bucket once Log flow exists to attach one, see §12 Phase 4), meal name if set, calorie count, meal tag, timestamp, flame icon if the author's effective streak is > 0 (streak is treated as broken once a day is missed, even before `streak_count` itself is next updated — see `getEffectiveStreak` in §4/§10), and a small like button + count and comment-bubble + count (2026-08-16, see §10) — both counts computed client-side from a batch query over the page's log ids, the same "fetch rows, batch-fetch related rows by id, join via Map" convention used everywhere else in this codebase. **Feed includes the viewer's own logs, interleaved with friends' purely by timestamp** — one reverse-chronological timeline, not two sections (changed 2026-08-16 from the original "friends only" design during Phase 4's live walkthrough — a single continuous timeline reads more naturally than requiring a separate own-history view before Phase 7 builds one). Tap card → Meal Detail (below). Feed also carries a bell icon (top corner) with an unread-count badge, opening the Notifications inbox (2026-08-16, see below). Query: `logs` joined to `users`, ordered by `created_at desc`, no author filter — RLS (§4) transparently returns only what's permitted (the caller's own rows at any visibility, or an accepted friend's public rows), so the feed can never over-fetch a private log.
 
 **Log flow (see §6 for detail).**
 
-**Meal detail view:** full photo, calories + each macro (estimate vs. final), meal type, timestamp, edit option (own logs only).
+**Meal detail view** (`/home/log/:logId`, previously specced but never built — implemented alongside Likes & Comments, 2026-08-16): full photo, meal name, calories + each macro (estimate vs. final), meal type, timestamp, edit option (own logs only — still not built, tracked separately from this pass), like button + count, and the comment thread below: top-level comments each with a "Reply" affordance (one level of visual indent, no further nesting — replies carry no "Reply" button of their own), a compose box, delete available to the comment's own author or the log's owner.
+
+**Notifications inbox** (new screen, reached via Feed's bell icon, 2026-08-16): a simple reverse-chronological list — "Maya liked your Omelette", "Dev replied to your Cheesy omelette" — each row tapping through to that log's Meal Detail. Opening the inbox marks every notification read. No push delivery, no separate tab — an in-app list only, consistent with §10's existing "no real push notifications" decision.
 
 **Friend profile:** public logs grid (photo + calories + meal type), current streak (`users.streak_count`), quick stats if permitted (avg daily calories from public logs, most logged meal type — both computed client-side from the same RLS-filtered query the feed uses, so a private log is excluded by construction, not by a second rule that could drift out of sync) — fully private-default users show no streak/stats to friends at all, regardless of individual public logs.
 
@@ -186,7 +236,7 @@ Replaces the Phase 2 placeholder at `src/screens/log/LogPlaceholder.tsx` (route 
 
 - Private logs must never appear in any friend-facing feed/query, and must never leak into aggregate stats (enforced at the RLS layer, not just app code).
 - Streak increments once per day if the user logs at least one meal (public or private); resets to 0 if a full calendar day passes with no log.
-- No comments/likes — the feed is for visibility/accountability only.
+- Likes and one-level-threaded comments are supported (reversed 2026-08-16 — see §10; originally "no comments/likes, the feed is for visibility/accountability only"). Still true: no algorithmic amplification — like/comment counts never drive feed ordering or ranking (§11's "no algorithmic feed ranking" stands unchanged).
 - No dark patterns on rewards — no paywalled streak-freeze, no manipulative copy.
 
 ## 8. Error Handling & Edge Cases
@@ -225,16 +275,24 @@ Following the **test-driven-development** skill during implementation:
 - **Camera testing (2026-08-16):** real camera capture only makes sense on a phone, and deployment is still local-dev-only (§10 Deployment). Chose exposing the Vite dev server on the local WiFi network (`--host` flag) so the phone's browser can hit it directly, over deferring to desktop-only file-picker testing or jumping ahead on the deployment decision.
 - **Photo upload timing (2026-08-16):** the captured photo stays in-memory (Zustand draft) through capture and estimation, and is only uploaded to Storage at the moment the user taps Post — chosen over uploading immediately at capture time, since the latter would leave orphaned images in Storage every time someone backs out of the flow, which nothing in this phase cleans up.
 - **Streak increment mechanism (2026-08-16):** a plain TypeScript pure function (`computeNextStreak`, sibling to `getEffectiveStreak`) run client-side after a successful log insert, writing the result via the existing `users_update_own` RLS path — chosen over a Postgres RPC. Consistent with every other convention in this codebase (pure functions, TDD, RLS-protected client writes); a server-side atomic RPC would be more defensive against concurrent posts, but this app has no realistic double-post race (one user, one device, one Log button), so the added complexity of introducing the project's first backend function isn't justified yet.
+- **Comments/likes reversed (2026-08-16):** the original spec explicitly ruled these out ("the feed is for visibility/accountability only"). Reversed after live-testing Phase 4 — the user wants the app to lean further into "AI cal tracker with a social media aspect," closer to Hevy's actual feed (which does have likes/comments) than the original accountability-only framing. Still no algorithmic amplification — counts never affect feed ordering.
+- **Likes/comments live on a new Meal Detail screen, not inline on Feed cards (2026-08-16):** Feed cards get a lightweight like button + comment count only; the full comment thread and like list live on Meal Detail (already specced in §5 pre-Phase-4, never built until now) — mirrors Hevy's own pattern (compact feed card, full interaction on the detail view) and avoids cluttering an already-dense Feed card.
+- **Simple like (not multi-reaction) (2026-08-16):** one toggleable like per user per log, not an Instagram/Slack-style reaction set — matches the app's minimalism elsewhere and keeps the data model to one row per (log, user) pair.
+- **One-level comment threading (2026-08-16):** top-level comments plus replies, but replies can't themselves be replied to (Instagram/YouTube-style, not Reddit-style unlimited nesting) — one nullable `parent_comment_id`, one level of UI indent.
+- **Comment deletion: author or the log's owner (2026-08-16):** a deliberate widening from this codebase's usual "you only ever touch your own rows" pattern (logs, friendships) — the log's owner gets basic moderation over comments on their own post, on the reasoning that a public post's comments are still happening on *their* content.
+- **Full notifications inbox, not a simple unread badge (2026-08-16):** a dedicated screen listing each individual like/comment/reply event, not just a dot indicator — a real new `notifications` table with its own read/unread state, not a single per-user timestamp check. Reached via a bell icon on Feed (not a 6th tab — the 5-tab bar is a fixed decision from the Phase 2 retrofit, §5/§10).
+- **Reply notifications go to the log's owner only, never the parent comment's author (2026-08-16):** simpler than the more "expected" behavior of also notifying whoever's comment got replied to — one recipient-computation rule for every notification type, at the cost of a reply's parent-comment author not being told directly (they'd still see it browsing the thread). Revisit if this feels wrong once used.
 
 ## 11. Explicitly Out of Scope
 
-Barcode scanning, restaurant menu database, Apple Health/wearable sync, in-app messaging, algorithmic feed ranking, Android-specific anything, real push notifications, native App Store distribution, comments/likes on the feed, an admin UI for managing rewards, real password reset (see §10).
+Barcode scanning, restaurant menu database, Apple Health/wearable sync, in-app messaging, algorithmic feed ranking, Android-specific anything, real push notifications, native App Store distribution, an admin UI for managing rewards, real password reset (see §10). Comments/likes were out of scope as of the original spec but reversed 2026-08-16 (see §7, §10) — no longer listed here.
 
 ## 12. Build Phasing
 
 1. **Foundation + Onboarding/Auth** — project scaffold, Supabase setup, RLS policies, auth + onboarding screens. **Complete, merged to master.**
 2. **Visual & navigation retrofit** — apply §2's design system and §5's 5-tab structure to Phase 1's already-built screens; no backend/schema changes. *(New phase, inserted 2026-08-15 — not part of the original phasing.)* **Complete, merged to master.**
 3. **Friends + Feed** — seed 5 mock friend accounts, full Friends tab (search, Your Circle, requests, Accept/Decline), populated Feed, and a real Friend Profile screen — all backed by the seeded data since Log flow/Streaks don't exist yet to generate it organically. **Complete, merged to master.**
-4. **Log flow** — photo capture, optional description, Gemini estimate via Edge Function, editable fields, post + streak increment.
-5. **Streaks & Rewards** — streak display, rewards marketplace, redemption RPC.
-6. **Profile & Settings polish** — own stats, calendar history, settings screen.
+4. **Log flow** — photo capture, optional description, Gemini estimate via Edge Function, editable fields, post + streak increment. **Complete, merged to master.**
+5. **Likes & Comments** — `log_likes`/`log_comments`/`notifications` tables + RLS, inline like/comment counts on Feed and Friend Profile, a new Meal Detail screen, and a Notifications inbox. *(New phase, inserted 2026-08-16 — not part of the original phasing; reverses the original "no comments/likes" decision, see §7/§10/§11.)*
+6. **Streaks & Rewards** — streak display, rewards marketplace, redemption RPC.
+7. **Profile & Settings polish** — own stats, calendar history, settings screen.
