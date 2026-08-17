@@ -109,6 +109,32 @@ create policy "log_comments_select_own_or_public_friend"
     )
   );
 
+-- A table's own RLS policy can't directly embed a subquery against that
+-- same table — Postgres's policy rewriter can't expand it without
+-- re-expanding log_comments' own policies inside themselves, and fails
+-- with "infinite recursion detected in policy" unconditionally (even for
+-- a top-level insert where parent_comment_id is null — this is a
+-- plan-time expansion problem, not a per-row runtime one). Confirmed live
+-- during the phase's RLS walkthrough (2026-08-18): this made EVERY insert
+-- into log_comments fail, not just replies. Fixed by wrapping the
+-- self-referencing parent lookup in a `security definer` function, which
+-- breaks the direct-subquery recursion — the standard documented
+-- Postgres/Supabase pattern for self-referential RLS.
+create or replace function log_comments_parent_is_valid(check_parent_id uuid, check_log_id uuid)
+returns boolean
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select exists (
+    select 1 from log_comments parent
+    where parent.id = check_parent_id
+      and parent.parent_comment_id is null
+      and parent.log_id = check_log_id
+  );
+$$;
+
 -- The final AND clause is what caps threading at one level (spec §10):
 -- if parent_comment_id is set, the referenced parent's OWN
 -- parent_comment_id must be null — a reply can never itself be replied to.
@@ -139,12 +165,7 @@ create policy "log_comments_insert_own_if_log_visible"
     )
     and (
       parent_comment_id is null
-      or exists (
-        select 1 from log_comments parent
-        where parent.id = log_comments.parent_comment_id
-          and parent.parent_comment_id is null
-          and parent.log_id = log_comments.log_id
-      )
+      or log_comments_parent_is_valid(parent_comment_id, log_id)
     )
   );
 
