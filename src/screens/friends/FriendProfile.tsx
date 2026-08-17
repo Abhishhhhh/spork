@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useFriendProfile } from '../../hooks/useFriendProfile'
 import { computeAverageCalories, computeMostLoggedMealType } from '../../lib/friendStats'
 import { getEffectiveStreak } from '../../lib/streak'
+import { computeLikeDelta } from '../../lib/likeDelta'
 import { useToggleLike } from '../../hooks/useMealDetail'
 
 export default function FriendProfile() {
@@ -104,8 +105,7 @@ export default function FriendProfile() {
         <ul className="grid grid-cols-3 gap-2">
           {logs.map((log) => {
             const displayLiked = optimisticLikes[log.id] ?? log.likedByViewer
-            const displayLikeCount =
-              log.likeCount + (optimisticLikes[log.id] === undefined ? 0 : optimisticLikes[log.id] === log.likedByViewer ? 0 : optimisticLikes[log.id] ? 1 : -1)
+            const displayLikeCount = log.likeCount + computeLikeDelta(optimisticLikes[log.id], log.likedByViewer)
             return (
               <li key={log.id} className="flex flex-col items-center gap-1 rounded-2xl border border-border p-3">
                 <button onClick={() => navigate(`/home/log/${log.id}`)} className="flex w-full flex-col items-center gap-1">

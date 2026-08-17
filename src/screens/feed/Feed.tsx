@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useFeed } from '../../hooks/useFeed'
 import { useNotifications } from '../../hooks/useNotifications'
 import { getEffectiveStreak } from '../../lib/streak'
+import { computeLikeDelta } from '../../lib/likeDelta'
 import { useToggleLike } from '../../hooks/useMealDetail'
 
 export default function Feed() {
@@ -66,41 +67,42 @@ export default function Feed() {
       <div className="flex flex-col gap-3 px-4 py-6">
         {items.map(({ log, author, photoSignedUrl, likeCount, likedByViewer, commentCount }) => {
           const effectiveStreak = getEffectiveStreak(author.streak_count, author.streak_last_log_date, new Date())
+          const displayLiked = optimisticLikes[log.id] ?? likedByViewer
+          const displayLikeCount = likeCount + computeLikeDelta(optimisticLikes[log.id], likedByViewer)
           return (
-            <button
-              key={log.id}
-              onClick={() => navigate(`/home/log/${log.id}`)}
-              className="flex flex-col gap-2 rounded-2xl border border-border p-4 text-left"
-            >
-              {photoSignedUrl && (
-                <img src={photoSignedUrl} alt="" className="h-40 w-full rounded-xl object-cover" />
-              )}
-              <div className="flex items-center gap-2">
-                {author.photo_url ? (
-                  <img src={author.photo_url} alt={author.name} className="h-8 w-8 rounded-full object-cover" />
-                ) : (
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-border/60 text-xs text-muted">
-                    {author.name.charAt(0).toUpperCase()}
-                  </div>
+            <div key={log.id} className="flex flex-col gap-2 rounded-2xl border border-border p-4">
+              <button
+                onClick={() => navigate(`/home/log/${log.id}`)}
+                className="flex flex-col gap-2 text-left"
+              >
+                {photoSignedUrl && (
+                  <img src={photoSignedUrl} alt="" className="h-40 w-full rounded-xl object-cover" />
                 )}
-                <span className="text-sm font-semibold text-primary">@{author.username}</span>
-                {effectiveStreak > 0 && <span className="text-sm">🔥</span>}
-                <span className="ml-auto text-xs text-muted">
-                  {new Date(log.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                </span>
-              </div>
-              {log.name && <p className="font-semibold text-primary">{log.name}</p>}
-              <div className="flex items-center justify-between">
-                <span className="text-xs capitalize text-muted">{log.meal_type}</span>
-                <span className="text-lg font-bold text-primary">
-                  {log.calories_final ?? log.calories_estimate ?? '—'} kcal
-                </span>
-              </div>
+                <div className="flex items-center gap-2">
+                  {author.photo_url ? (
+                    <img src={author.photo_url} alt={author.name} className="h-8 w-8 rounded-full object-cover" />
+                  ) : (
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-border/60 text-xs text-muted">
+                      {author.name.charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  <span className="text-sm font-semibold text-primary">@{author.username}</span>
+                  {effectiveStreak > 0 && <span className="text-sm">🔥</span>}
+                  <span className="ml-auto text-xs text-muted">
+                    {new Date(log.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                  </span>
+                </div>
+                {log.name && <p className="font-semibold text-primary">{log.name}</p>}
+                <div className="flex items-center justify-between">
+                  <span className="text-xs capitalize text-muted">{log.meal_type}</span>
+                  <span className="text-lg font-bold text-primary">
+                    {log.calories_final ?? log.calories_estimate ?? '—'} kcal
+                  </span>
+                </div>
+              </button>
               <div className="flex items-center gap-4 pt-1">
                 <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    const displayLiked = optimisticLikes[log.id] ?? likedByViewer
+                  onClick={() => {
                     setOptimisticLikes((prev) => ({ ...prev, [log.id]: !displayLiked }))
                     toggleLike.mutate(
                       { logId: log.id, logOwnerId: log.user_id, currentlyLiked: displayLiked },
@@ -112,17 +114,15 @@ export default function Feed() {
                   }}
                   className="flex items-center gap-1 text-sm text-muted"
                 >
-                  <span>{(optimisticLikes[log.id] ?? likedByViewer) ? '🔥' : '🤍'}</span>
-                  <span>
-                    {likeCount + (optimisticLikes[log.id] === undefined ? 0 : optimisticLikes[log.id] === likedByViewer ? 0 : optimisticLikes[log.id] ? 1 : -1)}
-                  </span>
+                  <span>{displayLiked ? '🔥' : '🤍'}</span>
+                  <span>{displayLikeCount}</span>
                 </button>
                 <span className="flex items-center gap-1 text-sm text-muted">
                   <span>💬</span>
                   <span>{commentCount}</span>
                 </span>
               </div>
-            </button>
+            </div>
           )
         })}
       </div>

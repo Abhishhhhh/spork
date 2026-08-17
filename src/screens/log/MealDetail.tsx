@@ -9,6 +9,7 @@ import {
   type CommentThread,
   type CommentWithAuthor,
 } from '../../hooks/useMealDetail'
+import { computeLikeDelta } from '../../lib/likeDelta'
 
 export default function MealDetail() {
   const { logId } = useParams<{ logId: string }>()
@@ -66,8 +67,7 @@ export default function MealDetail() {
   const { log, author, photoSignedUrl, likeCount, likedByViewer, comments } = data
   const viewerId = session?.user.id
   const displayLiked = optimisticLiked ?? likedByViewer
-  const likeDelta = optimisticLiked === null ? 0 : optimisticLiked === likedByViewer ? 0 : optimisticLiked ? 1 : -1
-  const displayLikeCount = likeCount + likeDelta
+  const displayLikeCount = likeCount + computeLikeDelta(optimisticLiked, likedByViewer)
 
   function handleToggleLike() {
     const next = !displayLiked
