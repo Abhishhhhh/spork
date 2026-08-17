@@ -112,6 +112,8 @@ create policy "log_comments_select_own_or_public_friend"
 -- The final AND clause is what caps threading at one level (spec §10):
 -- if parent_comment_id is set, the referenced parent's OWN
 -- parent_comment_id must be null — a reply can never itself be replied to.
+-- It also pins the parent to the same log, so a reply can never
+-- reference a top-level comment on a different log.
 create policy "log_comments_insert_own_if_log_visible"
   on log_comments for insert
   to authenticated
@@ -141,6 +143,7 @@ create policy "log_comments_insert_own_if_log_visible"
         select 1 from log_comments parent
         where parent.id = log_comments.parent_comment_id
           and parent.parent_comment_id is null
+          and parent.log_id = log_comments.log_id
       )
     )
   );
@@ -183,6 +186,15 @@ create policy "notifications_insert_by_actor_for_log_owner"
     actor_id = auth.uid()
     and actor_id <> recipient_id
     and recipient_id = (select user_id from logs where id = notifications.log_id)
+    and (
+      type = 'like'
+      or exists (
+        select 1 from log_comments c
+        where c.id = notifications.comment_id
+          and c.log_id = notifications.log_id
+          and c.user_id = auth.uid()
+      )
+    )
   );
 
 create policy "notifications_update_own"
@@ -190,3 +202,17 @@ create policy "notifications_update_own"
   to authenticated
   using (recipient_id = auth.uid())
   with check (recipient_id = auth.uid());
+
+-- Caps a recipient to one outstanding "like" notification per (actor, log)
+-- pair — re-liking after unliking re-inserts into the same slot rather than
+-- piling up an undismissable duplicate (there's no DELETE policy on this
+-- table). useToggleLike tolerates the resulting unique-violation (23505).
+create unique index notifications_unique_like_per_actor_log
+  on notifications (recipient_id, actor_id, log_id)
+  where type = 'like';
+
+-- Prototype-scale traffic doesn't need these yet, but they're free while
+-- this file is still unexecuted.
+create index log_comments_log_id_idx on log_comments (log_id);
+create index log_comments_parent_comment_id_idx on log_comments (parent_comment_id);
+create index notifications_recipient_id_idx on notifications (recipient_id);
