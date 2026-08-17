@@ -132,7 +132,10 @@ export function useToggleLike() {
           log_id: input.logId,
           type: 'like',
         })
-        if (notifError) throw notifError
+        // 23505 = unique_violation: a like notification for this
+        // (actor, log) pair already exists from a prior like/unlike cycle
+        // — the existing row still stands in for this one, nothing to do.
+        if (notifError && notifError.code !== '23505') throw notifError
       }
     },
     onSuccess: () => {
@@ -157,12 +160,16 @@ export function useAddComment() {
       if (!session) throw new Error('Not signed in')
       const userId = session.user.id
 
-      const { error: commentError } = await supabase.from('log_comments').insert({
-        log_id: input.logId,
-        user_id: userId,
-        parent_comment_id: input.parentCommentId,
-        body: input.body,
-      })
+      const { data: insertedComment, error: commentError } = await supabase
+        .from('log_comments')
+        .insert({
+          log_id: input.logId,
+          user_id: userId,
+          parent_comment_id: input.parentCommentId,
+          body: input.body,
+        })
+        .select('id')
+        .single()
       if (commentError) throw commentError
 
       if (input.logOwnerId !== userId) {
@@ -171,6 +178,7 @@ export function useAddComment() {
           actor_id: userId,
           log_id: input.logId,
           type: input.parentCommentId ? 'reply' : 'comment',
+          comment_id: insertedComment.id,
         })
         if (notifError) throw notifError
       }
@@ -195,6 +203,7 @@ export function useDeleteComment() {
       queryClient.invalidateQueries({ queryKey: ['mealDetail'] })
       queryClient.invalidateQueries({ queryKey: ['feed'] })
       queryClient.invalidateQueries({ queryKey: ['friendProfile'] })
+      queryClient.invalidateQueries({ queryKey: ['notifications'] })
     },
   })
 }
