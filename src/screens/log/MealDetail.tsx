@@ -107,14 +107,19 @@ export default function MealDetail() {
       )}
 
       <div className="mb-4 flex items-center gap-2">
-        {author.photo_url ? (
-          <img src={author.photo_url} alt={author.name} className="h-8 w-8 rounded-full object-cover" />
-        ) : (
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-border/60 text-xs text-muted">
-            {author.name.charAt(0).toUpperCase()}
-          </div>
-        )}
-        <span className="text-sm font-semibold text-primary">@{author.username}</span>
+        <button
+          onClick={() => navigate(`/home/friend/${author.username}`)}
+          className="flex items-center gap-2"
+        >
+          {author.photo_url ? (
+            <img src={author.photo_url} alt={author.name} className="h-8 w-8 rounded-full object-cover" />
+          ) : (
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-border/60 text-xs text-muted">
+              {author.name.charAt(0).toUpperCase()}
+            </div>
+          )}
+          <span className="text-sm font-semibold text-primary">@{author.username}</span>
+        </button>
         <span className="ml-auto text-xs text-muted">
           {new Date(log.created_at).toLocaleString(undefined, {
             month: 'short',
