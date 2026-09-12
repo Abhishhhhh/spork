@@ -225,28 +225,40 @@ function CommentRow({
   onReply?: () => void
   onDelete: () => void
 }) {
+  const navigate = useNavigate()
   return (
     <div className="flex items-start gap-2">
-      {comment.author.photo_url ? (
-        <img src={comment.author.photo_url} alt={comment.author.name} className="h-7 w-7 rounded-full object-cover" />
-      ) : (
-        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-background text-xs text-muted">
-          {comment.author.name.charAt(0).toUpperCase()}
-        </div>
-      )}
+      <button
+        onClick={() => navigate(`/home/friend/${comment.author.username}`)}
+        className="shrink-0 border-0"
+        aria-label={`View ${comment.author.username}'s profile`}
+      >
+        {comment.author.photo_url ? (
+          <img src={comment.author.photo_url} alt={comment.author.name} className="h-7 w-7 rounded-full object-cover" />
+        ) : (
+          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-surface border border-border/40 text-xs font-bold text-muted">
+            {comment.author.name.charAt(0).toUpperCase()}
+          </div>
+        )}
+      </button>
       <div className="flex-1">
         <p className="text-sm">
-          <span className="font-semibold text-primary">@{comment.author.username}</span>{' '}
+          <button
+            onClick={() => navigate(`/home/friend/${comment.author.username}`)}
+            className="font-semibold text-primary border-0 mr-1"
+          >
+            @{comment.author.username}
+          </button>
           <span className="text-primary">{comment.body}</span>
         </p>
         <div className="flex gap-3 text-xs text-muted">
           {onReply && (
-            <button onClick={onReply} className="font-semibold">
+            <button onClick={onReply} className="font-semibold border-0">
               Reply
             </button>
           )}
           {canDelete && (
-            <button onClick={onDelete} className="font-semibold text-error">
+            <button onClick={onDelete} className="font-semibold text-error border-0">
               Delete
             </button>
           )}

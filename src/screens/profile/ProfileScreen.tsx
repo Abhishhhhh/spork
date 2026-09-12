@@ -1,9 +1,12 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { supabase } from '../../lib/supabase'
 import { useCurrentUser } from '../../hooks/useCurrentUser'
+import { useSession } from '../../hooks/useSession'
 import { useTodayStats } from '../../hooks/useTodayStats'
 import { useMyLogs, useLogsForDay, useUpdateProfile } from '../../hooks/useProfile'
 import { useMyPosts } from '../../hooks/useMyPosts'
+import { useFriendships } from '../../hooks/useFriendships'
 import { useStreakData } from '../../hooks/useStreakData'
 import { useToggleLike } from '../../hooks/useMealDetail'
 import { CalorieRing } from '../../components/CalorieRing'
@@ -17,17 +20,23 @@ import {
   computeCalorieRingPct,
   buildLogDateSet,
 } from '../../lib/profileStats'
+import { useQueryClient } from '@tanstack/react-query'
 
 export default function ProfileScreen() {
-  const navigate      = useNavigate()
+  const navigate       = useNavigate()
+  const queryClient    = useQueryClient()
+  const { session }    = useSession()
   const { data: user, isLoading } = useCurrentUser()
   const { data: stats }           = useTodayStats()
   const { data: recentLogs = [] } = useMyLogs(14)
   const { data: streakData }      = useStreakData()
   const { data: posts = [], isLoading: postsLoading } = useMyPosts()
+  const { data: friendships }     = useFriendships()
   const updateProfile = useUpdateProfile()
   const toggleLike    = useToggleLike()
   const { toast }     = useToast()
+  const avatarInputRef = useRef<HTMLInputElement>(null)
+  const [uploadingAvatar, setUploadingAvatar] = useState(false)
 
   const [selectedDay, setSelectedDay] = useState<string | null>(null)
   const { data: dayLogs = [] }        = useLogsForDay(selectedDay ?? '')
@@ -48,6 +57,31 @@ export default function ProfileScreen() {
       { logId, logOwnerId, currentlyLiked },
       { onError: () => { setOptimisticLikes((p) => ({ ...p, [logId]: currentlyLiked })); toast('Could not like — try again', 'error') } },
     )
+  }
+
+  async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file || !session?.user.id) return
+    setUploadingAvatar(true)
+    try {
+      const ext  = file.name.split('.').pop() ?? 'jpg'
+      const path = `${session.user.id}/avatar.${ext}`
+      const { error: uploadErr } = await supabase.storage
+        .from('avatars').upload(path, file, { upsert: true })
+      if (uploadErr) throw uploadErr
+
+      const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(path)
+      const { error: updateErr } = await supabase
+        .from('users').update({ photo_url: urlData.publicUrl }).eq('id', session.user.id)
+      if (updateErr) throw updateErr
+
+      queryClient.invalidateQueries({ queryKey: ['currentUser'] })
+      toast('Photo updated ✓')
+    } catch {
+      toast('Could not update photo — try again', 'error')
+    } finally {
+      setUploadingAvatar(false)
+    }
   }
 
   if (isLoading) {
@@ -77,6 +111,13 @@ export default function ProfileScreen() {
   const logDates       = streakData?.recentLogDates ?? buildLogDateSet(recentLogs)
   const effectiveStreak = streakData?.effectiveStreak ?? user.streak_count
 
+  // Real following/followers counts from friendships
+  const followingCount = friendships?.accepted.length ?? 0
+  // Outgoing pending are people you follow who haven't accepted yet
+  const followingTotal = followingCount + (friendships?.outgoing.length ?? 0)
+  // Followers = people who follow you (accepted from their side = accepted on ours)
+  const followersCount = followingCount // accepted is mutual — both sides accepted
+
   function saveField(fields: Parameters<typeof updateProfile.mutate>[0]) {
     updateProfile.mutate(fields, {
       onSuccess: () => toast('Saved ✓'),
@@ -87,7 +128,7 @@ export default function ProfileScreen() {
   return (
     <div className="flex min-h-[calc(100vh-5rem)] flex-col pb-8">
 
-      {/* ── Top bar: @username + settings gear ──────────────────── */}
+      {/* ── Top bar ─────────────────────────────────────────────── */}
       <div className="flex items-center justify-between px-5 pt-6 pb-3">
         <div className="flex items-center gap-2">
           <p className="text-lg font-bold text-primary">@{user.username}</p>
@@ -97,23 +138,20 @@ export default function ProfileScreen() {
         </div>
         <div className="flex items-center gap-2">
           <button onClick={() => navigate('/home/friends')} aria-label="Friends"
-            className="flex h-8 w-8 items-center justify-center rounded-full text-muted">
+            className="flex h-8 w-8 items-center justify-center rounded-full text-muted border-0">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
-              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-              <circle cx="9" cy="7" r="4" />
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" />
               <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
             </svg>
           </button>
           <button onClick={() => navigate('/home/notifications')} aria-label="Notifications"
-            className="flex h-8 w-8 items-center justify-center rounded-full text-muted">
+            className="flex h-8 w-8 items-center justify-center rounded-full text-muted border-0">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
-              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-              <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 0 1-3.46 0" />
             </svg>
           </button>
-          {/* Settings gear */}
           <button onClick={() => navigate('/home/settings')} aria-label="Settings"
-            className="flex h-8 w-8 items-center justify-center rounded-full text-muted">
+            className="flex h-8 w-8 items-center justify-center rounded-full text-muted border-0">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
               <circle cx="12" cy="12" r="3" />
               <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
@@ -122,44 +160,77 @@ export default function ProfileScreen() {
         </div>
       </div>
 
-      {/* ── Identity row: avatar + name + stats ──────────────────── */}
+      {/* ── Identity row ─────────────────────────────────────────── */}
       <div className="px-5 pb-4">
         <div className="flex items-center gap-5">
-          <div className="relative shrink-0">
+
+          {/* Avatar — tappable to change */}
+          <button
+            onClick={() => avatarInputRef.current?.click()}
+            className="relative shrink-0 rounded-full border-0"
+            aria-label="Change profile photo"
+          >
             {user.photo_url ? (
-              <img src={user.photo_url} alt={user.name} className="h-20 w-20 rounded-full object-cover border border-border/40" />
+              <img src={user.photo_url} alt={user.name}
+                className="h-20 w-20 rounded-full object-cover border border-border/40" />
             ) : (
               <div className="flex h-20 w-20 items-center justify-center rounded-full bg-surface border border-border/40 text-2xl font-bold text-muted">
                 {user.name.charAt(0).toUpperCase()}
               </div>
             )}
-          </div>
+            {/* Camera badge */}
+            <span className="absolute bottom-0 right-0 flex h-6 w-6 items-center justify-center rounded-full bg-primary border-2 border-background">
+              {uploadingAvatar ? (
+                <svg className="h-3 w-3 animate-spin text-background" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4" />
+                </svg>
+              ) : (
+                <svg className="h-3 w-3 text-background" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                  <circle cx="12" cy="13" r="4" />
+                </svg>
+              )}
+            </span>
+            <input
+              ref={avatarInputRef}
+              type="file"
+              accept="image/*"
+              className="sr-only"
+              onChange={handleAvatarChange}
+            />
+          </button>
+
           <div className="flex-1 min-w-0">
+            {/* Editable name — border-0 removes the global button border */}
             {editingName ? (
               <div className="flex items-center gap-2 mb-2">
                 <input value={nameVal} onChange={(e) => setNameVal(e.target.value)} autoFocus
                   className="rounded-full bg-surface border border-border/60 px-3 py-1 text-sm font-bold text-primary w-32 placeholder:text-muted" />
                 <button onClick={() => { saveField({ name: nameVal }); setEditingName(false) }}
                   className="rounded-full bg-primary px-3 py-1 text-xs font-semibold text-background">Save</button>
-                <button onClick={() => setEditingName(false)} className="text-xs text-muted">✕</button>
+                <button onClick={() => setEditingName(false)} className="text-xs text-muted border-0">✕</button>
               </div>
             ) : (
-              <button onClick={() => { setNameVal(user.name); setEditingName(true) }}
-                className="mb-2 text-base font-bold text-primary text-left">
+              <button
+                onClick={() => { setNameVal(user.name); setEditingName(true) }}
+                className="mb-2 text-base font-bold text-primary text-left border-0"
+              >
                 {user.name}
               </button>
             )}
+
+            {/* Stats row — no borders on these buttons */}
             <div className="flex gap-4">
               <div className="text-center">
                 <p className="text-base font-bold text-primary leading-none">{posts.length}</p>
                 <p className="text-xs text-muted mt-0.5">Posts</p>
               </div>
-              <button onClick={() => navigate('/home/friends')} className="text-center">
-                <p className="text-base font-bold text-primary leading-none">—</p>
+              <button onClick={() => navigate('/home/friends')} className="text-center border-0">
+                <p className="text-base font-bold text-primary leading-none">{followingTotal}</p>
                 <p className="text-xs text-muted mt-0.5">Following</p>
               </button>
-              <button onClick={() => navigate('/home/friends')} className="text-center">
-                <p className="text-base font-bold text-primary leading-none">—</p>
+              <button onClick={() => navigate('/home/friends')} className="text-center border-0">
+                <p className="text-base font-bold text-primary leading-none">{followersCount}</p>
                 <p className="text-xs text-muted mt-0.5">Followers</p>
               </button>
             </div>
