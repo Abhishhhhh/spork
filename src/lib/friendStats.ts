@@ -46,3 +46,16 @@ export function computeMostLoggedMealType(logs: FriendStatLog[]): string | null 
   }
   return best
 }
+
+/** Distinct days with at least one log in the last `days` calendar days. */
+export function computeWeeklyLoggedDays(logs: FriendStatLog[], days = 14): number {
+  const cutoff = new Date()
+  cutoff.setDate(cutoff.getDate() - days)
+  const cutoffStr = cutoff.toISOString().slice(0, 10)
+  const daySet = new Set<string>()
+  for (const log of logs) {
+    const day = log.created_at.slice(0, 10)
+    if (day >= cutoffStr) daySet.add(day)
+  }
+  return daySet.size
+}

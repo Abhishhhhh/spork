@@ -8,6 +8,7 @@ export interface Database {
           name: string
           photo_url: string | null
           calorie_goal: number | null
+          protein_goal: number | null
           privacy_default: 'public' | 'private'
           streak_count: number
           streak_last_log_date: string | null
@@ -20,6 +21,7 @@ export interface Database {
           name: string
           photo_url?: string | null
           calorie_goal?: number | null
+          protein_goal?: number | null
           privacy_default?: 'public' | 'private'
         }
         Update: {
@@ -28,6 +30,7 @@ export interface Database {
           name?: string
           photo_url?: string | null
           calorie_goal?: number | null
+          protein_goal?: number | null
           privacy_default?: 'public' | 'private'
           streak_count?: number
           streak_last_log_date?: string | null
@@ -59,6 +62,8 @@ export interface Database {
           photo_url: string | null
           name: string | null
           description: string | null
+          caption: string | null
+          satiety: 'loved_it' | 'good' | 'okay' | 'not_great' | null
           meal_type: 'breakfast' | 'lunch' | 'dinner' | 'snack'
           visibility: 'public' | 'private'
           calories_estimate: number | null

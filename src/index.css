@@ -1,9 +1,263 @@
 @import "tailwindcss";
 
+/* ══════════════════════════════════════════════════════════════
+   DESIGN TOKENS — LIGHT MODE
+   User-approved standard monochrome palette.
+   Background: full white (#FFFFFF).
+   Cards:      full white with subtle shadow/border when needed.
+   Text:       true black hierarchy.
+   ══════════════════════════════════════════════════════════════ */
 @theme {
-  --color-background: #faf7f0;
-  --color-primary: #231815;
-  --color-muted: #8b8680;
-  --color-border: #e8e2d8;
-  --color-error: #c0392b;
+  --color-background: #FFFFFF;   /* pure white page                         */
+  --color-surface:    #FFFFFF;   /* cards, inputs — also white              */
+  --color-primary:    #000000;   /* true black text + filled buttons        */
+  --color-secondary:  #1C1C1E;   /* near-black — headings, strong labels    */
+  --color-muted:      #6B6B6B;   /* grey — secondary text                   */
+  --color-border:     #E6E6E6;   /* neutral separator                       */
+  --color-error:      #FF3B30;   /* red                                     */
+}
+
+/* ══════════════════════════════════════════════════════════════
+   DARK MODE — .dark on <html>
+   Standard inverse monochrome palette:
+   Background: #000000
+   Cards:      #111111 / #1A1A1A depth stack
+   Text:       #FFFFFF / #B3B3B3
+   ══════════════════════════════════════════════════════════════ */
+.dark {
+  --color-background:          #000000;   /* OLED true black page            */
+  --color-surface:             #111111;   /* cards                           */
+  --color-surface-elevated:    #1A1A1A;   /* modal sheets                    */
+  --color-surface-overlay:     #242424;   /* dropdowns / top layer           */
+  --color-primary:             #FFFFFF;   /* pure white text + buttons       */
+  --color-secondary:           #F5F5F5;   /* strong labels                   */
+  --color-muted:               #B3B3B3;   /* secondary text                  */
+  --color-border:              #2A2A2A;   /* neutral dark separator          */
+  --color-error:               #FF453A;   /* bright red for dark mode        */
+}
+
+/* ══════════════════════════════════════════════════════════════
+   PINK THEME — .pink on <html>
+   Blush background, white cards, hot-pink primary.
+   Inspired by soft health/wellness app aesthetic.
+   ══════════════════════════════════════════════════════════════ */
+.pink {
+  --color-background:          #FFF0F5;   /* blush pink page                 */
+  --color-surface:             #FFFFFF;   /* white cards float on blush      */
+  --color-surface-elevated:    #FFE4EF;   /* tinted sheets                   */
+  --color-surface-overlay:     #FFD6E8;   /* deeper tint for overlays        */
+  --color-primary:             #E91E8C;   /* hot pink — buttons, headings    */
+  --color-secondary:           #AD1457;   /* deeper pink — strong labels     */
+  --color-muted:               #9E6478;   /* rose-grey secondary text        */
+  --color-border:              #F0C0D4;   /* soft pink separator             */
+  --color-error:               #FF3B30;   /* red (same as light)             */
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+  background-color: var(--color-background);
+  color: var(--color-primary);
+}
+
+html {
+  font-size: 14px;
+}
+
+body {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.42;
+  letter-spacing: -0.01em;
+  text-rendering: geometricPrecision;
+}
+
+/* ── Card shadow system ──────────────────────────────────────
+   Light: subtle floating shadow (replaces borders on cards)
+   Dark:  no shadow needed — dark surface reads off black page */
+:root {
+  --shadow-card:    0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-sheet:   0 4px 16px rgba(0,0,0,0.12), 0 1px 4px rgba(0,0,0,0.06);
+  --shadow-modal:   0 8px 32px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.08);
+}
+.dark {
+  --shadow-card:   none;
+  --shadow-sheet:  none;
+  --shadow-modal:  0 8px 32px rgba(0,0,0,0.6);
+}
+.pink {
+  --shadow-card:   0 2px 8px rgba(233,30,140,0.08), 0 1px 3px rgba(233,30,140,0.04);
+  --shadow-sheet:  0 4px 16px rgba(233,30,140,0.12), 0 1px 4px rgba(233,30,140,0.06);
+  --shadow-modal:  0 8px 32px rgba(233,30,140,0.18);
+}
+
+/* ── Smooth theme transition ────────────────────────────────── */
+*, *::before, *::after {
+  transition:
+    background-color 0.22s ease,
+    border-color     0.22s ease,
+    color            0.22s ease,
+    box-shadow       0.22s ease,
+    fill             0.18s ease,
+    stroke           0.18s ease;
+}
+/* Never transition animations */
+.animate-fade-in, .animate-slide-up, .animate-slide-down,
+.animate-pop, .animate-bounce-in, .animate-toast-in,
+.animate-toast-out, .skeleton { transition: none !important; }
+
+/* ── Tailwind v4 class-based dark/pink variants ─────────────── */
+@variant dark  (&:where(.dark,  .dark  *));
+@variant pink  (&:where(.pink,  .pink  *));
+
+/* ══════════════════════════════════════════════════════════════
+   KEYFRAMES
+   ══════════════════════════════════════════════════════════════ */
+
+@keyframes fade-in {
+  from { opacity: 0 }
+  to   { opacity: 1 }
+}
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(12px) }
+  to   { opacity: 1; transform: translateY(0) }
+}
+@keyframes slide-down {
+  from { opacity: 0; transform: translateY(-10px) }
+  to   { opacity: 1; transform: translateY(0) }
+}
+@keyframes pop {
+  0%   { transform: scale(1) }
+  40%  { transform: scale(1.35) }
+  70%  { transform: scale(0.9) }
+  100% { transform: scale(1) }
+}
+@keyframes shimmer {
+  0%   { background-position: -400px 0 }
+  100% { background-position:  400px 0 }
+}
+@keyframes bounce-in {
+  0%   { opacity: 0; transform: scale(0.6) translateY(20px) }
+  60%  { transform: scale(1.08) translateY(-4px) }
+  80%  { transform: scale(0.96) translateY(0) }
+  100% { opacity: 1; transform: scale(1) translateY(0) }
+}
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(12px) scale(0.95) }
+  to   { opacity: 1; transform: translateY(0) scale(1) }
+}
+@keyframes toast-out {
+  from { opacity: 1; transform: translateY(0) scale(1) }
+  to   { opacity: 0; transform: translateY(8px) scale(0.95) }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   ANIMATION UTILITIES
+   ══════════════════════════════════════════════════════════════ */
+.animate-fade-in    { animation: fade-in    0.2s  ease-out both }
+.animate-slide-up   { animation: slide-up   0.25s ease-out both }
+.animate-slide-down { animation: slide-down 0.2s  ease-out both }
+.animate-pop        { animation: pop        0.3s  ease-out both }
+.animate-bounce-in  { animation: bounce-in  0.45s cubic-bezier(.36,.07,.19,.97) both }
+.animate-toast-in   { animation: toast-in   0.22s ease-out both }
+.animate-toast-out  { animation: toast-out  0.18s ease-in  both }
+
+/* ══════════════════════════════════════════════════════════════
+   SKELETON — adapts to both modes
+   ══════════════════════════════════════════════════════════════ */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--color-border)  25%,
+    var(--color-surface) 50%,
+    var(--color-border)  75%
+  );
+  background-size: 800px 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+  border-radius: 0.75rem;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   CARD / SURFACE UTILITIES
+   Use .card instead of explicit border — shadow floats in light,
+   surface colour separates in dark.
+   ══════════════════════════════════════════════════════════════ */
+.card {
+  background-color: var(--color-surface);
+  box-shadow: var(--shadow-card);
+  border-radius: 1rem;         /* 16px soft mobile card radius */
+}
+.card-lg {
+  background-color: var(--color-surface);
+  box-shadow: var(--shadow-sheet);
+  border-radius: 1.25rem;      /* 20px — larger sheets */
+}
+
+.bg-surface          { background-color: var(--color-surface) }
+.bg-surface-elevated { background-color: var(--color-surface-elevated, var(--color-surface)) }
+.bg-surface-overlay  { background-color: var(--color-surface-overlay,  var(--color-surface)) }
+
+/* ══════════════════════════════════════════════════════════════
+   MACRO BAR COLOURS — visible in both modes
+   ══════════════════════════════════════════════════════════════ */
+.macro-protein { background-color: #3A7BD5 }
+.macro-carbs   { background-color: #F5A623 }
+.macro-fat     { background-color: #E07040 }
+
+.dark .macro-protein { background-color: #5E9EFF }
+.dark .macro-carbs   { background-color: #FFD060 }
+.dark .macro-fat     { background-color: #FF8C5A }
+
+.pink .macro-protein { background-color: #E91E8C }
+.pink .macro-carbs   { background-color: #F06292 }
+.pink .macro-fat     { background-color: #CE93D8 }
+
+/* ══════════════════════════════════════════════════════════════
+   INTERACTIVE BEHAVIOUR
+   ══════════════════════════════════════════════════════════════ */
+button:not(:disabled):not(.no-press),
+a:not(.no-press) {
+  transition: transform 0.1s ease, opacity 0.1s ease;
+}
+button:not(:disabled):not(.no-press) {
+  border: 1px solid var(--color-border);
+  background-clip: padding-box;
+}
+button:not(:disabled):not(.no-press):active,
+a:not(.no-press):active { transform: scale(0.96) }
+
+button:disabled { cursor: not-allowed }
+
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: 0.5rem;
+}
+
+.scroll-hide { scrollbar-width: none; -ms-overflow-style: none }
+.scroll-hide::-webkit-scrollbar { display: none }
+
+.page-enter { animation: fade-in 0.18s ease-out both }
+
+/* ══════════════════════════════════════════════════════════════
+   WARNING BANNERS
+   ══════════════════════════════════════════════════════════════ */
+.banner-warning {
+  background-color: #FFF8E6;
+  border-color: #F5D88A;
+}
+.dark .banner-warning {
+  background-color: #2A2310;
+  border-color: #6B5A1A;
+}
+.banner-warning-text      { color: #8B6200 }
+.dark .banner-warning-text { color: #FFD060 }
+
+/* ══════════════════════════════════════════════════════════════
+   PHOTO OVERLAYS — always dark semi-transparent
+   ══════════════════════════════════════════════════════════════ */
+.photo-pill {
+  background-color: rgba(0,0,0,0.5);
+  color: #fff;
 }

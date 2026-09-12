@@ -97,7 +97,7 @@ export default function MealDetail() {
       <button
         onClick={() => navigate(-1)}
         aria-label="Back"
-        className="mb-6 flex h-9 w-9 items-center justify-center rounded-full border border-border text-primary"
+        className="mb-6 flex h-9 w-9 items-center justify-center rounded-full bg-surface shadow-[var(--shadow-card)] text-primary"
       >
         ←
       </button>
@@ -114,7 +114,7 @@ export default function MealDetail() {
           {author.photo_url ? (
             <img src={author.photo_url} alt={author.name} className="h-8 w-8 rounded-full object-cover" />
           ) : (
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-border/60 text-xs text-muted">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-background text-xs text-muted">
               {author.name.charAt(0).toUpperCase()}
             </div>
           )}
@@ -130,18 +130,21 @@ export default function MealDetail() {
         </span>
       </div>
 
-      {log.name && <h1 className="mb-2 text-xl font-bold text-primary">{log.name}</h1>}
+      {log.name && <h1 className="mb-1 text-lg font-bold text-primary">{log.name}</h1>}
+      {(log as { caption?: string | null }).caption && (
+        <p className="mb-2 text-sm text-muted">{(log as { caption?: string | null }).caption}</p>
+      )}
       <p className="mb-4 text-sm capitalize text-muted">{log.meal_type}</p>
 
       <div className="mb-6 grid grid-cols-2 gap-3">
-        <div className="rounded-2xl border border-border p-3 text-center">
+        <div className="card p-3 text-center">
           <p className="text-xs text-muted">Calories</p>
-          <p className="text-lg font-bold text-primary">{log.calories_final ?? '—'}</p>
+          <p className="text-base font-bold text-primary">{log.calories_final ?? '—'}</p>
           <p className="text-xs text-muted">estimate: {log.calories_estimate ?? '—'}</p>
         </div>
-        <div className="rounded-2xl border border-border p-3 text-center">
+        <div className="card p-3 text-center">
           <p className="text-xs text-muted">Protein / Carbs / Fat</p>
-          <p className="text-lg font-bold text-primary">
+          <p className="text-base font-bold text-primary">
             {log.protein_final_g ?? '—'}g / {log.carbs_final_g ?? '—'}g / {log.fat_final_g ?? '—'}g
           </p>
         </div>
@@ -149,7 +152,7 @@ export default function MealDetail() {
 
       <button
         onClick={handleToggleLike}
-        className="mb-6 flex items-center gap-2 self-start rounded-full border border-border px-4 py-2 text-sm font-semibold text-primary"
+        className="mb-6 flex items-center gap-2 self-start rounded-full bg-surface shadow-[var(--shadow-card)] px-4 py-2 text-sm font-semibold text-primary"
       >
         <span>{displayLiked ? '🔥' : '🤍'}</span>
         <span>{displayLikeCount}</span>
@@ -184,7 +187,7 @@ export default function MealDetail() {
       </ul>
 
       {replyingTo && (
-        <div className="mb-2 flex items-center justify-between rounded-full bg-border/60 px-4 py-2 text-xs text-muted">
+        <div className="mb-2 flex items-center justify-between rounded-full bg-background px-4 py-2 text-xs text-muted">
           <span>Replying to a comment</span>
           <button onClick={() => setReplyingTo(null)} className="font-semibold text-primary">
             Cancel
@@ -197,7 +200,7 @@ export default function MealDetail() {
           value={commentBody}
           onChange={(e) => setCommentBody(e.target.value)}
           placeholder="Add a comment…"
-          className="flex-1 rounded-full bg-border/60 px-5 py-3 text-base text-primary placeholder:text-muted"
+          className="flex-1 rounded-full bg-surface border border-border/60 px-5 py-3 text-base text-primary placeholder:text-muted"
         />
         <button
           onClick={handleAddComment}
@@ -227,7 +230,7 @@ function CommentRow({
       {comment.author.photo_url ? (
         <img src={comment.author.photo_url} alt={comment.author.name} className="h-7 w-7 rounded-full object-cover" />
       ) : (
-        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-border/60 text-xs text-muted">
+        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-background text-xs text-muted">
           {comment.author.name.charAt(0).toUpperCase()}
         </div>
       )}

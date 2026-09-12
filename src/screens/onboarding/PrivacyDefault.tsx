@@ -14,15 +14,15 @@ export default function PrivacyDefault() {
   return (
     <div className="flex min-h-screen flex-col px-6 py-8">
       <button
-        onClick={() => navigate(-1)}
+        onClick={() => navigate('/onboarding/profile')}
         aria-label="Back"
-        className="mb-6 flex h-9 w-9 items-center justify-center rounded-full border border-border text-primary"
+        className="mb-6 flex h-9 w-9 items-center justify-center rounded-full bg-surface shadow-[var(--shadow-card)] text-primary"
       >
         ←
       </button>
-      <OnboardingProgress step={3} total={4} />
+      <OnboardingProgress step={2} total={3} />
 
-      <h1 className="mb-2 text-2xl font-bold text-primary">Who sees your meals?</h1>
+      <h1 className="mb-2 text-xl font-bold text-primary">Who sees your meals?</h1>
       <p className="mb-8 text-sm text-muted">Every log can still be flipped individually.</p>
 
       <div className="flex flex-col gap-3">
@@ -30,7 +30,7 @@ export default function PrivacyDefault() {
           <p className="font-semibold text-primary">Public by default</p>
           <p className="text-sm text-muted">Friends see your meals in their feed.</p>
         </button>
-        <button onClick={() => choose('private')} className="rounded-2xl border border-border p-4 text-left">
+        <button onClick={() => choose('private')} className="card p-4 text-left">
           <p className="font-semibold text-primary">Private by default</p>
           <p className="text-sm text-muted">Only you. Nothing shows up on the feed or in stats.</p>
         </button>

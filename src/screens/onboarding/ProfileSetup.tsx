@@ -56,25 +56,25 @@ export default function ProfileSetup() {
     }
 
     setProfile({ name: name.trim(), username: normalizedUsername, avatarFile })
-    navigate('/onboarding/goal')
+    navigate('/onboarding/privacy')
   }
 
   return (
     <div className="flex min-h-screen flex-col px-6 py-8">
       <button
-        onClick={() => navigate('/welcome')}
+        onClick={() => navigate('/onboarding/create-account')}
         aria-label="Back"
-        className="mb-6 flex h-9 w-9 items-center justify-center rounded-full border border-border text-primary"
+        className="mb-6 flex h-9 w-9 items-center justify-center rounded-full bg-surface shadow-[var(--shadow-card)] text-primary"
       >
         ←
       </button>
-      <OnboardingProgress step={1} total={4} />
+      <OnboardingProgress step={1} total={3} />
 
-      <h1 className="mb-2 text-2xl font-bold text-primary">Set up your profile</h1>
+      <h1 className="mb-2 text-xl font-bold text-primary">Set up your profile</h1>
       <p className="mb-8 text-sm text-muted">This is what friends see on the feed.</p>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <label className="mx-auto mb-2 flex h-24 w-24 cursor-pointer items-center justify-center overflow-hidden rounded-full bg-border/60 text-center text-sm text-muted">
+        <label className="mx-auto mb-2 flex h-24 w-24 cursor-pointer items-center justify-center overflow-hidden rounded-full bg-background border border-border text-center text-sm text-muted">
           {avatarPreviewUrl ? (
             <img src={avatarPreviewUrl} alt="" className="h-24 w-24 object-cover" />
           ) : (
@@ -91,13 +91,13 @@ export default function ProfileSetup() {
           placeholder="Your name"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          className="rounded-full bg-border/60 px-5 py-3 text-base text-primary placeholder:text-muted"
+          className="rounded-full bg-surface border border-border/60 px-5 py-3 text-base text-primary placeholder:text-muted"
         />
         <input
           placeholder="@ username"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
-          className="rounded-full bg-border/60 px-5 py-3 text-base text-primary placeholder:text-muted"
+          className="rounded-full bg-surface border border-border/60 px-5 py-3 text-base text-primary placeholder:text-muted"
         />
         {error && <p className="text-sm text-error">{error}</p>}
         <button

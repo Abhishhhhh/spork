@@ -3,12 +3,43 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+
+    <!-- ── PWA / Add to Home Screen ─────────────────────────────────────── -->
+    <!-- iOS "Add to Home Screen" meta tags -->
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Spork" />
+
+    <!-- iOS home screen icon (180×180 for iPhone Retina) -->
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
+    <!-- Android / Chrome theme colour -->
+    <meta name="theme-color" content="#000000" />
+
+    <!-- Standard favicon -->
     <link rel="icon" type="image/png" href="/pwa-192x192.png" />
-    <link rel="apple-touch-icon" href="/pwa-192x192.png" />
+
+    <!-- SEO basics -->
+    <meta name="description" content="Track meals, build streaks, share with friends." />
+    <meta name="application-name" content="Spork" />
+
     <title>Spork</title>
+
+    <!-- Apply theme BEFORE React mounts — eliminates flash of wrong theme -->
+    <script>
+      (function() {
+        var stored = localStorage.getItem('spork-theme');
+        var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        var theme = stored || (prefersDark ? 'dark' : 'dark');  /* default dark */
+        document.documentElement.classList.remove('dark', 'pink');
+        if (theme === 'dark') document.documentElement.classList.add('dark');
+        if (theme === 'pink') document.documentElement.classList.add('pink');
+        var colors = { light: '#FFFFFF', dark: '#000000', pink: '#FFF0F5' };
+        var meta = document.querySelector('meta[name="theme-color"]');
+        if (meta) meta.setAttribute('content', colors[theme] || '#000000');
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
