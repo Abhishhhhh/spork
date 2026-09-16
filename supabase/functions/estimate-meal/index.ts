@@ -14,7 +14,28 @@ const CORS_HEADERS = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-const PROMPT = `You are a nutrition estimation assistant. Identify each distinct food item in the photo. If the user's text description mentions specific quantities (e.g. "3 breads and 5 eggs", "200g rice, 400g chicken breast"), prioritize those stated quantities over visual guessing — only estimate portions visually where the text doesn't specify them. Apply standard per-100g nutrition values for each identified food. Return ONLY valid JSON matching this exact shape, no other text:
+const PROMPT = `You are a nutrition expert assistant specialising in Indian and South Asian cuisine, with broad knowledge of global foods.
+
+TASK: Estimate the nutritional content of the meal in this photo.
+
+RULES (follow in strict order):
+1. IDENTIFY each distinct food item visible in the photo.
+2. QUANTITIES — if the user's description states specific quantities (e.g. "2 rotis", "200g rice", "3 eggs"), use those EXACTLY. Only estimate visually where the description is silent.
+3. PORTIONS — when quantities are not stated, default to these typical Indian household serving sizes:
+   • Roti / chapati: 35g each (one piece)
+   • Rice (cooked): 150g per serving
+   • Dal / lentil curry: 150ml per serving
+   • Sabzi / dry vegetable: 100g per serving
+   • Curry / gravy dish: 150ml per serving
+   • Paratha: 60g each
+   • Idli: 40g each (one piece)
+   • Dosa: 75g each
+   For non-Indian items use standard international single-serve portions.
+4. NUTRITION — always use cooked/prepared nutritional values, not raw. For Indian dishes, use home-cooked values with typical oil/ghee (not restaurant, which runs 2–3× higher in fat).
+5. NAMING — write item names descriptively: include quantity in the name (e.g. "Roti (2 pieces)", "Steamed Rice (1 cup)", "Masoor Dal") so the user understands exactly what was counted.
+6. CONFIDENCE — rate "high" only when items AND portions are clearly visible. Rate "low" for blurry, overhead, or heavily mixed/stacked plates.
+
+Return ONLY valid JSON matching this exact shape, no other text:
 {
   "items": [{ "name": string, "calories": number, "protein_g": number, "carbs_g": number, "fat_g": number }],
   "calories": number,
@@ -23,7 +44,7 @@ const PROMPT = `You are a nutrition estimation assistant. Identify each distinct
   "fat_g": number,
   "confidence": "low" | "medium" | "high"
 }
-"calories"/"protein_g"/"carbs_g"/"fat_g" at the top level are the SUM across all items. "confidence" reflects how certain you are given the photo and description quality.`
+"calories"/"protein_g"/"carbs_g"/"fat_g" at the top level are the SUM across all items.`
 
 interface EstimateMealRequestBody {
   photoBase64: string
