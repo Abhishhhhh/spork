@@ -251,19 +251,19 @@ export default function ProfileScreen() {
             <div>
               <div className="flex items-center justify-between mb-1">
                 <p className="text-xs text-muted">Calories</p>
-                <p className={`text-xs font-semibold ${over ? 'text-error' : 'text-primary'}`}>
+                <p className={`text-xs font-semibold ${over ? 'text-error' : 'accent-teal'}`}>
                   {over ? `${(todayCal - calorieGoal).toLocaleString()} over` : `${(calorieGoal - todayCal).toLocaleString()} left`}
                 </p>
               </div>
               <div className="h-1.5 w-full rounded-full bg-border overflow-hidden">
-                <div className={`h-1.5 rounded-full ${over ? 'bg-error' : 'bg-primary'}`} style={{ width: `${Math.min(ringPct * 100, 100)}%` }} />
+                <div className={`h-1.5 rounded-full ${over ? 'bg-error' : 'macro-calories'}`} style={{ width: `${Math.min(ringPct * 100, 100)}%` }} />
               </div>
             </div>
             {proteinGoal > 0 && (
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <p className="text-xs text-muted">Protein</p>
-                  <p className="text-xs font-semibold text-primary">{todayProtein}g / {proteinGoal}g</p>
+                  <p className="text-xs font-semibold accent-pink">{todayProtein}g / {proteinGoal}g</p>
                 </div>
                 <div className="h-1.5 w-full rounded-full bg-border overflow-hidden">
                   <div className="h-1.5 rounded-full macro-protein" style={{ width: `${Math.min((todayProtein / proteinGoal) * 100, 100)}%` }} />
@@ -278,11 +278,11 @@ export default function ProfileScreen() {
       {/* ── Weekly stats ──────────────────────────────────────────── */}
       <div className="mx-5 mb-5 grid grid-cols-2 gap-3">
         <div className="card p-3 text-center">
-          <p className="text-xl font-bold text-primary">{weeklyDays}<span className="text-sm font-normal text-muted">/14</span></p>
+          <p className="font-display text-xl font-bold text-primary">{weeklyDays}<span className="text-sm font-normal text-muted">/14</span></p>
           <p className="text-xs text-muted">days logged</p>
         </div>
         <div className="card p-3 text-center">
-          <p className="text-xl font-bold text-primary">{weeklyAvg !== null ? weeklyAvg.toLocaleString() : '—'}</p>
+          <p className="font-display text-xl font-bold accent-teal">{weeklyAvg !== null ? weeklyAvg.toLocaleString() : '—'}</p>
           <p className="text-xs text-muted">avg kcal/day</p>
         </div>
       </div>

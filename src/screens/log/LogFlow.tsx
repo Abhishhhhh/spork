@@ -213,15 +213,15 @@ function CelebrationScreen({ data, onViewPost, onDone }: {
       <div className="w-full card p-4 text-left">
         <div className="flex items-center justify-between mb-3">
           <p className="text-sm font-semibold text-primary">Today's budget</p>
-          <p className="text-sm font-bold text-primary">{data.calories.toLocaleString()} kcal added</p>
+          <p className="text-sm font-bold accent-teal">{data.calories.toLocaleString()} kcal added</p>
         </div>
         <div className="h-3 w-full overflow-hidden rounded-full bg-border mb-2">
-          <div className="h-3 rounded-full bg-primary transition-all" style={{ width: `${pct}%` }} />
+          <div className="h-3 rounded-full macro-calories transition-all" style={{ width: `${pct}%` }} />
         </div>
         <div className="flex items-center justify-between">
           <p className="text-xs text-muted">{pct}% of daily goal</p>
           {data.remaining > 0 ? (
-            <p className="text-xs font-semibold text-primary">{data.remaining.toLocaleString()} kcal remaining</p>
+            <p className="text-xs font-semibold accent-teal">{data.remaining.toLocaleString()} kcal remaining</p>
           ) : (
             <p className="text-xs font-semibold text-error">Goal reached ✓</p>
           )}
@@ -232,7 +232,7 @@ function CelebrationScreen({ data, onViewPost, onDone }: {
       <div className="flex items-center gap-3">
         <span className="text-xl">🔥</span>
         <div className="text-left">
-          <p className="text-lg font-bold text-primary">{data.newStreakCount} day streak</p>
+          <p className="font-display text-lg font-bold text-primary">{data.newStreakCount} day streak</p>
           {isStreakMilestone && (
             <p className="text-xs text-muted">You've hit a milestone!</p>
           )}

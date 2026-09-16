@@ -1,7 +1,7 @@
 /**
  * StreakCalendar — shows the last `days` calendar days as a dot grid.
- * Filled dot = logged that day. Empty = missed.
- * Optionally tappable (onDayTap) — used by Profile screen to drill into that day's logs.
+ * Logged day dots use the teal tracking accent (matching design spec).
+ * Tappable when onDayTap is provided.
  */
 
 interface StreakCalendarProps {
@@ -38,17 +38,18 @@ export function StreakCalendar({ logDates, days = 14, onDayTap }: StreakCalendar
             type="button"
             onClick={() => onDayTap?.(dateStr)}
             disabled={!onDayTap}
-            className={`${base} ${onDayTap ? 'cursor-pointer' : 'cursor-default'}`}
+            className={`${base} ${onDayTap ? 'cursor-pointer' : 'cursor-default'} border-0`}
           >
             <span className="text-[9px] text-muted uppercase">{dayLabel}</span>
             <span
               className={`h-5 w-5 rounded-full text-[10px] flex items-center justify-center font-semibold ${
                 logged
-                  ? 'bg-primary text-background'
+                  ? 'text-background'        /* teal bg via inline style */
                   : isToday
                   ? 'border-2 border-primary text-primary'
                   : 'bg-background text-muted'
               }`}
+              style={logged ? { backgroundColor: 'var(--color-teal)' } : undefined}
             >
               {logged ? '●' : '○'}
             </span>

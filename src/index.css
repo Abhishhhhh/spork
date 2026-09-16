@@ -1,11 +1,37 @@
 @import "tailwindcss";
 
 /* ══════════════════════════════════════════════════════════════
+   FONTS
+   Fredoka Medium — headings, big numbers, display text
+   DM Sans Regular + SemiBold — body, labels, UI copy
+   ══════════════════════════════════════════════════════════════ */
+@font-face {
+  font-family: 'Fredoka';
+  src: url('/fonts/fredoka-medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'DM Sans';
+  src: url('/fonts/dm-regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'DM Sans';
+  src: url('/fonts/dm-semibold.ttf') format('truetype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ══════════════════════════════════════════════════════════════
    DESIGN TOKENS — LIGHT MODE
-   User-approved standard monochrome palette.
-   Background: full white (#FFFFFF).
-   Cards:      full white with subtle shadow/border when needed.
-   Text:       true black hierarchy.
+   Monochrome palette + teal/pink tracking accents.
+   Background: full white. Text: true black.
+   Teal → calories, days logged.  Pink → protein.
    ══════════════════════════════════════════════════════════════ */
 @theme {
   --color-background: #FFFFFF;   /* pure white page                         */
@@ -15,42 +41,46 @@
   --color-muted:      #6B6B6B;   /* grey — secondary text                   */
   --color-border:     #E6E6E6;   /* neutral separator                       */
   --color-error:      #FF3B30;   /* red                                     */
+  /* Tracking accent colours (light) */
+  --color-teal:       #087f78;   /* calories, days-logged dots, cal ring    */
+  --color-pink-acc:   #ad2f6d;   /* protein bar, protein number             */
 }
 
 /* ══════════════════════════════════════════════════════════════
    DARK MODE — .dark on <html>
-   Standard inverse monochrome palette:
-   Background: #000000
-   Cards:      #111111 / #1A1A1A depth stack
-   Text:       #FFFFFF / #B3B3B3
    ══════════════════════════════════════════════════════════════ */
 .dark {
-  --color-background:          #000000;   /* OLED true black page            */
-  --color-surface:             #111111;   /* cards                           */
-  --color-surface-elevated:    #1A1A1A;   /* modal sheets                    */
-  --color-surface-overlay:     #242424;   /* dropdowns / top layer           */
-  --color-primary:             #FFFFFF;   /* pure white text + buttons       */
-  --color-secondary:           #F5F5F5;   /* strong labels                   */
-  --color-muted:               #B3B3B3;   /* secondary text                  */
-  --color-border:              #2A2A2A;   /* neutral dark separator          */
-  --color-error:               #FF453A;   /* bright red for dark mode        */
+  --color-background:          #000000;
+  --color-surface:             #111111;
+  --color-surface-elevated:    #1A1A1A;
+  --color-surface-overlay:     #242424;
+  --color-primary:             #FFFFFF;
+  --color-secondary:           #F5F5F5;
+  --color-muted:               #B3B3B3;
+  --color-border:              #2A2A2A;
+  --color-error:               #FF453A;
+  /* Tracking accents brighten in dark for contrast */
+  --color-teal:                #42e8d4;
+  --color-pink-acc:            #ff77b8;
 }
 
 /* ══════════════════════════════════════════════════════════════
    PINK THEME — .pink on <html>
    Blush background, white cards, hot-pink primary.
-   Inspired by soft health/wellness app aesthetic.
    ══════════════════════════════════════════════════════════════ */
 .pink {
-  --color-background:          #FFF0F5;   /* blush pink page                 */
-  --color-surface:             #FFFFFF;   /* white cards float on blush      */
-  --color-surface-elevated:    #FFE4EF;   /* tinted sheets                   */
-  --color-surface-overlay:     #FFD6E8;   /* deeper tint for overlays        */
-  --color-primary:             #E91E8C;   /* hot pink — buttons, headings    */
-  --color-secondary:           #AD1457;   /* deeper pink — strong labels     */
-  --color-muted:               #9E6478;   /* rose-grey secondary text        */
-  --color-border:              #F0C0D4;   /* soft pink separator             */
-  --color-error:               #FF3B30;   /* red (same as light)             */
+  --color-background:          #FFF0F5;
+  --color-surface:             #FFFFFF;
+  --color-surface-elevated:    #FFE4EF;
+  --color-surface-overlay:     #FFD6E8;
+  --color-primary:             #E91E8C;
+  --color-secondary:           #AD1457;
+  --color-muted:               #9E6478;
+  --color-border:              #F0C0D4;
+  --color-error:               #FF3B30;
+  /* In pink theme accents keep their own identity */
+  --color-teal:                #087f78;
+  --color-pink-acc:            #E91E8C;
 }
 
 html,
@@ -67,15 +97,29 @@ html {
 
 body {
   margin: 0;
+  font-family: 'DM Sans', system-ui, sans-serif;
   font-size: 0.95rem;
   line-height: 1.42;
   letter-spacing: -0.01em;
   text-rendering: geometricPrecision;
+  -webkit-font-smoothing: antialiased;
 }
 
-/* ── Card shadow system ──────────────────────────────────────
-   Light: subtle floating shadow (replaces borders on cards)
-   Dark:  no shadow needed — dark surface reads off black page */
+/* ── Fredoka for headings and display numbers ────────────────── */
+h1, h2, h3, h4 {
+  font-family: 'Fredoka', system-ui, sans-serif;
+  font-weight: 500;
+  letter-spacing: -0.025em;
+}
+
+/* Utility class — use on any big stat number */
+.font-display {
+  font-family: 'Fredoka', system-ui, sans-serif;
+  font-weight: 500;
+  letter-spacing: -0.025em;
+}
+
+/* ── Card shadow system ──────────────────────────────────────── */
 :root {
   --shadow-card:    0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
   --shadow-sheet:   0 4px 16px rgba(0,0,0,0.12), 0 1px 4px rgba(0,0,0,0.06);
@@ -92,7 +136,7 @@ body {
   --shadow-modal:  0 8px 32px rgba(233,30,140,0.18);
 }
 
-/* ── Smooth theme transition ────────────────────────────────── */
+/* ── Smooth theme transition ─────────────────────────────────── */
 *, *::before, *::after {
   transition:
     background-color 0.22s ease,
@@ -107,14 +151,13 @@ body {
 .animate-pop, .animate-bounce-in, .animate-toast-in,
 .animate-toast-out, .skeleton { transition: none !important; }
 
-/* ── Tailwind v4 class-based dark/pink variants ─────────────── */
+/* ── Tailwind v4 class-based dark/pink variants ──────────────── */
 @variant dark  (&:where(.dark,  .dark  *));
 @variant pink  (&:where(.pink,  .pink  *));
 
 /* ══════════════════════════════════════════════════════════════
    KEYFRAMES
    ══════════════════════════════════════════════════════════════ */
-
 @keyframes fade-in {
   from { opacity: 0 }
   to   { opacity: 1 }
@@ -164,7 +207,7 @@ body {
 .animate-toast-out  { animation: toast-out  0.18s ease-in  both }
 
 /* ══════════════════════════════════════════════════════════════
-   SKELETON — adapts to both modes
+   SKELETON
    ══════════════════════════════════════════════════════════════ */
 .skeleton {
   background: linear-gradient(
@@ -180,38 +223,47 @@ body {
 
 /* ══════════════════════════════════════════════════════════════
    CARD / SURFACE UTILITIES
-   Use .card instead of explicit border — shadow floats in light,
-   surface colour separates in dark.
    ══════════════════════════════════════════════════════════════ */
 .card {
   background-color: var(--color-surface);
   box-shadow: var(--shadow-card);
-  border-radius: 1rem;         /* 16px soft mobile card radius */
+  border-radius: 1rem;
 }
 .card-lg {
   background-color: var(--color-surface);
   box-shadow: var(--shadow-sheet);
-  border-radius: 1.25rem;      /* 20px — larger sheets */
+  border-radius: 1.25rem;
 }
-
 .bg-surface          { background-color: var(--color-surface) }
 .bg-surface-elevated { background-color: var(--color-surface-elevated, var(--color-surface)) }
 .bg-surface-overlay  { background-color: var(--color-surface-overlay,  var(--color-surface)) }
 
 /* ══════════════════════════════════════════════════════════════
-   MACRO BAR COLOURS — visible in both modes
+   TRACKING ACCENT COLOURS
+   Teal → calories ring, calories bar, calories number, calendar dots
+   Pink → protein bar, protein number
+   These are the ONLY places colour is used in the UI.
+   Everything else stays black/white/neutral.
    ══════════════════════════════════════════════════════════════ */
-.macro-protein { background-color: #3A7BD5 }
-.macro-carbs   { background-color: #F5A623 }
-.macro-fat     { background-color: #E07040 }
 
-.dark .macro-protein { background-color: #5E9EFF }
+/* Calorie ring fill */
+.accent-teal  { color: var(--color-teal) }
+.accent-pink  { color: var(--color-pink-acc) }
+
+/* Progress bars */
+.macro-calories { background-color: var(--color-teal) }
+.macro-protein  { background-color: var(--color-pink-acc) }
+.macro-carbs    { background-color: #F5A623 }
+.macro-fat      { background-color: #E07040 }
+
 .dark .macro-carbs   { background-color: #FFD060 }
 .dark .macro-fat     { background-color: #FF8C5A }
 
-.pink .macro-protein { background-color: #E91E8C }
 .pink .macro-carbs   { background-color: #F06292 }
 .pink .macro-fat     { background-color: #CE93D8 }
+
+/* Calendar logged-day dots */
+.cal-dot-logged { background-color: var(--color-teal) }
 
 /* ══════════════════════════════════════════════════════════════
    INTERACTIVE BEHAVIOUR

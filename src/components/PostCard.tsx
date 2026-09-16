@@ -157,25 +157,25 @@ export function PostCard({ item, index = 0, viewerId, optimisticLiked, likeAnima
           {calories != null && (
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-wide text-muted leading-none mb-0.5">Calories</p>
-              <p className="text-sm font-bold text-primary">{Number(calories).toLocaleString()}</p>
+              <p className="font-display text-sm font-bold accent-teal">{Number(calories).toLocaleString()}</p>
             </div>
           )}
           {proteinG != null && (
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-wide text-muted leading-none mb-0.5">Protein</p>
-              <p className="text-sm font-bold text-primary">{proteinG}g</p>
+              <p className="font-display text-sm font-bold accent-pink">{proteinG}g</p>
             </div>
           )}
           {carbsG != null && (
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-wide text-muted leading-none mb-0.5">Carbs</p>
-              <p className="text-sm font-bold text-primary">{carbsG}g</p>
+              <p className="font-display text-sm font-bold text-primary">{carbsG}g</p>
             </div>
           )}
           {fatG != null && (
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-wide text-muted leading-none mb-0.5">Fat</p>
-              <p className="text-sm font-bold text-primary">{fatG}g</p>
+              <p className="font-display text-sm font-bold text-primary">{fatG}g</p>
             </div>
           )}
           {calories == null && proteinG == null && (
