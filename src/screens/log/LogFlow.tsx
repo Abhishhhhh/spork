@@ -11,6 +11,7 @@ import { useSession } from '../../hooks/useSession'
 import { useCurrentUser } from '../../hooks/useCurrentUser'
 import { useTodayStats } from '../../hooks/useTodayStats'
 import { computeNextStreak, getEffectiveStreak } from '../../lib/streak'
+import { hapticSuccess, hapticCelebration, hapticError } from '../../lib/haptics'
 
 type Step = 'capture' | 'loading' | 'edit' | 'celebration'
 
@@ -88,6 +89,7 @@ export default function LogFlow() {
         new Date(),
       )
       const wasStreakBroken = getEffectiveStreak(user.streak_count, user.streak_last_log_date, new Date()) === 0
+      const isStreakMilestone = [7, 30, 100].includes(newStreakCount)
 
       // Invalidate all relevant queries
       queryClient.invalidateQueries({ queryKey: ['currentUser'] })
@@ -111,7 +113,11 @@ export default function LogFlow() {
       })
       reset()
       setStep('celebration')
+      // Haptic — milestone gets celebration pulse, normal post gets success tap
+      if (isStreakMilestone) hapticCelebration()
+      else hapticSuccess()
     } catch {
+      hapticError()
       setPostError("Couldn't post — check your connection and try again.")
     } finally {
       setPosting(false)

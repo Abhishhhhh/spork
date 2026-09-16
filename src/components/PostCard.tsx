@@ -8,6 +8,7 @@ import { getEffectiveStreak } from '../lib/streak'
 import { ShareModal } from './ShareModal'
 import { FeedImage } from './FeedImage'
 import { useToast } from './Toast'
+import { hapticLight } from '../lib/haptics'
 import type { FeedItem } from '../hooks/useFeed'
 
 interface PostCardProps {
@@ -61,6 +62,11 @@ export function PostCard({ item, index = 0, viewerId, optimisticLiked, likeAnima
       onSuccess: () => toast('Post deleted'),
       onError:   () => toast('Could not delete — try again', 'error'),
     })
+  }
+
+  function handleLikeWithHaptic() {
+    hapticLight()
+    onLike(log.id, log.user_id, displayLiked)
   }
 
   return (
@@ -190,7 +196,7 @@ export function PostCard({ item, index = 0, viewerId, optimisticLiked, likeAnima
         {/* ── Interaction bar ─────────────────────────────── */}
         <div className="flex items-center gap-5 px-4 pt-2.5 pb-2">
           {/* Like */}
-          <button onClick={() => onLike(log.id, log.user_id, displayLiked)} className="flex items-center gap-1.5 text-sm">
+          <button onClick={handleLikeWithHaptic} className="flex items-center gap-1.5 text-sm">
             <svg viewBox="0 0 24 24" fill={displayLiked ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"
               className={`h-5 w-5 ${displayLiked ? 'text-primary' : 'text-muted'} ${likeAnimating ? 'animate-pop' : ''}`}>
               <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3z" />
