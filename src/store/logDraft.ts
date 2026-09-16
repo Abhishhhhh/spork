@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import type { ParsedEstimate } from '../lib/parseEstimate'
+import { generateMealName } from '../lib/generateMealName'
 
 export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack'
 export type Visibility = 'public' | 'private'
@@ -11,17 +12,20 @@ export interface EstimateResult {
 }
 
 /**
- * Pulls a sensible default meal name from the AI's items array.
- * Uses the first item name, falling back to '' on any unexpected shape.
+ * Pulls a fun default meal name from the AI's items array using
+ * generateMealName. Falls back to '' when no items exist so manual
+ * logging still starts with an empty field.
  */
-function defaultMealNameFromRaw(raw: unknown): string {
-  if (typeof raw !== 'object' || raw === null) return ''
-  const items = (raw as Record<string, unknown>).items
-  if (!Array.isArray(items) || items.length === 0) return ''
-  const first = items[0]
-  if (typeof first !== 'object' || first === null) return ''
-  const name = (first as Record<string, unknown>).name
-  return typeof name === 'string' ? name : ''
+function defaultMealNameFromRaw(raw: unknown, mealType: MealType): string {
+  const items = (() => {
+    if (typeof raw !== 'object' || raw === null) return []
+    const arr = (raw as Record<string, unknown>).items
+    if (!Array.isArray(arr)) return []
+    return arr.filter((i): i is { name: string } =>
+      typeof i === 'object' && i !== null && typeof (i as { name?: unknown }).name === 'string'
+    )
+  })()
+  return generateMealName(items, mealType)
 }
 
 interface LogDraftState {
@@ -82,7 +86,7 @@ export const useLogDraftStore = create<LogDraftState>((set, get) => ({
       mealType,
       visibility,
       portionMultiplier: 1,
-      mealName: defaultMealNameFromRaw(estimate?.raw),
+      mealName: defaultMealNameFromRaw(estimate?.raw, mealType),
       calories: estimate?.parsed.calories ?? null,
       proteinG: estimate?.parsed.protein_g ?? null,
       carbsG: estimate?.parsed.carbs_g ?? null,

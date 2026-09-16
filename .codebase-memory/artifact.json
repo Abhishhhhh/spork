@@ -1,11 +1,11 @@
 {
     "schema_version": 2,
-    "commit": "5123ee4263c3a5f3bd7cc9c9da7b1354c27cc442",
-    "indexed_at": "2026-09-04T08:39:03Z",
+    "commit": "71bea39ed72006feed753f507b4f542f4fea19d7",
+    "indexed_at": "2026-09-16T09:28:10Z",
     "project": "Spork",
-    "nodes": 726,
-    "edges": 1688,
-    "original_size": 3211264,
-    "compressed_size": 542566,
+    "nodes": 816,
+    "edges": 2052,
+    "original_size": 3342336,
+    "compressed_size": 619665,
     "compression_level": 9
 }

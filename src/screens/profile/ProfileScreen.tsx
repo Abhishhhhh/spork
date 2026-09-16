@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { useCurrentUser } from '../../hooks/useCurrentUser'
@@ -35,7 +35,6 @@ export default function ProfileScreen() {
   const updateProfile = useUpdateProfile()
   const toggleLike    = useToggleLike()
   const { toast }     = useToast()
-  const avatarInputRef = useRef<HTMLInputElement>(null)
   const [uploadingAvatar, setUploadingAvatar] = useState(false)
 
   const [selectedDay, setSelectedDay] = useState<string | null>(null)
@@ -164,22 +163,27 @@ export default function ProfileScreen() {
       <div className="px-5 pb-4">
         <div className="flex items-center gap-5">
 
-          {/* Avatar — tappable to change */}
-          <button
-            onClick={() => avatarInputRef.current?.click()}
-            className="relative shrink-0 rounded-full border-0"
-            aria-label="Change profile photo"
-          >
-            {user.photo_url ? (
-              <img src={user.photo_url} alt={user.name}
-                className="h-20 w-20 rounded-full object-cover border border-border/40" />
-            ) : (
-              <div className="flex h-20 w-20 items-center justify-center rounded-full bg-surface border border-border/40 text-2xl font-bold text-muted">
-                {user.name.charAt(0).toUpperCase()}
-              </div>
-            )}
+          {/* Avatar — hidden input label, camera badge overlay */}
+          <div className="relative shrink-0">
+            <label
+              htmlFor="avatar-upload"
+              className="block cursor-pointer"
+              aria-label="Change profile photo"
+            >
+              {user.photo_url ? (
+                <img src={user.photo_url} alt={user.name}
+                  className="h-20 w-20 rounded-full object-cover border border-border/40" />
+              ) : (
+                <div className="flex h-20 w-20 items-center justify-center rounded-full bg-surface border border-border/40 text-2xl font-bold text-muted">
+                  {user.name.charAt(0).toUpperCase()}
+                </div>
+              )}
+            </label>
             {/* Camera badge */}
-            <span className="absolute bottom-0 right-0 flex h-6 w-6 items-center justify-center rounded-full bg-primary border-2 border-background">
+            <label
+              htmlFor="avatar-upload"
+              className="absolute bottom-0 right-0 flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-primary border-2 border-background"
+            >
               {uploadingAvatar ? (
                 <svg className="h-3 w-3 animate-spin text-background" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                   <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4" />
@@ -190,15 +194,15 @@ export default function ProfileScreen() {
                   <circle cx="12" cy="13" r="4" />
                 </svg>
               )}
-            </span>
+            </label>
             <input
-              ref={avatarInputRef}
+              id="avatar-upload"
               type="file"
               accept="image/*"
               className="sr-only"
               onChange={handleAvatarChange}
             />
-          </button>
+          </div>
 
           <div className="flex-1 min-w-0">
             {/* Editable name — border-0 removes the global button border */}
