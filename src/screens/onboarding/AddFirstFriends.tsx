@@ -155,8 +155,8 @@ export default function AddFirstFriends() {
       <li key={user.id} className="choice">
         <Avatar name={user.name} photoUrl={user.photo_url} />
         <span className="min-w-0 flex-1">
-          <b>{user.name}</b>
-          <small className="truncate">@{user.username} · {desc}</small>
+          <b>@{user.username}</b>
+          <small className="truncate">{user.name} · {desc}</small>
         </span>
         <button
           type="button"
