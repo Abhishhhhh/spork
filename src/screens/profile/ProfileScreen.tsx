@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { useCurrentUser } from '../../hooks/useCurrentUser'
@@ -37,6 +37,7 @@ export default function ProfileScreen() {
   const toggleLike    = useToggleLike()
   const { toast }     = useToast()
   const [uploadingAvatar, setUploadingAvatar] = useState(false)
+  const avatarInputRef = useRef<HTMLInputElement>(null)
 
   const [selectedDay, setSelectedDay] = useState<string | null>(null)
   const { data: dayLogs = [] }        = useLogsForDay(selectedDay ?? '')
@@ -70,17 +71,24 @@ export default function ProfileScreen() {
         .from('avatars').upload(path, file, { upsert: true })
       if (uploadErr) throw uploadErr
 
+      // Same storage path every time (upsert), so bust the cache or the
+      // browser/CDN keeps showing the previous photo.
       const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(path)
+      const photoUrl = `${urlData.publicUrl}?v=${Date.now()}`
       const { error: updateErr } = await supabase
-        .from('users').update({ photo_url: urlData.publicUrl }).eq('id', session.user.id)
+        .from('users').update({ photo_url: photoUrl }).eq('id', session.user.id)
       if (updateErr) throw updateErr
 
       queryClient.invalidateQueries({ queryKey: ['currentUser'] })
+      queryClient.invalidateQueries({ queryKey: ['feed'] })
+      queryClient.invalidateQueries({ queryKey: ['myPosts'] })
       toast('Photo updated ✓')
-    } catch {
-      toast('Could not update photo — try again', 'error')
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'try again'
+      toast(`Could not update photo — ${msg}`, 'error')
     } finally {
       setUploadingAvatar(false)
+      e.target.value = ''
     }
   }
 
@@ -130,21 +138,46 @@ export default function ProfileScreen() {
       <div className="topbar">
         <span className="clay">@{user.username}</span>
         <span className="flex items-center gap-2.5">
-          <button type="button" onClick={() => navigate('/home/friends')} aria-label="Friends" className="circle sm">♧</button>
-          <button type="button" onClick={() => navigate('/home/rewards')} aria-label="Streaks and rewards" className="circle sm">✳</button>
-          <button type="button" onClick={() => navigate('/home/settings')} aria-label="Settings" className="circle sm">⚙</button>
+          {/* Add friends — Instagram-style person+plus */}
+          <button type="button" onClick={() => navigate('/home/friends')} aria-label="Find friends" className="circle sm">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="10" cy="8" r="3.5" />
+              <path d="M3.5 20a6.5 6.5 0 0 1 13 0" />
+              <path d="M19 8v6M16 11h6" />
+            </svg>
+          </button>
+          <button type="button" onClick={() => navigate('/home/rewards')} aria-label="Streaks and rewards" className="circle sm" style={{ fontSize: 15 }}>🔥</button>
+          <button type="button" onClick={() => navigate('/home/settings')} aria-label="Settings" className="circle sm">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="3" />
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+            </svg>
+          </button>
         </span>
       </div>
 
       {/* ── Identity row ─────────────────────────────────────────── */}
       <div className="flex items-center gap-3.5">
-        <label htmlFor="avatar-upload" className="relative cursor-pointer" aria-label="Change profile photo">
+        <button
+          type="button"
+          onClick={() => avatarInputRef.current?.click()}
+          disabled={uploadingAvatar}
+          aria-label="Change profile photo"
+          className="no-press relative flex-none"
+        >
           <Avatar name={user.name} photoUrl={user.photo_url} size="big" />
-          {uploadingAvatar && (
-            <span className="absolute inset-0 grid place-items-center rounded-[26px] bg-black/40 text-white">…</span>
-          )}
-          <input id="avatar-upload" type="file" accept="image/*" className="sr-only" onChange={handleAvatarChange} />
-        </label>
+          <span className="absolute -bottom-1 -right-1 grid h-6 w-6 place-items-center rounded-full bg-ink text-on-ink" style={{ boxShadow: '0 0 0 3px var(--color-canvas)' }}>
+            {uploadingAvatar ? (
+              <span className="text-[10px]">…</span>
+            ) : (
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 12, height: 12 }}>
+                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                <circle cx="12" cy="13" r="4" />
+              </svg>
+            )}
+          </span>
+        </button>
+        <input ref={avatarInputRef} id="avatar-upload" type="file" accept="image/*" className="sr-only" onChange={handleAvatarChange} />
 
         <span className="min-w-0 flex-1">
           {editingName ? (
