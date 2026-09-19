@@ -2,20 +2,21 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useOnboardingStore, type TrackedBefore } from '../../store/onboardingStore'
 import { OnboardingProgress } from '../../components/OnboardingProgress'
+import { TopBar } from '../../components/TopBar'
 
 const TRACKED_OPTIONS: { value: TrackedBefore; icon: string; label: string; sub: string }[] = [
-  { value: 'yes',   icon: '✅', label: 'Yes',          sub: 'I know the drill' },
-  { value: 'tried', icon: '🤔', label: 'Tried briefly', sub: 'Gave up or lost track' },
-  { value: 'no',    icon: '👋', label: 'Never',         sub: 'This is new for me' },
+  { value: 'yes',   icon: '✓', label: 'Yes',           sub: 'I know the drill' },
+  { value: 'tried', icon: '◌', label: 'Tried briefly', sub: 'Gave up or lost track' },
+  { value: 'no',    icon: '✳', label: 'Never',         sub: 'This is new for me' },
 ]
 
 const CHALLENGE_OPTIONS = [
-  { id: 'consistency',  label: 'Staying consistent',  icon: '📅' },
-  { id: 'logging_time', label: 'Logging feels tedious', icon: '⏱️' },
-  { id: 'social',       label: 'No accountability',   icon: '👥' },
-  { id: 'accuracy',     label: 'Estimating portions', icon: '🔢' },
-  { id: 'motivation',   label: 'Losing motivation',   icon: '🔋' },
-  { id: 'complexity',   label: 'Too complicated',     icon: '🧩' },
+  { id: 'consistency',  label: 'Staying consistent',    icon: '▦' },
+  { id: 'logging_time', label: 'Logging feels tedious', icon: '◷' },
+  { id: 'social',       label: 'No accountability',     icon: '♧' },
+  { id: 'accuracy',     label: 'Estimating portions',   icon: '№' },
+  { id: 'motivation',   label: 'Losing motivation',     icon: '↗' },
+  { id: 'complexity',   label: 'Too complicated',       icon: '✧' },
 ]
 
 export default function Experience() {
@@ -40,66 +41,54 @@ export default function Experience() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col px-6 py-8">
-      <button onClick={() => navigate('/onboarding/food')} aria-label="Back"
-        className="mb-6 flex h-9 w-9 items-center justify-center rounded-full bg-surface shadow-[var(--shadow-card)] text-primary">←</button>
+    <div className="screen min-h-screen">
+      <TopBar title="Your plan" back="/onboarding/food" />
       <OnboardingProgress step={5} total={6} />
 
-      <h1 className="mb-1 text-xl font-bold text-primary">Your experience</h1>
-      <p className="mb-8 text-sm text-muted">Helps us set the right expectations for you.</p>
+      <h2>Your experience</h2>
+      <p className="muted">Helps us set the right expectations for you</p>
 
-      <div className="flex flex-col gap-6">
-
-        {/* Tracked before */}
-        <div>
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">
-            Have you tracked calories before?
-          </p>
-          <div className="flex flex-col gap-2">
-            {TRACKED_OPTIONS.map((opt) => (
+      {/* Tracked before */}
+      <div className="section">
+        <span className="caps">Have you tracked calories before?</span>
+        <div className="list">
+          {TRACKED_OPTIONS.map((opt) => {
+            const sel = tracked === opt.value
+            return (
               <button key={opt.value} type="button" onClick={() => setTracked(opt.value)}
-                className={`flex items-center gap-3 rounded-xl px-4 py-3 text-left transition-colors ${
-                  tracked === opt.value
-                    ? 'bg-primary text-background'
-                    : 'bg-surface/80 text-primary'}`}>
-                <span className="text-lg w-7 text-center">{opt.icon}</span>
-                <div>
-                  <p className="text-sm font-semibold">{opt.label}</p>
-                  <p className={`text-xs ${tracked === opt.value ? 'text-background/70' : 'text-muted'}`}>{opt.sub}</p>
-                </div>
+                className={`choice ${sel ? 'sel' : ''}`} aria-pressed={sel}>
+                <span className="icon">{opt.icon}</span>
+                <span className="min-w-0 flex-1">
+                  <b>{opt.label}</b>
+                  <small>{opt.sub}</small>
+                </span>
+                {sel && <span className="check">✓</span>}
               </button>
-            ))}
-          </div>
+            )
+          })}
         </div>
-
-        {/* Challenges — multi-select, optional */}
-        <div>
-          <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted">
-            Biggest challenges
-            <span className="ml-1 normal-case font-normal">(pick all that apply)</span>
-          </p>
-          <div className="grid grid-cols-2 gap-2 mt-2">
-            {CHALLENGE_OPTIONS.map((opt) => {
-              const selected = challenges.includes(opt.id)
-              return (
-                <button key={opt.id} type="button" onClick={() => toggleChallenge(opt.id)}
-                  className={`flex items-center gap-2 rounded-xl px-3 py-2.5 text-left transition-colors ${
-                    selected ? 'bg-primary text-background' : 'bg-surface/80 text-primary'}`}>
-                  <span className="text-base">{opt.icon}</span>
-                  <span className="text-xs font-medium leading-tight">{opt.label}</span>
-                </button>
-              )
-            })}
-          </div>
-        </div>
-
-        {error && <p className="text-sm text-error">{error}</p>}
-
-        <button onClick={handleContinue}
-          className="rounded-full bg-primary py-3 text-base font-semibold text-background">
-          Continue
-        </button>
       </div>
+
+      {/* Challenges — multi-select, optional */}
+      <div className="section">
+        <span className="caps">Biggest challenges · pick all that apply</span>
+        <div className="tile-grid">
+          {CHALLENGE_OPTIONS.map((opt) => {
+            const selected = challenges.includes(opt.id)
+            return (
+              <button key={opt.id} type="button" onClick={() => toggleChallenge(opt.id)}
+                className={`tile compact ${selected ? 'sel' : ''}`} aria-pressed={selected}>
+                <span className="icon">{opt.icon}</span>
+                <b>{opt.label}</b>
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      {error && <p className="error-text">{error}</p>}
+
+      <button type="button" onClick={handleContinue} className="btn">Continue</button>
     </div>
   )
 }

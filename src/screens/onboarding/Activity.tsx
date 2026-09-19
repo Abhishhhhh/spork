@@ -12,18 +12,19 @@ import {
 } from '../../lib/calorieGoal'
 import { useOnboardingStore } from '../../store/onboardingStore'
 import { OnboardingProgress } from '../../components/OnboardingProgress'
+import { TopBar } from '../../components/TopBar'
 
 const JOB_OPTIONS: { value: JobActivity; icon: string; label: string; sub: string }[] = [
-  { value: 'desk',     icon: '💻', label: 'Desk job',      sub: 'Sitting most of the day' },
-  { value: 'on_feet',  icon: '🚶', label: 'On my feet',    sub: 'Retail, teaching, service' },
-  { value: 'physical', icon: '🔨', label: 'Physical job',  sub: 'Manual labour, construction' },
+  { value: 'desk',     icon: '▣', label: 'Desk job',      sub: 'Sitting most of the day' },
+  { value: 'on_feet',  icon: '♧', label: 'On my feet',    sub: 'Retail, teaching, service' },
+  { value: 'physical', icon: '✳', label: 'Physical job',  sub: 'Manual labour, construction' },
 ]
 
 const WORKOUT_TYPE_OPTIONS: { value: WorkoutType; icon: string; label: string }[] = [
-  { value: 'none',     icon: '🛋️',  label: 'No workouts' },
-  { value: 'cardio',   icon: '🏃',  label: 'Cardio' },
-  { value: 'strength', icon: '🏋️',  label: 'Strength' },
-  { value: 'mixed',    icon: '🤸',  label: 'Mixed' },
+  { value: 'none',     icon: '◌', label: 'No workouts' },
+  { value: 'cardio',   icon: '↗', label: 'Cardio' },
+  { value: 'strength', icon: '✦', label: 'Strength' },
+  { value: 'mixed',    icon: '∞', label: 'Mixed' },
 ]
 
 const DAYS = [0, 1, 2, 3, 4, 5, 6, 7]
@@ -69,104 +70,79 @@ export default function Activity() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col px-6 py-8">
-      <button onClick={() => navigate('/onboarding/goal')} aria-label="Back"
-        className="mb-6 flex h-9 w-9 items-center justify-center rounded-full bg-surface shadow-[var(--shadow-card)] text-primary">←</button>
+    <div className="screen min-h-screen">
+      <TopBar title="Your plan" back="/onboarding/goal" />
       <OnboardingProgress step={3} total={6} />
 
-      <h1 className="mb-1 text-xl font-bold text-primary">Your activity</h1>
-      <p className="mb-8 text-sm text-muted">Tells us how many calories you actually burn daily.</p>
+      <h2>Your activity</h2>
+      <p className="muted">Tells us how many calories you actually burn daily</p>
 
-      <div className="flex flex-col gap-6">
-
-        {/* Daily job activity */}
-        <div>
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">Daily activity level</p>
-          <div className="flex flex-col gap-1.5">
-            {JOB_OPTIONS.map((opt) => (
+      {/* Daily job activity */}
+      <div className="section">
+        <span className="caps">Daily activity level</span>
+        <div className="list">
+          {JOB_OPTIONS.map((opt) => {
+            const sel = jobActivity === opt.value
+            return (
               <button key={opt.value} type="button" onClick={() => setJobActivity(opt.value)}
-                className={`flex items-center gap-3 rounded-xl px-4 py-3 text-left transition-colors ${
-                  jobActivity === opt.value
-                    ? 'bg-primary text-background'
-                    : 'bg-surface/80 text-primary'}`}>
-                <span className="text-lg w-7 text-center">{opt.icon}</span>
-                <div>
-                  <p className="text-sm font-semibold">{opt.label}</p>
-                  <p className={`text-xs ${jobActivity === opt.value ? 'text-background/70' : 'text-muted'}`}>{opt.sub}</p>
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Workout type */}
-        <div>
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">Workout type</p>
-          <div className="grid grid-cols-4 gap-2">
-            {WORKOUT_TYPE_OPTIONS.map((opt) => (
-              <button key={opt.value} type="button" onClick={() => setWorkoutType(opt.value)}
-                className={`flex flex-col items-center gap-1 rounded-xl py-3 text-sm transition-colors ${
-                  workoutType === opt.value
-                    ? 'bg-primary text-background'
-                    : 'bg-surface/80 text-primary'}`}>
-                <span className="text-lg">{opt.icon}</span>
-                <span className={`text-[11px] font-medium ${workoutType === opt.value ? 'text-background' : 'text-primary'}`}>
-                  {opt.label}
+                className={`choice ${sel ? 'sel' : ''}`} aria-pressed={sel}>
+                <span className="icon">{opt.icon}</span>
+                <span className="min-w-0 flex-1">
+                  <b>{opt.label}</b>
+                  <small>{opt.sub}</small>
                 </span>
+                {sel && <span className="check">✓</span>}
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* Workout type */}
+      <div className="section">
+        <span className="caps">Workout type</span>
+        <div className="tile-grid">
+          {WORKOUT_TYPE_OPTIONS.map((opt) => (
+            <button key={opt.value} type="button" onClick={() => setWorkoutType(opt.value)}
+              className={`tile compact ${workoutType === opt.value ? 'sel' : ''}`} aria-pressed={workoutType === opt.value}>
+              <span className="icon">{opt.icon}</span>
+              <b>{opt.label}</b>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Workout days — hidden when no workouts */}
+      {workoutType !== 'none' && (
+        <div className="section">
+          <span className="caps">Workout days per week</span>
+          <div className="num-pills">
+            {DAYS.filter(d => d > 0).map((d) => (
+              <button key={d} type="button" onClick={() => setWorkoutDays(d)}
+                className={`num-pill ${workoutDays === d ? 'sel' : ''}`} aria-pressed={workoutDays === d}>
+                {d}
               </button>
             ))}
           </div>
         </div>
+      )}
 
-        {/* Workout days — hidden when no workouts */}
-        {workoutType !== 'none' && (
-          <div>
-            <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted">
-              Workout days per week
-            </p>
-            <div className="flex gap-1.5 flex-wrap">
-              {DAYS.filter(d => d > 0).map((d) => (
-                <button key={d} type="button" onClick={() => setWorkoutDays(d)}
-                  className={`h-10 w-10 rounded-full text-sm font-semibold transition-colors ${
-                    workoutDays === d
-                      ? 'bg-primary text-background'
-                      : 'bg-background text-primary'}`}>
-                  {d}
-                </button>
-              ))}
-            </div>
-          </div>
+      {/* Live calorie preview card */}
+      <div className="card tint">
+        <span className="caps">Your daily targets</span>
+        {wasClamped && (
+          <p className="tiny muted" style={{ marginTop: 6 }}>
+            Clamped to the safe minimum ({MIN_SAFE_CALORIES[store.sex].toLocaleString()} kcal) for your pace
+          </p>
         )}
-
-        {/* Live calorie preview card */}
-        <div className={`rounded-2xl p-4 ${wasClamped ? 'banner-warning border' : 'bg-background'}`}>
-          <p className="text-xs text-muted mb-2">Your daily targets based on this activity</p>
-          {wasClamped && (
-            <p className="text-xs banner-warning-text mb-2">
-              ⚠️ Clamped to safe minimum ({MIN_SAFE_CALORIES[store.sex].toLocaleString()} kcal) for your pace.
-            </p>
-          )}
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xl font-bold text-primary">{calorieGoal.toLocaleString()}
-                <span className="text-sm font-normal text-muted"> kcal/day</span>
-              </p>
-              <p className="text-xs text-muted">Maintenance: {tdee.toLocaleString()} kcal</p>
-            </div>
-            <div className="text-right">
-              <p className="text-base font-bold text-primary">{proteinGoal}g
-                <span className="text-sm font-normal text-muted"> protein</span>
-              </p>
-              <p className="text-xs text-muted">Daily target</p>
-            </div>
-          </div>
+        <div className="mt-2.5 flex items-end justify-between gap-3">
+          <b className="stat">{calorieGoal.toLocaleString()} <small style={{ font: '12px var(--font-sans)' }}>kcal</small></b>
+          <b>{proteinGoal}g protein</b>
         </div>
-
-        <button onClick={handleContinue}
-          className="rounded-full bg-primary py-3 text-base font-semibold text-background">
-          Continue
-        </button>
+        <p className="tiny muted" style={{ marginTop: 6 }}>Maintenance · {tdee.toLocaleString()} kcal</p>
       </div>
+
+      <button type="button" onClick={handleContinue} className="btn">Continue</button>
     </div>
   )
 }
