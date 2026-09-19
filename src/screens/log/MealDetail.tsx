@@ -10,6 +10,9 @@ import {
   type CommentWithAuthor,
 } from '../../hooks/useMealDetail'
 import { computeLikeDelta } from '../../lib/likeDelta'
+import { relativeTime } from '../../lib/relativeTime'
+import { TopBar } from '../../components/TopBar'
+import { Avatar } from '../../components/Avatar'
 
 export default function MealDetail() {
   const { logId } = useParams<{ logId: string }>()
@@ -30,36 +33,22 @@ export default function MealDetail() {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-[calc(100vh-5rem)] items-center justify-center">
-        <p className="text-muted">Loading…</p>
+      <div>
+        <TopBar title="Meal detail" />
+        <p className="muted text-center" style={{ padding: 60 }}>Loading…</p>
       </div>
     )
   }
 
-  if (isError) {
+  if (isError || !data) {
     return (
-      <div className="flex min-h-[calc(100vh-5rem)] flex-col items-center justify-center gap-4 px-6 text-center">
-        <p className="text-muted">Something went wrong loading this meal.</p>
-        <button
-          onClick={() => navigate(-1)}
-          className="rounded-full bg-primary px-6 py-3 text-base font-semibold text-background"
-        >
-          Go back
-        </button>
-      </div>
-    )
-  }
-
-  if (!data) {
-    return (
-      <div className="flex min-h-[calc(100vh-5rem)] flex-col items-center justify-center gap-4 px-6 text-center">
-        <p className="text-muted">Couldn't find that meal.</p>
-        <button
-          onClick={() => navigate(-1)}
-          className="rounded-full bg-primary px-6 py-3 text-base font-semibold text-background"
-        >
-          Go back
-        </button>
+      <div>
+        <TopBar title="Meal detail" />
+        <div className="card text-center" style={{ padding: 40 }}>
+          <div style={{ fontSize: 40, lineHeight: 1 }}>◌</div>
+          <h4 style={{ marginTop: 12 }}>{isError ? 'Something went wrong loading this meal' : 'Couldn’t find that meal'}</h4>
+          <button type="button" onClick={() => navigate(-1)} className="btn">Go back</button>
+        </div>
       </div>
     )
   }
@@ -68,6 +57,12 @@ export default function MealDetail() {
   const viewerId = session?.user.id
   const displayLiked = optimisticLiked ?? likedByViewer
   const displayLikeCount = likeCount + computeLikeDelta(optimisticLiked, likedByViewer)
+  const caption  = (log as { caption?: string | null }).caption
+  const calories = log.calories_final ?? log.calories_estimate
+  const proteinG = log.protein_final_g ?? log.protein_estimate_g
+  const carbsG   = log.carbs_final_g ?? log.carbs_estimate_g
+  const fatG     = log.fat_final_g ?? log.fat_estimate_g
+  const mealTypeLabel = log.meal_type.charAt(0).toUpperCase() + log.meal_type.slice(1)
 
   function handleToggleLike() {
     const next = !displayLiked
@@ -93,119 +88,99 @@ export default function MealDetail() {
   }
 
   return (
-    <div className="flex min-h-[calc(100vh-5rem)] flex-col px-6 py-8">
+    <div>
+      <TopBar title="Meal detail" />
+
+      {/* Author row */}
       <button
-        onClick={() => navigate(-1)}
-        aria-label="Back"
-        className="mb-6 flex h-9 w-9 items-center justify-center rounded-full bg-surface shadow-[var(--shadow-card)] text-primary"
+        type="button"
+        onClick={() => navigate(viewerId === author.id ? '/home/profile' : `/home/friend/${author.username}`)}
+        className="no-press flex w-full items-center gap-2.5 text-left"
       >
-        ←
+        <Avatar name={author.name} photoUrl={author.photo_url} />
+        <span className="min-w-0 flex-1">
+          <b className="block font-semibold">{author.name}</b>
+          <small className="muted block">{mealTypeLabel} · {relativeTime(log.created_at)}</small>
+        </span>
       </button>
+      <div style={{ height: 15 }} />
 
-      {photoSignedUrl && (
-        <img src={photoSignedUrl} alt="" className="mb-4 aspect-square w-full rounded-2xl object-cover" />
-      )}
+      {photoSignedUrl && <img src={photoSignedUrl} alt="" className="photo tall" />}
 
-      <div className="mb-4 flex items-center gap-2">
-        <button
-          onClick={() => navigate(`/home/friend/${author.username}`)}
-          className="flex items-center gap-2"
-        >
-          {author.photo_url ? (
-            <img src={author.photo_url} alt={author.name} className="h-8 w-8 rounded-full object-cover" />
-          ) : (
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-background text-xs text-muted">
-              {author.name.charAt(0).toUpperCase()}
-            </div>
-          )}
-          <span className="text-sm font-semibold text-primary">@{author.username}</span>
+      <h3 style={{ marginTop: 17 }}>{log.name || mealTypeLabel}</h3>
+      {caption && <p className="small muted">{caption}</p>}
+
+      <div className="card tint">
+        <div className="flex items-center justify-between gap-2">
+          <b className="font-semibold">{calories != null ? `${Number(calories).toLocaleString()} kcal` : '— kcal'}</b>
+          <span className="protein-total">{proteinG ?? '—'}g protein</span>
+          <span>{carbsG ?? '—'}g carbs</span>
+          <span>{fatG ?? '—'}g fat</span>
+        </div>
+        {log.calories_final != null && log.calories_estimate != null && log.calories_final !== log.calories_estimate && (
+          <p className="tiny muted" style={{ marginTop: 8 }}>AI estimate was {log.calories_estimate.toLocaleString()} kcal</p>
+        )}
+      </div>
+
+      <div className="flex items-center gap-4" style={{ margin: '17px 0' }}>
+        <button type="button" onClick={handleToggleLike} className={`flex items-center gap-1.5 ${displayLiked ? 'font-semibold' : ''}`}>
+          <span style={{ fontSize: 16, lineHeight: 1 }}>{displayLiked ? '♥' : '♡'}</span>
+          {displayLikeCount} {displayLikeCount === 1 ? 'like' : 'likes'}
         </button>
-        <span className="ml-auto text-xs text-muted">
-          {new Date(log.created_at).toLocaleString(undefined, {
-            month: 'short',
-            day: 'numeric',
-            hour: 'numeric',
-            minute: '2-digit',
-          })}
+        <span className="flex items-center gap-1.5">
+          <span style={{ fontSize: 16, lineHeight: 1 }}>◌</span>
+          {comments.length} {comments.length === 1 ? 'comment' : 'comments'}
         </span>
       </div>
 
-      {log.name && <h1 className="mb-1 text-lg font-bold text-primary">{log.name}</h1>}
-      {(log as { caption?: string | null }).caption && (
-        <p className="mb-2 text-sm text-muted">{(log as { caption?: string | null }).caption}</p>
-      )}
-      <p className="mb-4 text-sm capitalize text-muted">{log.meal_type}</p>
+      <div className="divider" />
 
-      <div className="mb-6 grid grid-cols-2 gap-3">
-        <div className="card p-3 text-center">
-          <p className="text-xs text-muted">Calories</p>
-          <p className="text-base font-bold text-primary">{log.calories_final ?? '—'}</p>
-          <p className="text-xs text-muted">estimate: {log.calories_estimate ?? '—'}</p>
+      <h4>Comments</h4>
+      {comments.length === 0 && <p className="small muted" style={{ marginTop: 8 }}>No comments yet</p>}
+      {comments.map((comment: CommentThread) => (
+        <div key={comment.id}>
+          <CommentRow
+            comment={comment}
+            canDelete={viewerId === comment.user_id || viewerId === log.user_id}
+            onReply={() => setReplyingTo(comment.id)}
+            onDelete={() => deleteComment.mutate(comment.id)}
+          />
+          {comment.replies.length > 0 && (
+            <div className="border-l border-line" style={{ marginLeft: 19, paddingLeft: 12 }}>
+              {comment.replies.map((reply) => (
+                <CommentRow
+                  key={reply.id}
+                  comment={reply}
+                  canDelete={viewerId === reply.user_id || viewerId === log.user_id}
+                  onDelete={() => deleteComment.mutate(reply.id)}
+                />
+              ))}
+            </div>
+          )}
         </div>
-        <div className="card p-3 text-center">
-          <p className="text-xs text-muted">Protein / Carbs / Fat</p>
-          <p className="text-base font-bold text-primary">
-            {log.protein_final_g ?? '—'}g / {log.carbs_final_g ?? '—'}g / {log.fat_final_g ?? '—'}g
-          </p>
-        </div>
-      </div>
-
-      <button
-        onClick={handleToggleLike}
-        className="mb-6 flex items-center gap-2 self-start rounded-full bg-surface shadow-[var(--shadow-card)] px-4 py-2 text-sm font-semibold text-primary"
-      >
-        <span>{displayLiked ? '🔥' : '🤍'}</span>
-        <span>{displayLikeCount}</span>
-      </button>
-
-      <h2 className="mb-3 text-sm font-semibold text-muted">COMMENTS</h2>
-      <ul className="mb-4 flex flex-col gap-4">
-        {comments.length === 0 && <p className="text-sm text-muted">No comments yet.</p>}
-        {comments.map((comment: CommentThread) => (
-          <li key={comment.id} className="flex flex-col gap-2">
-            <CommentRow
-              comment={comment}
-              canDelete={viewerId === comment.user_id || viewerId === log.user_id}
-              onReply={() => setReplyingTo(comment.id)}
-              onDelete={() => deleteComment.mutate(comment.id)}
-            />
-            {comment.replies.length > 0 && (
-              <ul className="ml-8 flex flex-col gap-2 border-l border-border pl-3">
-                {comment.replies.map((reply) => (
-                  <li key={reply.id}>
-                    <CommentRow
-                      comment={reply}
-                      canDelete={viewerId === reply.user_id || viewerId === log.user_id}
-                      onDelete={() => deleteComment.mutate(reply.id)}
-                    />
-                  </li>
-                ))}
-              </ul>
-            )}
-          </li>
-        ))}
-      </ul>
+      ))}
 
       {replyingTo && (
-        <div className="mb-2 flex items-center justify-between rounded-full bg-background px-4 py-2 text-xs text-muted">
+        <div className="pill tint flex w-full justify-between" style={{ marginTop: 12 }}>
           <span>Replying to a comment</span>
-          <button onClick={() => setReplyingTo(null)} className="font-semibold text-primary">
-            Cancel
-          </button>
+          <button type="button" onClick={() => setReplyingTo(null)} className="font-semibold">Cancel</button>
         </div>
       )}
 
-      <div className="mt-auto flex gap-2">
+      <div className="flex items-center gap-2" style={{ marginTop: 12 }}>
         <input
+          className="input flex-1"
           value={commentBody}
           onChange={(e) => setCommentBody(e.target.value)}
-          placeholder="Add a comment…"
-          className="flex-1 rounded-full bg-surface border border-border/60 px-5 py-3 text-base text-primary placeholder:text-muted"
+          onKeyDown={(e) => e.key === 'Enter' && handleAddComment()}
+          placeholder="Add a comment"
         />
         <button
+          type="button"
           onClick={handleAddComment}
           disabled={!commentBody.trim() || addComment.isPending}
-          className="rounded-full bg-primary px-5 py-3 text-sm font-semibold text-background disabled:opacity-50"
+          className="pill sel"
+          style={{ padding: '12px 16px' }}
         >
           Post
         </button>
@@ -226,44 +201,20 @@ function CommentRow({
   onDelete: () => void
 }) {
   const navigate = useNavigate()
+  const goToAuthor = () => navigate(`/home/friend/${comment.author.username}`)
   return (
-    <div className="flex items-start gap-2">
-      <button
-        onClick={() => navigate(`/home/friend/${comment.author.username}`)}
-        className="shrink-0 border-0"
-        aria-label={`View ${comment.author.username}'s profile`}
-      >
-        {comment.author.photo_url ? (
-          <img src={comment.author.photo_url} alt={comment.author.name} className="h-7 w-7 rounded-full object-cover" />
-        ) : (
-          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-surface border border-border/40 text-xs font-bold text-muted">
-            {comment.author.name.charAt(0).toUpperCase()}
-          </div>
-        )}
+    <div className="meal-row">
+      <button type="button" onClick={goToAuthor} aria-label={`View ${comment.author.username}'s profile`} className="no-press">
+        <Avatar name={comment.author.name} photoUrl={comment.author.photo_url} />
       </button>
-      <div className="flex-1">
-        <p className="text-sm">
-          <button
-            onClick={() => navigate(`/home/friend/${comment.author.username}`)}
-            className="font-semibold text-primary border-0 mr-1"
-          >
-            @{comment.author.username}
-          </button>
-          <span className="text-primary">{comment.body}</span>
-        </p>
-        <div className="flex gap-3 text-xs text-muted">
-          {onReply && (
-            <button onClick={onReply} className="font-semibold border-0">
-              Reply
-            </button>
-          )}
-          {canDelete && (
-            <button onClick={onDelete} className="font-semibold text-error border-0">
-              Delete
-            </button>
-          )}
-        </div>
-      </div>
+      <span className="min-w-0 flex-1">
+        <button type="button" onClick={goToAuthor} className="font-semibold">{comment.author.name}</button>
+        <p className="small">{comment.body}</p>
+        <span className="flex gap-3">
+          {onReply && <button type="button" onClick={onReply} className="muted tiny">Reply</button>}
+          {canDelete && <button type="button" onClick={onDelete} className="tiny text-error">Delete</button>}
+        </span>
+      </span>
     </div>
   )
 }

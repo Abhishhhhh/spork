@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import Capture from './Capture'
@@ -150,33 +150,29 @@ export default function LogFlow() {
 // ── Loading screen ───────────────────────────────────────────────────────────
 
 function LoadingScreen({ onSkip, photoFile }: { onSkip: () => void; photoFile: File | null }) {
-  const [dots, setDots] = useState('.')
-  const previewUrl = photoFile ? URL.createObjectURL(photoFile) : null
-
-  useEffect(() => {
-    const id = setInterval(() => setDots((d) => (d.length >= 3 ? '.' : d + '.')), 500)
-    return () => clearInterval(id)
-  }, [])
+  const previewUrl = useMemo(() => (photoFile ? URL.createObjectURL(photoFile) : null), [photoFile])
 
   useEffect(() => {
     return () => { if (previewUrl) URL.revokeObjectURL(previewUrl) }
   }, [previewUrl])
 
   return (
-    <div className="relative flex min-h-[calc(100vh-5rem)] flex-col items-center justify-center gap-6 overflow-hidden">
-      {/* Blurred photo backdrop */}
-      {previewUrl && (
-        <img src={previewUrl} alt="" className="absolute inset-0 h-full w-full object-cover opacity-20 blur-xl scale-110" />
-      )}
-      <div className="relative flex flex-col items-center gap-4 px-8 text-center">
-        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-2xl animate-pulse">
-          ✨
+    <div>
+      <div className="topbar">
+        <span style={{ width: 42 }} />
+        <span className="clay">Log a meal</span>
+        <span style={{ width: 42 }} />
+      </div>
+      <div className="text-center" style={{ paddingTop: 100 }}>
+        <div className="icon-box relative mx-auto overflow-hidden" style={{ width: 145, height: 145, borderRadius: 48, fontSize: 70 }}>
+          {previewUrl && <img src={previewUrl} alt="" className="absolute inset-0 h-full w-full object-cover opacity-30 blur-sm" />}
+          <span className="relative animate-spin-slow">✳</span>
         </div>
-        <p className="text-base font-semibold text-primary">Analysing your meal{dots}</p>
-        <p className="text-sm text-muted">AI is identifying ingredients and estimating macros</p>
-        <button onClick={onSkip} className="mt-4 rounded-full bg-surface shadow-[var(--shadow-card)] bg-background/80 px-5 py-2 text-sm font-medium text-primary">
-          Skip — enter manually
-        </button>
+        <div style={{ height: 28 }} />
+        <h2>Analysing your meal</h2>
+        <p className="muted">Identifying ingredients and estimating macros</p>
+        <div style={{ height: 28 }} />
+        <button type="button" onClick={onSkip} className="btn light">Skip · enter manually</button>
       </div>
     </div>
   )
@@ -193,63 +189,47 @@ function CelebrationScreen({ data, onViewPost, onDone }: {
   const isStreakMilestone = [7, 30, 100].includes(data.newStreakCount)
 
   return (
-    <div className="flex min-h-[calc(100vh-5rem)] flex-col items-center justify-center gap-6 px-6 text-center">
-      {/* Emoji / milestone */}
-      <div className="flex flex-col items-center gap-2">
-        <p className="text-4xl">{isStreakMilestone ? '🏆' : '🔥'}</p>
-        <h1 className="text-xl font-bold text-primary">
-          {isStreakMilestone
-            ? `${data.newStreakCount}-day streak! 🎉`
-            : data.wasStreakBroken
-            ? 'Streak back on track!'
-            : 'Logged!'}
-        </h1>
-        {data.mealName && (
-          <p className="text-sm text-muted">{data.mealName}</p>
+    <div className="text-center animate-fade-in" style={{ paddingTop: 60 }}>
+      <span className="font-display block" style={{ fontSize: 90, lineHeight: 1 }}>{isStreakMilestone ? '✦' : '✳'}</span>
+      <h2>
+        {isStreakMilestone
+          ? `${data.newStreakCount}-day streak!`
+          : data.wasStreakBroken
+          ? 'Streak back on track!'
+          : 'Logged!'}
+      </h2>
+      {data.mealName && <p className="muted">{data.mealName}</p>}
+
+      {/* Calorie summary */}
+      <div className="card text-left" style={{ marginTop: 30 }}>
+        <div className="flex items-center justify-between">
+          <b className="font-semibold">Today’s budget</b>
+          <b className="font-semibold">{data.calories.toLocaleString()} kcal added</b>
+        </div>
+        {data.calorieGoal > 0 && (
+          <>
+            <div className="bar calories" style={{ margin: '15px 0' }}>
+              <i style={{ width: `${pct}%` }} />
+            </div>
+            <div className="flex items-center justify-between small muted">
+              <span>{pct}% of daily goal</span>
+              {data.remaining > 0
+                ? <span className="calories-left">{data.remaining.toLocaleString()} kcal remaining</span>
+                : <span>Goal reached ✓</span>}
+            </div>
+          </>
         )}
       </div>
 
-      {/* Calorie summary */}
-      <div className="w-full card p-4 text-left">
-        <div className="flex items-center justify-between mb-3">
-          <p className="text-sm font-semibold text-primary">Today's budget</p>
-          <p className="text-sm font-bold accent-teal">{data.calories.toLocaleString()} kcal added</p>
-        </div>
-        <div className="h-3 w-full overflow-hidden rounded-full bg-border mb-2">
-          <div className="h-3 rounded-full macro-calories transition-all" style={{ width: `${pct}%` }} />
-        </div>
-        <div className="flex items-center justify-between">
-          <p className="text-xs text-muted">{pct}% of daily goal</p>
-          {data.remaining > 0 ? (
-            <p className="text-xs font-semibold accent-teal">{data.remaining.toLocaleString()} kcal remaining</p>
-          ) : (
-            <p className="text-xs font-semibold text-error">Goal reached ✓</p>
-          )}
-        </div>
-      </div>
-
-      {/* Streak count */}
-      <div className="flex items-center gap-3">
-        <span className="text-xl">🔥</span>
-        <div className="text-left">
-          <p className="font-display text-lg font-bold text-primary">{data.newStreakCount} day streak</p>
-          {isStreakMilestone && (
-            <p className="text-xs text-muted">You've hit a milestone!</p>
-          )}
-        </div>
+      {/* Streak */}
+      <div className="card tint text-left">
+        <h3>{data.newStreakCount} day streak</h3>
+        <p className="small muted">{isStreakMilestone ? 'You’ve hit a milestone!' : 'Your log keeps it going'}</p>
       </div>
 
       {/* Actions */}
-      <div className="flex w-full flex-col gap-2">
-        <button onClick={onViewPost}
-          className="w-full rounded-full bg-surface shadow-[var(--shadow-card)] py-3 text-sm font-semibold text-primary">
-          View post
-        </button>
-        <button onClick={onDone}
-          className="w-full rounded-full bg-primary py-3 text-base font-semibold text-background">
-          Back to feed
-        </button>
-      </div>
+      <button type="button" onClick={onViewPost} className="btn light">View post</button>
+      <button type="button" onClick={onDone} className="btn">Back to feed</button>
     </div>
   )
 }
