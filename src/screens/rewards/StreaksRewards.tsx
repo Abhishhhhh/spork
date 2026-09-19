@@ -4,8 +4,9 @@ import { useStreakData } from '../../hooks/useStreakData'
 import { useRewards, useRedeemReward, type EnrichedReward } from '../../hooks/useRewards'
 import { StreakCalendar } from '../../components/StreakCalendar'
 import { MILESTONE_LABELS } from '../../lib/streakMeta'
+import { TopBar } from '../../components/TopBar'
 
-const MILESTONE_ICONS: Record<number, string> = { 7: '🔥', 30: '⚡', 100: '🏆' }
+const MILESTONE_ICONS: Record<number, string> = { 7: '✳', 30: '⚡︎', 100: '★' }
 
 export default function StreaksRewards() {
   const navigate = useNavigate()
@@ -32,7 +33,12 @@ export default function StreaksRewards() {
   }
 
   if (streakLoading) {
-    return <div className="flex min-h-[calc(100vh-5rem)] items-center justify-center"><p className="text-muted">Loading…</p></div>
+    return (
+      <div>
+        <TopBar title="Streaks & rewards" back="/home/profile" />
+        <p className="muted text-center" style={{ padding: 60 }}>Loading…</p>
+      </div>
+    )
   }
 
   const effectiveStreak = streak?.effectiveStreak ?? 0
@@ -42,101 +48,82 @@ export default function StreaksRewards() {
   const milestoneProgress = streak?.milestoneProgress ?? 0
   const logDates        = streak?.recentLogDates ?? new Set<string>()
 
+  // ── Post-redemption code state ────────────────────────────────
+  if (codeModal) {
+    return (
+      <div className="animate-fade-in">
+        <TopBar title="Reward" back={null} />
+        <div className="text-center" style={{ paddingTop: 90 }}>
+          <div style={{ fontSize: 60, lineHeight: 1 }}>✦</div>
+          <h2 style={{ marginTop: 12 }}>Reward unlocked</h2>
+          <p className="muted">Show this code to {codeModal.partner}</p>
+          <div className="card tint" style={{ padding: 30, marginTop: 30 }}>
+            <p className="caps">Your code</p>
+            <div className="code" style={{ marginTop: 10 }}>{codeModal.code}</div>
+          </div>
+          <p className="hint">Screenshot or copy this code before closing</p>
+          <button type="button" onClick={() => setCodeModal(null)} className="btn">Done</button>
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <div className="flex min-h-[calc(100vh-5rem)] flex-col gap-0 pb-6">
+    <div>
+      <TopBar title="Streaks & rewards" back="/home/profile" />
 
       {/* ── Hero ─────────────────────────────────────────────────── */}
-      <div className="flex flex-col items-center gap-2 px-6 pt-10 pb-6">
-        <p className="text-7xl leading-none">🔥</p>
-        <p className="text-4xl font-bold text-primary">{effectiveStreak}</p>
-        <p className="text-base text-muted">{effectiveStreak === 1 ? 'day streak' : 'day streak'}</p>
-        {effectiveStreak === 0 && (
-          <p className="mt-1 text-sm text-muted text-center">Log your first meal to start your streak</p>
+      <div className="card ink text-center" style={{ padding: 25 }}>
+        <span style={{ fontSize: 45, lineHeight: 1 }}>✳</span>
+        <div className="big">{effectiveStreak}</div>
+        <p>day streak</p>
+        <p className="small muted">
+          {todayLogged
+            ? 'Logged today · streak safe'
+            : effectiveStreak > 0
+            ? `Log a meal today to keep your ${effectiveStreak}-day streak alive`
+            : 'Log your first meal to start your streak'}
+        </p>
+        {!todayLogged && (
+          <button type="button" onClick={() => navigate('/home/log')} className="btn light" style={{ marginTop: 18 }}>
+            Log now
+          </button>
         )}
       </div>
 
-      {/* ── At-risk banner ───────────────────────────────────────── */}
-      {!todayLogged && effectiveStreak > 0 && (
-        <div className="mx-5 mb-4 flex items-center gap-3 rounded-2xl border banner-warning px-4 py-3">
-            <span className="text-lg">⚠️</span>
-            <div className="flex-1">
-              <p className="text-sm font-semibold banner-warning-text">Don't break your streak!</p>
-              <p className="text-xs banner-warning-text opacity-80">Log a meal today to keep your {effectiveStreak}-day streak alive.</p>
-            </div>
-          <button
-            onClick={() => navigate('/home/log')}
-            className="rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-background"
-          >
-            Log now
-          </button>
-        </div>
-      )}
-
-      {!todayLogged && effectiveStreak === 0 && (
-        <div className="mx-5 mb-4 flex items-center gap-3 card bg-background px-4 py-3">
-          <span className="text-lg">📝</span>
-          <p className="flex-1 text-sm text-muted">Log a meal today to start building your streak.</p>
-          <button
-            onClick={() => navigate('/home/log')}
-            className="rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-background"
-          >
-            Log
-          </button>
-        </div>
-      )}
-
-      {todayLogged && (
-        <div className="mx-5 mb-4 flex items-center gap-3 card bg-background px-4 py-3">
-          <span className="text-lg">✅</span>
-          <p className="text-sm font-medium text-primary">Logged today — streak safe!</p>
-        </div>
-      )}
-
       {/* ── Progress to next milestone ───────────────────────────── */}
       {nextMilestone !== null && (
-        <div className="mx-5 mb-5 card p-4">
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-sm font-semibold text-primary">
-              {MILESTONE_ICONS[nextMilestone]} Next unlock: {MILESTONE_LABELS[nextMilestone] ?? `${nextMilestone}-day`}
-            </p>
-            <p className="text-xs text-muted">{daysToMilestone} day{daysToMilestone !== 1 ? 's' : ''} to go</p>
+        <div className="card">
+          <div className="flex items-center justify-between">
+            <b className="font-semibold">Next unlock · {MILESTONE_LABELS[nextMilestone] ?? `${nextMilestone} days`}</b>
+            <small className="muted">{daysToMilestone} day{daysToMilestone !== 1 ? 's' : ''} to go</small>
           </div>
-          <div className="h-2.5 w-full overflow-hidden rounded-full bg-border">
-            <div
-              className="h-2.5 rounded-full bg-primary transition-all duration-500"
-              style={{ width: `${Math.round(milestoneProgress * 100)}%` }}
-            />
+          <div className="bar" style={{ margin: '14px 0 6px' }}>
+            <i style={{ width: `${Math.round(milestoneProgress * 100)}%` }} />
           </div>
-          <p className="mt-1.5 text-xs text-muted text-right">
-            {Math.round(milestoneProgress * 100)}% there
-          </p>
+          <p className="tiny muted">{Math.round(milestoneProgress * 100)}% there</p>
         </div>
       )}
 
       {/* ── 14-day calendar ─────────────────────────────────────── */}
-      <div className="mx-5 mb-5">
-        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">Last 14 days</p>
+      <div className="section">
+        <span className="caps">Last 14 days</span>
         <StreakCalendar logDates={logDates} days={14} />
       </div>
 
       {/* ── Milestone badges ─────────────────────────────────────── */}
-      <div className="mx-5 mb-6">
-        <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted">Milestones</p>
-        <div className="flex gap-2">
+      <div className="section">
+        <span className="caps">Milestones</span>
+        <div className="tile-grid three">
           {[7, 30, 100].map((m) => {
             const reached = effectiveStreak >= m
             return (
-              <div
-                key={m}
-                className={`flex flex-1 flex-col items-center gap-1 rounded-2xl border py-3 transition-colors ${
-                  reached ? 'border-primary bg-primary/10' : 'border-border bg-background opacity-50'
-                }`}
-              >
-                <span className="text-xl">{MILESTONE_ICONS[m]}</span>
-                <span className={`text-xs font-semibold ${reached ? 'text-primary' : 'text-muted'}`}>
-                  {m} days
+              <div key={m} className={`tile compact ${reached ? 'sel' : ''}`}>
+                <span className="icon">{MILESTONE_ICONS[m]}</span>
+                <span>
+                  <b>{m} days</b>
+                  <small className="block">{reached ? 'Unlocked' : 'Locked'}</small>
                 </span>
-                {reached && <span className="text-[10px] text-primary">Unlocked!</span>}
               </div>
             )
           })}
@@ -144,12 +131,12 @@ export default function StreaksRewards() {
       </div>
 
       {/* ── Rewards marketplace ──────────────────────────────────── */}
-      <div className="mx-5">
-        <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted">Rewards</p>
+      <div className="section">
+        <span className="caps">Rewards</span>
         {rewardsLoading ? (
-          <p className="text-sm text-muted">Loading rewards…</p>
+          <p className="small muted">Loading rewards…</p>
         ) : (
-          <div className="flex flex-col gap-3">
+          <>
             {(rewards ?? []).map((reward) => (
               <RewardCard
                 key={reward.id}
@@ -159,34 +146,10 @@ export default function StreaksRewards() {
                 redeeming={redeemingId === reward.id}
               />
             ))}
-            {(rewards ?? []).length === 0 && (
-              <p className="text-sm text-muted">No rewards available yet.</p>
-            )}
-          </div>
+            {(rewards ?? []).length === 0 && <p className="small muted">No rewards available yet</p>}
+          </>
         )}
       </div>
-
-      {/* ── Code modal ───────────────────────────────────────────── */}
-      {codeModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-6">
-          <div className="w-full max-w-sm rounded-3xl bg-surface-elevated p-6 text-center shadow-xl border border-border">
-            <p className="text-3xl mb-3">🎉</p>
-            <p className="text-base font-bold text-primary mb-1">You unlocked a reward!</p>
-            <p className="text-sm text-muted mb-4">{codeModal.partner}</p>
-            <div className="card bg-background px-6 py-4 mb-4">
-              <p className="text-xs text-muted mb-1">Your code</p>
-              <p className="text-xl font-bold tracking-widest text-primary">{codeModal.code}</p>
-            </div>
-            <p className="text-xs text-muted mb-5">Screenshot or copy this code before closing.</p>
-            <button
-              onClick={() => setCodeModal(null)}
-              className="w-full rounded-full bg-primary py-3 text-sm font-semibold text-background"
-            >
-              Done
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
@@ -206,41 +169,28 @@ function RewardCard({
   const streakNeeded = reward.milestone_required - currentStreak
 
   return (
-    <div className={`rounded-2xl border p-4 transition-opacity ${locked ? 'opacity-60 border-border' : 'border-primary/30'}`}>
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex-1">
-          <div className="flex items-center gap-1.5 mb-0.5">
-            {locked && <span className="text-sm">🔒</span>}
-            <p className="text-sm font-bold text-primary">{reward.partner_name}</p>
-          </div>
-          <p className="text-sm text-muted mb-2">{reward.offer_description}</p>
+    <div className="card" style={{ marginTop: 0, opacity: locked ? 0.6 : 1 }}>
+      <div className="flex items-center justify-between gap-3">
+        <span className="min-w-0 flex-1">
+          <b className="block font-semibold">{reward.partner_name}</b>
+          <p className="small muted">{reward.offer_description}</p>
           {locked ? (
-            <p className="text-xs text-muted">
-              🔥 {streakNeeded} more day{streakNeeded !== 1 ? 's' : ''} to unlock
+            <p className="small muted" style={{ marginTop: 4 }}>
+              Unlock with a {reward.milestone_required} day streak · {streakNeeded} more day{streakNeeded !== 1 ? 's' : ''}
             </p>
           ) : reward.isExpired ? (
-            <p className="text-xs text-error">Expired</p>
+            <p className="small text-error" style={{ marginTop: 4 }}>Expired</p>
           ) : reward.isRedeemed ? (
-            <div>
-              <p className="text-xs text-muted mb-1">Your code:</p>
-              <p className="text-sm font-bold tracking-widest text-primary">{reward.redemptionCode}</p>
-            </div>
+            <p className="small" style={{ marginTop: 4 }}>Your code · <b className="code" style={{ fontSize: 14 }}>{reward.redemptionCode}</b></p>
           ) : null}
-        </div>
+        </span>
         {!locked && !reward.isExpired && !reward.isRedeemed && (
-          <button
-            onClick={onRedeem}
-            disabled={redeeming}
-            className="shrink-0 rounded-full bg-primary px-4 py-2 text-xs font-semibold text-background disabled:opacity-50"
-          >
+          <button type="button" onClick={onRedeem} disabled={redeeming} className="pill sel">
             {redeeming ? '…' : 'Redeem'}
           </button>
         )}
-        {!locked && reward.isRedeemed && (
-          <span className="shrink-0 rounded-full bg-surface shadow-[var(--shadow-card)] px-3 py-1.5 text-xs font-medium text-muted">
-            Redeemed ✓
-          </span>
-        )}
+        {!locked && reward.isRedeemed && <span className="pill tint">Redeemed ✓</span>}
+        {locked && <span className="pill tint">Locked</span>}
       </div>
     </div>
   )
