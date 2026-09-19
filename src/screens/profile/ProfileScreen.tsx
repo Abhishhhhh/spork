@@ -14,6 +14,7 @@ import { StreakCalendar } from '../../components/StreakCalendar'
 import { PostCard } from '../../components/PostCard'
 import { ProfileHeaderSkeleton, Skeleton, FeedCardSkeleton } from '../../components/Skeleton'
 import { useToast } from '../../components/Toast'
+import { Avatar } from '../../components/Avatar'
 import {
   computeWeeklyAvgCalories,
   computeWeeklyLoggedDays,
@@ -86,13 +87,12 @@ export default function ProfileScreen() {
   if (isLoading) {
     return (
       <div className="animate-fade-in">
+        <div className="topbar"><Skeleton className="h-6 w-24" /></div>
         <ProfileHeaderSkeleton />
-        <div className="mx-5 mt-2 flex flex-col gap-3">
-          <Skeleton className="h-36 rounded-2xl" />
-          <div className="grid grid-cols-2 gap-3">
-            <Skeleton className="h-20 rounded-2xl" />
-            <Skeleton className="h-20 rounded-2xl" />
-          </div>
+        <Skeleton className="mt-5 h-44 !rounded-[27px]" />
+        <div className="tile-grid mt-3">
+          <Skeleton className="h-24 !rounded-[27px]" />
+          <Skeleton className="h-24 !rounded-[27px]" />
         </div>
       </div>
     )
@@ -125,187 +125,113 @@ export default function ProfileScreen() {
   }
 
   return (
-    <div className="flex min-h-[calc(100vh-5rem)] flex-col pb-8">
-
+    <div>
       {/* ── Top bar ─────────────────────────────────────────────── */}
-      <div className="flex items-center justify-between px-5 pt-6 pb-3">
-        <div className="flex items-center gap-2">
-          <p className="text-lg font-bold text-primary">@{user.username}</p>
-          {effectiveStreak > 0 && (
-            <span className="text-sm font-semibold text-muted">🔥 {effectiveStreak}</span>
-          )}
-        </div>
-        <div className="flex items-center gap-2">
-          <button onClick={() => navigate('/home/friends')} aria-label="Friends"
-            className="flex h-8 w-8 items-center justify-center rounded-full text-muted border-0">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
-              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" />
-              <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
-            </svg>
-          </button>
-          <button onClick={() => navigate('/home/notifications')} aria-label="Notifications"
-            className="flex h-8 w-8 items-center justify-center rounded-full text-muted border-0">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
-              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 0 1-3.46 0" />
-            </svg>
-          </button>
-          <button onClick={() => navigate('/home/settings')} aria-label="Settings"
-            className="flex h-8 w-8 items-center justify-center rounded-full text-muted border-0">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
-              <circle cx="12" cy="12" r="3" />
-              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
-            </svg>
-          </button>
-        </div>
+      <div className="topbar">
+        <span className="clay">@{user.username}</span>
+        <span className="flex items-center gap-2.5">
+          <button type="button" onClick={() => navigate('/home/friends')} aria-label="Friends" className="circle sm">♧</button>
+          <button type="button" onClick={() => navigate('/home/rewards')} aria-label="Streaks and rewards" className="circle sm">✳</button>
+          <button type="button" onClick={() => navigate('/home/settings')} aria-label="Settings" className="circle sm">⚙</button>
+        </span>
       </div>
 
       {/* ── Identity row ─────────────────────────────────────────── */}
-      <div className="px-5 pb-4">
-        <div className="flex items-center gap-5">
+      <div className="flex items-center gap-3.5">
+        <label htmlFor="avatar-upload" className="relative cursor-pointer" aria-label="Change profile photo">
+          <Avatar name={user.name} photoUrl={user.photo_url} size="big" />
+          {uploadingAvatar && (
+            <span className="absolute inset-0 grid place-items-center rounded-[26px] bg-black/40 text-white">…</span>
+          )}
+          <input id="avatar-upload" type="file" accept="image/*" className="sr-only" onChange={handleAvatarChange} />
+        </label>
 
-          {/* Avatar — hidden input label, camera badge overlay */}
-          <div className="relative shrink-0">
-            <label
-              htmlFor="avatar-upload"
-              className="block cursor-pointer"
-              aria-label="Change profile photo"
-            >
-              {user.photo_url ? (
-                <img src={user.photo_url} alt={user.name}
-                  className="h-20 w-20 rounded-full object-cover border border-border/40" />
-              ) : (
-                <div className="flex h-20 w-20 items-center justify-center rounded-full bg-surface border border-border/40 text-2xl font-bold text-muted">
-                  {user.name.charAt(0).toUpperCase()}
-                </div>
-              )}
-            </label>
-            {/* Camera badge */}
-            <label
-              htmlFor="avatar-upload"
-              className="absolute bottom-0 right-0 flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-primary border-2 border-background"
-            >
-              {uploadingAvatar ? (
-                <svg className="h-3 w-3 animate-spin text-background" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4" />
-                </svg>
-              ) : (
-                <svg className="h-3 w-3 text-background" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-                  <circle cx="12" cy="13" r="4" />
-                </svg>
-              )}
-            </label>
-            <input
-              id="avatar-upload"
-              type="file"
-              accept="image/*"
-              className="sr-only"
-              onChange={handleAvatarChange}
-            />
-          </div>
-
-          <div className="flex-1 min-w-0">
-            {/* Editable name — border-0 removes the global button border */}
-            {editingName ? (
-              <div className="flex items-center gap-2 mb-2">
-                <input value={nameVal} onChange={(e) => setNameVal(e.target.value)} autoFocus
-                  className="rounded-full bg-surface border border-border/60 px-3 py-1 text-sm font-bold text-primary w-32 placeholder:text-muted" />
-                <button onClick={() => { saveField({ name: nameVal }); setEditingName(false) }}
-                  className="rounded-full bg-primary px-3 py-1 text-xs font-semibold text-background">Save</button>
-                <button onClick={() => setEditingName(false)} className="text-xs text-muted border-0">✕</button>
-              </div>
-            ) : (
-              <button
-                onClick={() => { setNameVal(user.name); setEditingName(true) }}
-                className="mb-2 text-base font-bold text-primary text-left border-0"
-              >
-                {user.name}
-              </button>
-            )}
-
-            {/* Stats row — no borders on these buttons */}
-            <div className="flex gap-4">
-              <div className="text-center">
-                <p className="text-base font-bold text-primary leading-none">{posts.length}</p>
-                <p className="text-xs text-muted mt-0.5">Posts</p>
-              </div>
-              <button onClick={() => navigate('/home/friends')} className="text-center border-0">
-                <p className="text-base font-bold text-primary leading-none">{followingTotal}</p>
-                <p className="text-xs text-muted mt-0.5">Following</p>
-              </button>
-              <button onClick={() => navigate('/home/friends')} className="text-center border-0">
-                <p className="text-base font-bold text-primary leading-none">{followersCount}</p>
-                <p className="text-xs text-muted mt-0.5">Followers</p>
-              </button>
-            </div>
-          </div>
-        </div>
+        <span className="min-w-0 flex-1">
+          {editingName ? (
+            <span className="flex items-center gap-2">
+              <input value={nameVal} onChange={(e) => setNameVal(e.target.value)} autoFocus
+                onKeyDown={(e) => { if (e.key === 'Enter') { saveField({ name: nameVal }); setEditingName(false) } }}
+                className="input" style={{ padding: '8px 12px' }} />
+              <button type="button" onClick={() => { saveField({ name: nameVal }); setEditingName(false) }} className="pill sel">Save</button>
+              <button type="button" onClick={() => setEditingName(false)} className="muted">✕</button>
+            </span>
+          ) : (
+            <button type="button" onClick={() => { setNameVal(user.name); setEditingName(true) }} className="block text-left">
+              <h3 className="truncate">{user.name}</h3>
+            </button>
+          )}
+          <p className="small muted">Tap name or photo to edit</p>
+          <span className="flex gap-3 small" style={{ marginTop: 8 }}>
+            <span><b>{posts.length}</b> posts</span>
+            <button type="button" onClick={() => navigate('/home/friends')}><b>{followingTotal}</b> following</button>
+            <button type="button" onClick={() => navigate('/home/friends')}><b>{followersCount}</b> followers</button>
+          </span>
+        </span>
       </div>
 
       {/* ── Today's ring ─────────────────────────────────────────── */}
-      <div className="mx-5 mb-5 card p-4">
-        <p className="mb-4 text-xs font-semibold uppercase tracking-wide text-muted">Today</p>
-        <div className="flex items-center gap-5">
-          <CalorieRing pct={ringPct} size={110} label={todayCal.toLocaleString()} sublabel="kcal" over={over} />
-          <div className="flex flex-1 flex-col gap-3">
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <p className="text-xs text-muted">Calories</p>
-                <p className={`text-xs font-semibold ${over ? 'text-error' : 'accent-teal'}`}>
-                  {over ? `${(todayCal - calorieGoal).toLocaleString()} over` : `${(calorieGoal - todayCal).toLocaleString()} left`}
-                </p>
-              </div>
-              <div className="h-1.5 w-full rounded-full bg-border overflow-hidden">
-                <div className={`h-1.5 rounded-full ${over ? 'bg-error' : 'macro-calories'}`} style={{ width: `${Math.min(ringPct * 100, 100)}%` }} />
-              </div>
+      <div className="card" style={{ marginTop: 20 }}>
+        <span className="caps">Today{effectiveStreak > 0 ? ` · ${effectiveStreak} day streak` : ''}</span>
+        <div className="flex items-center gap-4" style={{ marginTop: 13 }}>
+          <CalorieRing pct={ringPct} size={120} label={todayCal.toLocaleString()} sublabel="kcal" over={over} />
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center justify-between">
+              <span>Calories</span>
+              <b className={over ? 'text-error' : 'calories-left'}>
+                {over ? `${(todayCal - calorieGoal).toLocaleString()} over` : `${(calorieGoal - todayCal).toLocaleString()} left`}
+              </b>
+            </div>
+            <div className={`bar calories ${over ? 'over' : ''}`} style={{ margin: '7px 0 18px' }}>
+              <i style={{ width: `${Math.min(ringPct * 100, 100)}%` }} />
             </div>
             {proteinGoal > 0 && (
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <p className="text-xs text-muted">Protein</p>
-                  <p className="text-xs font-semibold accent-pink">{todayProtein}g / {proteinGoal}g</p>
+              <>
+                <div className="flex items-center justify-between">
+                  <span>Protein</span>
+                  <b className="protein-total">{todayProtein} / {proteinGoal}g</b>
                 </div>
-                <div className="h-1.5 w-full rounded-full bg-border overflow-hidden">
-                  <div className="h-1.5 rounded-full macro-protein" style={{ width: `${Math.min((todayProtein / proteinGoal) * 100, 100)}%` }} />
+                <div className="bar protein" style={{ marginTop: 7 }}>
+                  <i style={{ width: `${Math.min((todayProtein / proteinGoal) * 100, 100)}%` }} />
                 </div>
-              </div>
+              </>
             )}
-            <p className="text-xs text-muted">{stats?.logCount ?? 0} meal{(stats?.logCount ?? 0) !== 1 ? 's' : ''} logged</p>
+            <p className="tiny muted" style={{ marginTop: 10 }}>{stats?.logCount ?? 0} meal{(stats?.logCount ?? 0) !== 1 ? 's' : ''} logged</p>
           </div>
         </div>
       </div>
 
       {/* ── Weekly stats ──────────────────────────────────────────── */}
-      <div className="mx-5 mb-5 grid grid-cols-2 gap-3">
-        <div className="card p-3 text-center">
-          <p className="font-display text-xl font-bold text-primary">{weeklyDays}<span className="text-sm font-normal text-muted">/14</span></p>
-          <p className="text-xs text-muted">days logged</p>
+      <div className="tile-grid">
+        <div className="tile compact">
+          <span className="icon">▦</span>
+          <span><b>{weeklyDays}/14</b><small className="block">days logged</small></span>
         </div>
-        <div className="card p-3 text-center">
-          <p className="font-display text-xl font-bold accent-teal">{weeklyAvg !== null ? weeklyAvg.toLocaleString() : '—'}</p>
-          <p className="text-xs text-muted">avg kcal/day</p>
+        <div className="tile compact">
+          <span className="icon">◌</span>
+          <span><b>{weeklyAvg !== null ? weeklyAvg.toLocaleString() : '—'}</b><small className="block">avg kcal/day</small></span>
         </div>
       </div>
 
       {/* ── Consistency calendar ─────────────────────────────────── */}
-      <div className="mx-5 mb-5">
-        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">Last 14 days — tap a day</p>
-        <StreakCalendar logDates={logDates} days={14} onDayTap={(d) => setSelectedDay(selectedDay === d ? null : d)} />
+      <div className="section">
+        <span className="caps">Last 14 days · tap a day</span>
+        <StreakCalendar logDates={logDates} days={14} selectedDay={selectedDay} onDayTap={(d) => setSelectedDay(selectedDay === d ? null : d)} />
         {selectedDay && (
-          <div className="mt-3 card p-3">
-            <p className="text-xs font-semibold text-muted mb-2">
+          <div className="card tint animate-slide-down">
+            <span className="caps">
               {new Date(selectedDay + 'T12:00:00').toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}
-            </p>
+            </span>
             {dayLogs.length === 0
-              ? <p className="text-sm text-muted">Nothing logged this day.</p>
+              ? <p className="small muted" style={{ marginTop: 8 }}>Nothing logged this day</p>
               : dayLogs.map((log) => (
-                <div key={log.id} className="flex items-center justify-between py-1.5 border-b border-border/50 last:border-0">
-                  <div>
-                    <p className="text-sm font-medium text-primary">{log.name || log.meal_type}</p>
-                    <p className="text-xs text-muted capitalize">{log.meal_type}</p>
-                  </div>
-                  <p className="text-sm font-bold text-primary">{(log.calories_final ?? log.calories_estimate ?? '—')} kcal</p>
-                </div>
+                <button key={log.id} type="button" onClick={() => navigate(`/home/log/${log.id}`)}
+                  className="meal-row w-full items-center justify-between" style={{ marginBottom: 0 }}>
+                  <span>
+                    <b className="block text-[13px] font-semibold">{log.name || log.meal_type}</b>
+                    <small className="muted capitalize">{log.meal_type}</small>
+                  </span>
+                  <b className="font-semibold">{(log.calories_final ?? log.calories_estimate ?? '—')} kcal</b>
+                </button>
               ))
             }
           </div>
@@ -313,37 +239,28 @@ export default function ProfileScreen() {
       </div>
 
       {/* ── My posts ─────────────────────────────────────────────── */}
-      <div className="mx-0">
-        <p className="mb-0 px-5 text-xs font-semibold uppercase tracking-wide text-muted pb-3 border-b border-border/40">
-          Posts · {posts.length}
-        </p>
+      <div className="section">
+        <span className="caps">Posts · {posts.length}</span>
         {postsLoading ? (
-          <div className="flex flex-col gap-0 mt-0">
-            {[1, 2].map((i) => <FeedCardSkeleton key={i} />)}
-          </div>
+          [1, 2].map((i) => <FeedCardSkeleton key={i} />)
         ) : posts.length === 0 ? (
-          <div className="flex flex-col items-center gap-3 py-12 text-center">
-            <p className="text-3xl">🍽️</p>
-            <p className="text-sm font-semibold text-primary">No meals logged yet</p>
-            <button onClick={() => navigate('/home/log')}
-              className="rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-background">
-              Log your first meal
-            </button>
+          <div className="card tint text-center" style={{ margin: 0, padding: 40 }}>
+            <div style={{ fontSize: 40, lineHeight: 1 }}>✳</div>
+            <h4 style={{ marginTop: 12 }}>No meals logged yet</h4>
+            <button type="button" onClick={() => navigate('/home/log')} className="btn">Log your first meal</button>
           </div>
         ) : (
-          <div className="flex flex-col">
-            {posts.map((item, i) => (
-              <PostCard
-                key={item.log.id}
-                item={item}
-                index={i}
-                viewerId={item.author.id}
-                optimisticLiked={optimisticLikes[item.log.id]}
-                likeAnimating={likeAnimating[item.log.id] ?? false}
-                onLike={handleLike}
-              />
-            ))}
-          </div>
+          posts.map((item, i) => (
+            <PostCard
+              key={item.log.id}
+              item={item}
+              index={i}
+              viewerId={item.author.id}
+              optimisticLiked={optimisticLikes[item.log.id]}
+              likeAnimating={likeAnimating[item.log.id] ?? false}
+              onLike={handleLike}
+            />
+          ))
         )}
       </div>
     </div>
