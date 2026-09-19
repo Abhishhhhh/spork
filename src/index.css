@@ -49,6 +49,7 @@
   --color-teal:        #087f78;
   --color-pink-acc:    #ad2f6d;
   --color-error:       #d23b2f;
+  --color-heart:       #ff3b5c;
 
   /* Compatibility aliases used throughout the app */
   --color-background:  var(--color-canvas);
@@ -79,6 +80,7 @@
   --color-teal:        #42e8d4;
   --color-pink-acc:    #ff77b8;
   --color-error:       #ff6b5e;
+  --color-heart:       #ff4d6d;
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -287,6 +289,7 @@
   .protein-total { color: var(--color-pink-acc); }
   .accent-teal { color: var(--color-teal); }
   .accent-pink { color: var(--color-pink-acc); }
+  .liked { color: var(--color-heart); }
 
   /* Calendar */
   .calendar { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }

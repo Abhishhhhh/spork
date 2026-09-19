@@ -99,7 +99,7 @@ export default function MealDetail() {
       >
         <Avatar name={author.name} photoUrl={author.photo_url} />
         <span className="min-w-0 flex-1">
-          <b className="block font-semibold">{author.name}</b>
+          <b className="block font-semibold">@{author.username}</b>
           <small className="muted block">{mealTypeLabel} · {relativeTime(log.created_at)}</small>
         </span>
       </button>
@@ -123,7 +123,7 @@ export default function MealDetail() {
       </div>
 
       <div className="flex items-center gap-4" style={{ margin: '17px 0' }}>
-        <button type="button" onClick={handleToggleLike} className={`flex items-center gap-1.5 ${displayLiked ? 'font-semibold' : ''}`}>
+        <button type="button" onClick={handleToggleLike} className={`flex items-center gap-1.5 ${displayLiked ? 'liked font-semibold' : ''}`}>
           <span style={{ fontSize: 16, lineHeight: 1 }}>{displayLiked ? '♥' : '♡'}</span>
           {displayLikeCount} {displayLikeCount === 1 ? 'like' : 'likes'}
         </button>
@@ -208,7 +208,7 @@ function CommentRow({
         <Avatar name={comment.author.name} photoUrl={comment.author.photo_url} />
       </button>
       <span className="min-w-0 flex-1">
-        <button type="button" onClick={goToAuthor} className="font-semibold">{comment.author.name}</button>
+        <button type="button" onClick={goToAuthor} className="font-semibold">@{comment.author.username}</button>
         <p className="small">{comment.body}</p>
         <span className="flex gap-3">
           {onReply && <button type="button" onClick={onReply} className="muted tiny">Reply</button>}

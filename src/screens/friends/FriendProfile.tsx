@@ -99,8 +99,8 @@ export default function FriendProfile() {
       <div className="flex items-center gap-3.5">
         <Avatar name={user.name} photoUrl={user.photo_url} size="big" />
         <span className="min-w-0">
-          <h3 className="truncate">{user.name}</h3>
-          <p className="muted small">@{user.username}</p>
+          <h3 className="truncate">@{user.username}</h3>
+          <p className="muted small">{user.name}</p>
           <p className="small">{logs.length} post{logs.length === 1 ? '' : 's'} · {effectiveStreak} day streak</p>
         </span>
       </div>
@@ -113,7 +113,7 @@ export default function FriendProfile() {
             <span className="caps">Streak</span>
             <h3>{effectiveStreak} day{effectiveStreak === 1 ? '' : 's'}</h3>
           </span>
-          <span style={{ fontSize: 40, lineHeight: 1 }}>✳</span>
+          <span style={{ fontSize: 40, lineHeight: 1 }}>🔥</span>
         </div>
       </div>
 

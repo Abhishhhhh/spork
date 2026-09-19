@@ -64,7 +64,7 @@ export default function NotificationsInbox() {
             >
               <span className="icon">{cfg.icon}</span>
               <span className="min-w-0 flex-1">
-                <b>{n.actor.name} {cfg.verb}</b>
+                <b>@{n.actor.username} {cfg.verb}</b>
                 <small className="truncate">{n.log.name ?? n.log.meal_type} · {relativeTime(n.createdAt)}</small>
               </span>
               <Avatar name={n.actor.name} photoUrl={n.actor.photo_url} size="sm" />

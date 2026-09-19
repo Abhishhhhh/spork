@@ -6,7 +6,7 @@ import { StreakCalendar } from '../../components/StreakCalendar'
 import { MILESTONE_LABELS } from '../../lib/streakMeta'
 import { TopBar } from '../../components/TopBar'
 
-const MILESTONE_ICONS: Record<number, string> = { 7: '✳', 30: '⚡︎', 100: '★' }
+const MILESTONE_ICONS: Record<number, string> = { 7: '🔥', 30: '⚡︎', 100: '🏆' }
 
 export default function StreaksRewards() {
   const navigate = useNavigate()
@@ -74,7 +74,7 @@ export default function StreaksRewards() {
 
       {/* ── Hero ─────────────────────────────────────────────────── */}
       <div className="card ink text-center" style={{ padding: 25 }}>
-        <span style={{ fontSize: 45, lineHeight: 1 }}>✳</span>
+        <span style={{ fontSize: 45, lineHeight: 1 }}>🔥</span>
         <div className="big">{effectiveStreak}</div>
         <p>day streak</p>
         <p className="small muted">

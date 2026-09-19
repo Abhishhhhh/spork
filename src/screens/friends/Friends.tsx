@@ -95,7 +95,7 @@ export default function Friends() {
       <>
         <Avatar name={user.name} photoUrl={user.photo_url} />
         <span className="min-w-0 flex-1">
-          <b>{user.name}</b>
+          <b>@{user.username}</b>
           <small className="truncate">{desc}</small>
         </span>
         {action}
@@ -136,7 +136,7 @@ export default function Friends() {
                 <div key={user.id}>
                   {person(
                     user,
-                    `@${user.username}`,
+                    user.name,
                     <button
                       type="button"
                       disabled={connected || sendMutation.isPending}
@@ -187,7 +187,7 @@ export default function Friends() {
               <div className="list">
                 {data.outgoing.map(({ user }) => (
                   <div key={user.id}>
-                    {person(user, `@${user.username}`, <span className="pill tint">Requested</span>)}
+                    {person(user, user.name, <span className="pill tint">Requested</span>)}
                   </div>
                 ))}
               </div>
@@ -209,7 +209,7 @@ export default function Friends() {
               <div className="list">
                 {data.accepted.map((user) => (
                   <div key={user.id}>
-                    {person(user, `@${user.username}`, <span className="pill">View</span>, () => navigate(`/home/friend/${user.username}`))}
+                    {person(user, user.name, <span className="pill">View</span>, () => navigate(`/home/friend/${user.username}`))}
                   </div>
                 ))}
               </div>
@@ -229,10 +229,10 @@ export default function Friends() {
                       {person(
                         user,
                         user.mutualCount > 0
-                          ? `@${user.username} · ${user.mutualCount} mutual friend${user.mutualCount > 1 ? 's' : ''}`
+                          ? `${user.name} · ${user.mutualCount} mutual friend${user.mutualCount > 1 ? 's' : ''}`
                           : user.recentLogs > 0
-                          ? `@${user.username} · ${user.recentLogs} meal${user.recentLogs > 1 ? 's' : ''} this week`
-                          : `@${user.username}`,
+                          ? `${user.name} · ${user.recentLogs} meal${user.recentLogs > 1 ? 's' : ''} this week`
+                          : user.name,
                         <button
                           type="button"
                           disabled={connectedIds.has(user.id) || sendMutation.isPending}

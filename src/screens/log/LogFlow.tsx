@@ -190,7 +190,7 @@ function CelebrationScreen({ data, onViewPost, onDone }: {
 
   return (
     <div className="text-center animate-fade-in" style={{ paddingTop: 60 }}>
-      <span className="font-display block" style={{ fontSize: 90, lineHeight: 1 }}>{isStreakMilestone ? '✦' : '✳'}</span>
+      <span className="font-display block" style={{ fontSize: 90, lineHeight: 1 }}>{isStreakMilestone ? '🏆' : '🔥'}</span>
       <h2>
         {isStreakMilestone
           ? `${data.newStreakCount}-day streak!`

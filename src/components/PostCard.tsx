@@ -86,7 +86,7 @@ export function PostCard({ item, index = 0, viewerId, optimisticLiked, likeAnima
           >
             <Avatar name={author.name} photoUrl={author.photo_url} />
             <span className="min-w-0 flex-1">
-              <b className="block truncate font-semibold">{author.name}</b>
+              <b className="block truncate font-semibold">@{author.username}</b>
               <small className="muted block">{relativeTime(log.created_at)} · {capitalize(log.meal_type)}</small>
             </span>
           </button>
@@ -121,7 +121,7 @@ export function PostCard({ item, index = 0, viewerId, optimisticLiked, likeAnima
               )}
             </div>
           ) : (
-            effectiveStreak > 0 && <span className="pill tint">✳ {effectiveStreak}</span>
+            effectiveStreak > 0 && <span className="pill tint">🔥 {effectiveStreak}</span>
           )}
         </div>
 
@@ -150,7 +150,7 @@ export function PostCard({ item, index = 0, viewerId, optimisticLiked, likeAnima
 
         {/* ── Interaction row ─────────────────────────────── */}
         <div className="flex items-center gap-4" style={{ marginTop: 14 }}>
-          <button type="button" onClick={handleLikeWithHaptic} className={`flex items-center gap-1.5 ${displayLiked ? 'text-ink font-semibold' : 'muted'}`}>
+          <button type="button" onClick={handleLikeWithHaptic} className={`flex items-center gap-1.5 ${displayLiked ? 'liked font-semibold' : 'muted'}`}>
             <span className={likeAnimating ? 'animate-pop inline-block' : 'inline-block'} style={{ fontSize: 16, lineHeight: 1 }}>
               {displayLiked ? '♥' : '♡'}
             </span>
