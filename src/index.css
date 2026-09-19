@@ -66,19 +66,39 @@
    DARK — .dark on <html>
    ══════════════════════════════════════════════════════════════ */
 .dark {
-  --color-canvas:      #151515;
-  --color-paper:       #252525;
+  --color-canvas:      #000000;   /* OLED true black */
+  --color-paper:       #111111;
   --color-ink:         #f4f4f3;
   --color-quiet:       #aaa9a7;
   --color-soft:        #313131;
   --color-soft2:       #454545;
-  --color-line:        #3a3a3a;
+  --color-line:        #2A2A2A;
   --color-on-ink:      #171717;
   --color-inverse:     #f4f4f3;
   --color-inverse-ink: #171717;
   --color-teal:        #42e8d4;
   --color-pink-acc:    #ff77b8;
-  --color-error:       #ff6b5e;
+  --color-error:       #FF453A;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   PINK — .pink on <html>
+   Blush background, white cards, hot-pink primary.
+   ══════════════════════════════════════════════════════════════ */
+.pink {
+  --color-canvas:      #FFF0F5;
+  --color-paper:       #ffffff;
+  --color-ink:         #E91E8C;
+  --color-quiet:       #9E6478;
+  --color-soft:        #FFE4EF;
+  --color-soft2:       #FFD6E8;
+  --color-line:        #F0C0D4;
+  --color-on-ink:      #ffffff;
+  --color-inverse:     #E91E8C;
+  --color-inverse-ink: #ffffff;
+  --color-teal:        #087f78;
+  --color-pink-acc:    #E91E8C;
+  --color-error:       #FF3B30;
 }
 
 /* ══════════════════════════════════════════════════════════════
