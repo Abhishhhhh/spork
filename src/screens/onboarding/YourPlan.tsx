@@ -64,7 +64,7 @@ function PlanLoader({ onDone }: { onDone: () => void }) {
   return (
     <div className="screen min-h-screen animate-fade-in">
       <TopBar title="Your plan" back={null} />
-      <div className="flex flex-col items-center justify-center text-center" style={{ height: 520 }}>
+      <div className="flex flex-col items-center justify-center text-center" style={{ minHeight: 'calc(100vh - 160px)' }}>
         <div className="icon-box" style={{ width: 120, height: 120, fontSize: 56 }}>✳</div>
         <div style={{ height: 28 }} />
         <h2>Building your plan</h2>
