@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { isValidUsernameFormat } from '../../lib/username'
 import { useOnboardingStore } from '../../store/onboardingStore'
-import { OnboardingProgress } from '../../components/OnboardingProgress'
+import { TopBar } from '../../components/TopBar'
 
 export default function ProfileSetup() {
   const navigate = useNavigate()
@@ -25,7 +25,7 @@ export default function ProfileSetup() {
     e.preventDefault()
     setError(null)
 
-    const normalizedUsername = username.trim().toLowerCase()
+    const normalizedUsername = username.trim().toLowerCase().replace(/^@/, '')
 
     if (!name.trim()) {
       setError('Name is required.')
@@ -59,52 +59,49 @@ export default function ProfileSetup() {
     navigate('/onboarding/privacy')
   }
 
+  const initial = (name.trim() || '?').charAt(0).toUpperCase()
+
   return (
-    <div className="flex min-h-screen flex-col px-6 py-8">
-      <button
-        onClick={() => navigate('/onboarding/create-account')}
-        aria-label="Back"
-        className="mb-6 flex h-9 w-9 items-center justify-center rounded-full bg-surface shadow-[var(--shadow-card)] text-primary"
-      >
-        ←
-      </button>
-      <OnboardingProgress step={1} total={3} />
+    <div className="screen min-h-screen">
+      <TopBar title="Your plan" back="/onboarding/create-account" />
 
-      <h1 className="mb-2 text-xl font-bold text-primary">Set up your profile</h1>
-      <p className="mb-8 text-sm text-muted">This is what friends see on the feed.</p>
+      <h2>Set up your profile</h2>
+      <p className="muted">Let your friends recognise you</p>
+      <div style={{ height: 28 }} />
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <label className="mx-auto mb-2 flex h-24 w-24 cursor-pointer items-center justify-center overflow-hidden rounded-full bg-background border border-border text-center text-sm text-muted">
-          {avatarPreviewUrl ? (
-            <img src={avatarPreviewUrl} alt="" className="h-24 w-24 object-cover" />
-          ) : (
-            'Add photo'
-          )}
-          <input
-            type="file"
-            accept="image/*"
-            className="sr-only"
-            onChange={(e) => setAvatarFile(e.target.files?.[0] ?? null)}
-          />
-        </label>
-        <input
-          placeholder="Your name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          className="rounded-full bg-surface border border-border/60 px-5 py-3 text-base text-primary placeholder:text-muted"
-        />
-        <input
-          placeholder="@ username"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          className="rounded-full bg-surface border border-border/60 px-5 py-3 text-base text-primary placeholder:text-muted"
-        />
-        {error && <p className="text-sm text-error">{error}</p>}
-        <button
-          type="submit"
-          disabled={checking}
-          className="rounded-full bg-primary py-3 text-base font-semibold text-background disabled:opacity-50"
-        >
+      <form onSubmit={handleSubmit}>
+        <div className="text-center">
+          <label className="inline-block cursor-pointer">
+            {avatarPreviewUrl ? (
+              <img src={avatarPreviewUrl} alt="" className="avatar bigavatar mx-auto" />
+            ) : (
+              <span className="avatar bigavatar mx-auto">{initial}</span>
+            )}
+            <input
+              type="file"
+              accept="image/*"
+              className="sr-only"
+              onChange={(e) => setAvatarFile(e.target.files?.[0] ?? null)}
+            />
+            <p className="small muted" style={{ marginTop: 10 }}>
+              {avatarPreviewUrl ? 'Change profile photo' : 'Add profile photo'}
+            </p>
+          </label>
+        </div>
+        <div style={{ height: 28 }} />
+
+        <div className="field">
+          <label htmlFor="name">Your name</label>
+          <input id="name" placeholder="Your name" value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" />
+        </div>
+        <div className="field">
+          <label htmlFor="username">Username</label>
+          <input id="username" placeholder="@username" value={username} onChange={(e) => setUsername(e.target.value)} autoCapitalize="none" autoComplete="username" />
+        </div>
+
+        {error && <p className="error-text">{error}</p>}
+
+        <button type="submit" disabled={checking} className="btn">
           {checking ? 'Checking…' : 'Continue'}
         </button>
       </form>

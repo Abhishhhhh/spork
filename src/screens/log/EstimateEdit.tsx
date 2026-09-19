@@ -2,11 +2,11 @@ import { useEffect, useMemo, useState } from 'react'
 import { useLogDraftStore, type MealType, type Satiety } from '../../store/logDraft'
 import { useTodayStats } from '../../hooks/useTodayStats'
 
-const MEAL_TYPE_OPTIONS: { value: MealType; icon: string; label: string }[] = [
-  { value: 'breakfast', icon: '🌅', label: 'Breakfast' },
-  { value: 'lunch',     icon: '☀️', label: 'Lunch' },
-  { value: 'dinner',    icon: '🌙', label: 'Dinner' },
-  { value: 'snack',     icon: '🍎', label: 'Snack' },
+const MEAL_TYPE_OPTIONS: { value: MealType; label: string }[] = [
+  { value: 'breakfast', label: 'Breakfast' },
+  { value: 'lunch',     label: 'Lunch' },
+  { value: 'dinner',    label: 'Dinner' },
+  { value: 'snack',     label: 'Snack' },
 ]
 
 const PORTION_OPTIONS: { value: number; label: string }[] = [
@@ -16,17 +16,17 @@ const PORTION_OPTIONS: { value: number; label: string }[] = [
   { value: 2,   label: '2×' },
 ]
 
-const SATIETY_OPTIONS: { value: Satiety; icon: string; label: string }[] = [
-  { value: 'loved_it',  icon: '😍', label: 'Loved it' },
-  { value: 'good',      icon: '👍', label: 'Good' },
-  { value: 'okay',      icon: '😐', label: 'Okay' },
-  { value: 'not_great', icon: '🤢', label: 'Not great' },
+const SATIETY_OPTIONS: { value: Satiety; label: string }[] = [
+  { value: 'loved_it',  label: 'Loved it' },
+  { value: 'good',      label: 'Good' },
+  { value: 'okay',      label: 'Okay' },
+  { value: 'not_great', label: 'Not great' },
 ]
 
 const CONFIDENCE_LABELS = {
-  high:   { text: 'High confidence',   color: 'text-green-600' },
-  medium: { text: 'Medium confidence', color: 'text-muted' },
-  low:    { text: 'Low confidence',    color: 'text-error' },
+  high:   'High confidence',
+  medium: 'Medium confidence',
+  low:    'Low confidence',
 }
 
 interface EstimateEditProps {
@@ -34,19 +34,6 @@ interface EstimateEditProps {
   onPost: () => void
   posting: boolean
   postError: string | null
-}
-
-function MacroBar({ label, value, total, color }: { label: string; value: number; total: number; color: string }) {
-  const pct = total > 0 ? Math.min((value / total) * 100, 100) : 0
-  return (
-    <div className="flex items-center gap-2">
-      <span className="w-12 text-right text-xs text-muted">{label}</span>
-      <div className="flex-1 h-2 rounded-full bg-border overflow-hidden">
-        <div className={`h-2 rounded-full ${color}`} style={{ width: `${pct}%` }} />
-      </div>
-      <span className="w-10 text-xs font-semibold text-primary">{value}g</span>
-    </div>
-  )
 }
 
 export default function EstimateEdit({ onBack, onPost, posting, postError }: EstimateEditProps) {
@@ -81,222 +68,164 @@ export default function EstimateEdit({ onBack, onPost, posting, postError }: Est
     return () => URL.revokeObjectURL(previewUrl)
   }, [previewUrl])
 
-  const totalMacroG = (proteinG ?? 0) + (carbsG ?? 0) + (fatG ?? 0)
-  const confidenceInfo = estimate?.parsed.confidence ? CONFIDENCE_LABELS[estimate.parsed.confidence] : null
+  const confidenceLabel = estimate?.parsed.confidence ? CONFIDENCE_LABELS[estimate.parsed.confidence] : null
   const kcalAfterThisMeal = (stats?.caloriesLogged ?? 0) + (calories ?? 0)
-  const goal = stats?.calorieGoal ?? 2000
-  const willExceedGoal = kcalAfterThisMeal > goal
+  const goal = stats?.calorieGoal ?? 0
+  const willExceedGoal = goal > 0 && kcalAfterThisMeal > goal
   const items = estimate?.parsed.items ?? []
 
   return (
-    <div className="flex min-h-[calc(100vh-5rem)] flex-col">
-
+    <div>
       {/* Top bar */}
-      <div className="flex items-center justify-between px-5 pt-6 pb-4">
-        <button onClick={onBack} aria-label="Back"
-          className="flex h-9 w-9 items-center justify-center rounded-full bg-surface shadow-[var(--shadow-card)] text-primary">←</button>
-        <h1 className="text-base font-semibold text-primary">
-          {estimate ? 'Review estimate' : 'Add details'}
-        </h1>
-        <div className="w-9" /> {/* spacer */}
+      <div className="topbar">
+        <button type="button" onClick={onBack} aria-label="Back" className="circle">←</button>
+        <span className="clay">{estimate ? 'Review meal' : 'Add details'}</span>
+        <span style={{ width: 42 }} />
       </div>
 
-      <div className="flex-1 overflow-y-auto px-5 pb-6 flex flex-col gap-5">
+      {/* Photo preview */}
+      {previewUrl && <img src={previewUrl} alt="" className="photo" style={{ height: 175 }} />}
 
-        {/* Photo preview */}
-        {previewUrl && (
-          <div className="relative">
-            <img src={previewUrl} alt=""
-              className="aspect-[4/3] w-full rounded-2xl object-cover" />
-            {confidenceInfo && (
-              <span className={`absolute top-2 right-2 rounded-full bg-background/90 px-2.5 py-1 text-xs font-semibold ${confidenceInfo.color}`}>
-                {confidenceInfo.text}
-              </span>
-            )}
-          </div>
-        )}
-
-        {/* AI item breakdown — collapsible */}
-        {items.length > 0 && (
-          <div className="card overflow-hidden">
-            <button
-              onClick={() => setShowItemBreakdown((v) => !v)}
-              className="w-full flex items-center justify-between px-4 py-3 text-left"
-            >
-              <div>
-                <p className="text-sm font-semibold text-primary">AI detected {items.length} item{items.length > 1 ? 's' : ''}</p>
-                <p className="text-xs text-muted">{items.map((i) => i.name).join(', ')}</p>
-              </div>
-              <span className="text-muted text-sm">{showItemBreakdown ? '▲' : '▼'}</span>
-            </button>
-            {showItemBreakdown && (
-              <div className="border-t border-border">
-                {items.map((item, idx) => (
-                  <div key={idx} className="flex items-center justify-between px-4 py-2.5 border-b border-border/60 last:border-0">
-                    <div>
-                      <p className="text-sm font-medium text-primary">{item.name}</p>
-                      <p className="text-xs text-muted">
-                        P: {item.protein_g}g · C: {item.carbs_g}g · F: {item.fat_g}g
-                      </p>
-                    </div>
-                    <p className="text-sm font-semibold text-primary">{item.calories} kcal</p>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Portion multiplier */}
-        {estimate && (
-          <div>
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">Portion size</p>
-            <div className="flex gap-2">
-              {PORTION_OPTIONS.map((opt) => (
-                <button key={opt.value} type="button"
-                  onClick={() => setPortionMultiplier(opt.value)}
-                  className={`flex-1 rounded-full py-2 text-sm font-semibold transition-colors ${
-                    portionMultiplier === opt.value
-                      ? 'bg-primary text-background'
-                      : 'bg-background text-primary'}`}>
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Calorie total + macro bars */}
-        <div className="rounded-2xl bg-background p-4">
-          <div className="flex items-baseline justify-between mb-3">
-            <p className="text-2xl font-bold text-primary">
-              {calories?.toLocaleString() ?? '—'}
-              <span className="text-base font-normal text-muted"> kcal</span>
-            </p>
-            {stats && (
-              <p className={`text-xs font-semibold ${willExceedGoal ? 'text-error' : 'text-muted'}`}>
-                {willExceedGoal
-                  ? `${(kcalAfterThisMeal - goal).toLocaleString()} over goal`
-                  : `${(goal - kcalAfterThisMeal).toLocaleString()} left today`}
-              </p>
-            )}
-          </div>
-          <div className="flex flex-col gap-2">
-            <MacroBar label="Protein" value={proteinG ?? 0} total={totalMacroG} color="macro-protein" />
-            <MacroBar label="Carbs"   value={carbsG ?? 0}   total={totalMacroG} color="macro-carbs" />
-            <MacroBar label="Fat"     value={fatG ?? 0}     total={totalMacroG} color="macro-fat" />
-          </div>
+      {/* Estimate summary */}
+      <div className="card tint">
+        <div className="flex items-center justify-between">
+          <span>
+            <span className="caps">{estimate ? 'Estimated calories' : 'Calories'}</span>
+            <h3>{calories != null ? `${calories.toLocaleString()} kcal` : '—'}</h3>
+          </span>
+          <span className="pill">{confidenceLabel ?? 'Editable'}</span>
         </div>
-
-        {/* Editable macro fields */}
-        <div>
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">Adjust if needed</p>
-          <div className="grid grid-cols-2 gap-2">
-            {([
-              { key: 'calories' as const, label: 'Calories (kcal)', val: calories },
-              { key: 'proteinG' as const, label: 'Protein (g)',     val: proteinG },
-              { key: 'carbsG'   as const, label: 'Carbs (g)',       val: carbsG },
-              { key: 'fatG'     as const, label: 'Fat (g)',         val: fatG },
-            ] as const).map(({ key, label, val }) => (
-              <label key={key} className="flex flex-col gap-1">
-                <span className="text-xs text-muted">{label}</span>
-                <input type="number" min="0" step="1"
-                  value={val ?? ''}
-                  onChange={(e) => setField(key, e.target.value === '' ? null : Number(e.target.value))}
-                  className="rounded-xl bg-surface border border-border/60 px-3 py-2 text-base text-primary" />
-              </label>
-            ))}
-          </div>
+        <div className="divider" />
+        <div className="flex items-center justify-between small">
+          <span>Protein <b className="protein-total">{proteinG ?? '—'}g</b></span>
+          <span>Carbs <b>{carbsG ?? '—'}g</b></span>
+          <span>Fat <b>{fatG ?? '—'}g</b></span>
         </div>
-
-        {/* Meal name */}
-        <div>
-          <label className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted">Meal name</label>
-          <input
-            placeholder="e.g. Chicken rice bowl"
-            value={mealName}
-            onChange={(e) => setMealName(e.target.value)}
-            className="mt-1 w-full rounded-2xl bg-surface border border-border/60 px-4 py-2.5 text-base text-primary placeholder:text-muted"
-          />
-        </div>
-
-        {/* Social caption */}
-        <div>
-          <label className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted">
-            Caption <span className="normal-case font-normal text-muted">(shows on your feed)</span>
-          </label>
-          <input
-            placeholder='e.g. "Finally nailed my macros 💪"'
-            value={caption}
-            onChange={(e) => setCaption(e.target.value)}
-            className="mt-1 w-full rounded-2xl bg-surface border border-border/60 px-4 py-2.5 text-base text-primary placeholder:text-muted"
-          />
-        </div>
-
-        {/* Meal type chips */}
-        <div>
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">Meal type</p>
-          <div className="flex gap-2">
-            {MEAL_TYPE_OPTIONS.map((opt) => (
-              <button key={opt.value} type="button" onClick={() => setMealType(opt.value)}
-                className={`flex flex-1 flex-col items-center gap-0.5 rounded-2xl border py-2.5 text-xs font-semibold transition-colors ${
-                  mealType === opt.value
-                    ? 'border-primary bg-primary text-background'
-                    : 'border-border text-primary'}`}>
-                <span className="text-base">{opt.icon}</span>
-                {opt.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* How did it feel? */}
-        <div>
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">
-            How was it? <span className="normal-case font-normal">(optional)</span>
+        {stats && goal > 0 && (
+          <p className={`tiny ${willExceedGoal ? 'text-error' : 'muted'}`} style={{ marginTop: 10 }}>
+            {willExceedGoal
+              ? `${(kcalAfterThisMeal - goal).toLocaleString()} kcal over today’s goal`
+              : `${(goal - kcalAfterThisMeal).toLocaleString()} kcal left today after this meal`}
           </p>
-          <div className="flex gap-2">
-            {SATIETY_OPTIONS.map((opt) => (
-              <button key={opt.value} type="button"
-                onClick={() => setSatiety(satiety === opt.value ? null : opt.value)}
-                className={`flex flex-1 flex-col items-center gap-0.5 rounded-2xl border py-2.5 text-xs font-semibold transition-colors ${
-                  satiety === opt.value
-                    ? 'border-primary bg-primary text-background'
-                    : 'border-border text-primary'}`}>
-                <span className="text-base">{opt.icon}</span>
+        )}
+      </div>
+
+      {/* AI item breakdown — collapsible */}
+      {items.length > 0 && (
+        <div className="card" style={{ marginTop: 0 }}>
+          <button type="button" onClick={() => setShowItemBreakdown((v) => !v)} className="flex w-full items-center justify-between gap-3 text-left">
+            <span className="min-w-0">
+              <b className="block font-semibold">AI detected {items.length} item{items.length > 1 ? 's' : ''}</b>
+              <small className="muted block truncate">{items.map((i) => i.name).join(', ')}</small>
+            </span>
+            <span className="muted">{showItemBreakdown ? '▴' : '▾'}</span>
+          </button>
+          {showItemBreakdown && items.map((item, idx) => (
+            <div key={idx} className="meal-row items-center justify-between" style={{ marginBottom: 0 }}>
+              <span>
+                <b className="block text-[13px] font-semibold">{item.name}</b>
+                <small className="muted">P {item.protein_g}g · C {item.carbs_g}g · F {item.fat_g}g</small>
+              </span>
+              <b className="font-semibold">{item.calories} kcal</b>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Editable macro fields */}
+      <div className="inline-fields">
+        {([
+          { key: 'calories' as const, label: 'Calories (kcal)', val: calories },
+          { key: 'proteinG' as const, label: 'Protein · g',     val: proteinG },
+          { key: 'carbsG'   as const, label: 'Carbs · g',       val: carbsG },
+          { key: 'fatG'     as const, label: 'Fat · g',         val: fatG },
+        ] as const).map(({ key, label, val }) => (
+          <div key={key} className="field">
+            <label htmlFor={`f-${key}`}>{label}</label>
+            <input id={`f-${key}`} type="number" min="0" step="1" inputMode="numeric"
+              value={val ?? ''}
+              onChange={(e) => setField(key, e.target.value === '' ? null : Number(e.target.value))} />
+          </div>
+        ))}
+      </div>
+
+      {/* Meal name */}
+      <div className="field">
+        <label htmlFor="meal-name">Meal name</label>
+        <input id="meal-name" placeholder="e.g. Chicken curry with roti" value={mealName} onChange={(e) => setMealName(e.target.value)} />
+      </div>
+
+      {/* Social caption */}
+      <div className="field">
+        <label htmlFor="caption">Caption · optional</label>
+        <input id="caption" placeholder="Add a caption" value={caption} onChange={(e) => setCaption(e.target.value)} />
+      </div>
+
+      {/* Meal type */}
+      <div className="section">
+        <span className="caps">Meal type</span>
+        <div className="num-pills">
+          {MEAL_TYPE_OPTIONS.map((opt) => (
+            <button key={opt.value} type="button" onClick={() => setMealType(opt.value)}
+              className={`num-pill ${mealType === opt.value ? 'sel' : ''}`} aria-pressed={mealType === opt.value}>
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Portion multiplier */}
+      {estimate && (
+        <div className="section">
+          <span className="caps">Portion</span>
+          <div className="num-pills">
+            {PORTION_OPTIONS.map((opt) => (
+              <button key={opt.value} type="button" onClick={() => setPortionMultiplier(opt.value)}
+                className={`num-pill ${portionMultiplier === opt.value ? 'sel' : ''}`} aria-pressed={portionMultiplier === opt.value}>
                 {opt.label}
               </button>
             ))}
           </div>
         </div>
+      )}
 
-        {/* Visibility */}
-        <div className="flex items-center justify-between card px-4 py-3">
-          <div>
-            <p className="text-sm font-semibold text-primary">Visible to friends</p>
-            <p className="text-xs text-muted">{visibility === 'public' ? 'Appears on the feed' : 'Only you can see this'}</p>
-          </div>
-          <button
-            onClick={() => setVisibility(visibility === 'public' ? 'private' : 'public')}
-            aria-label="Toggle visibility"
-            className={`h-7 w-12 rounded-full transition-colors ${visibility === 'public' ? 'bg-primary' : 'bg-border'}`}
-          >
-            <span className={`block h-5 w-5 translate-y-0 rounded-full bg-background transition-transform mx-auto ${
-              visibility === 'public' ? 'translate-x-2.5' : '-translate-x-2.5'}`} />
-          </button>
+      {/* How was it? */}
+      <div className="section">
+        <span className="caps">How was it? · optional</span>
+        <div className="num-pills">
+          {SATIETY_OPTIONS.map((opt) => (
+            <button key={opt.value} type="button" onClick={() => setSatiety(satiety === opt.value ? null : opt.value)}
+              className={`num-pill ${satiety === opt.value ? 'sel' : ''}`} aria-pressed={satiety === opt.value}>
+              {opt.label}
+            </button>
+          ))}
         </div>
-
-        {postError && <p className="text-sm text-error">{postError}</p>}
-
-        {/* Post button */}
-        <button
-          disabled={posting || calories === null}
-          onClick={onPost}
-          className="w-full rounded-full bg-primary py-3.5 text-base font-semibold text-background disabled:opacity-40"
-        >
-          {posting ? 'Posting…' : postError ? 'Retry' : 'Post 🔥'}
-        </button>
       </div>
+
+      {/* Visibility */}
+      <div className="card">
+        <div className="flex items-center justify-between">
+          <span>
+            <span className="block">Visible to friends</span>
+            <small className="muted">{visibility === 'public' ? 'Appears on the feed' : 'Only you can see this'}</small>
+          </span>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={visibility === 'public'}
+            aria-label="Visible to friends"
+            onClick={() => setVisibility(visibility === 'public' ? 'private' : 'public')}
+            className={`switch ${visibility === 'public' ? '' : 'off'}`}
+          />
+        </div>
+      </div>
+
+      {postError && <p className="error-text">{postError}</p>}
+
+      {/* Post button */}
+      <button type="button" disabled={posting || calories === null} onClick={onPost} className="btn">
+        {posting ? 'Posting…' : postError ? 'Retry' : 'Post meal'}
+      </button>
     </div>
   )
 }

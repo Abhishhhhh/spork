@@ -16,8 +16,8 @@ export default defineConfig({
         name: 'Spork',
         short_name: 'Spork',
         description: 'Track meals, build streaks, share with friends.',
-        theme_color: '#000000',        // matches dark default
-        background_color: '#000000',
+        theme_color: '#f5f5f4',        // Spork canvas (light default)
+        background_color: '#f5f5f4',
         display: 'standalone',
         orientation: 'portrait',
         start_url: '/',

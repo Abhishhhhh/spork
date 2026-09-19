@@ -2,8 +2,14 @@ import { useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useOnboardingStore } from '../../store/onboardingStore'
 import { OnboardingProgress } from '../../components/OnboardingProgress'
+import { TopBar } from '../../components/TopBar'
 
 type Sex = 'male' | 'female'
+
+const SEX_OPTIONS: { value: Sex; icon: string; label: string }[] = [
+  { value: 'female', icon: '♀', label: 'Female' },
+  { value: 'male',   icon: '♂', label: 'Male' },
+]
 
 export default function Basics() {
   const navigate = useNavigate()
@@ -42,71 +48,57 @@ export default function Basics() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col px-6 py-8">
-      <button onClick={() => navigate('/welcome')} aria-label="Back"
-        className="mb-6 flex h-9 w-9 items-center justify-center rounded-full bg-surface shadow-[var(--shadow-card)] text-primary">←</button>
+    <div className="screen min-h-screen">
+      <TopBar title="Your plan" back="/welcome" />
       <OnboardingProgress step={1} total={6} />
 
-      <h1 className="mb-1 text-xl font-bold text-primary">The basics</h1>
-      <p className="mb-8 text-sm text-muted">Used to calculate your personal calorie targets.</p>
+      <h2>The basics</h2>
+      <p className="muted">A few details to calculate your daily target</p>
+      <div style={{ height: 28 }} />
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-
-        {/* Height */}
-        <div>
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">Height</p>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label htmlFor="ht-ft" className="text-xs text-muted">Feet</label>
-              <input id="ht-ft" inputMode="numeric" placeholder="6"
-                value={heightFt} onChange={(e) => setHeightFt(e.target.value)}
-                className="mt-1 w-full rounded-xl bg-surface border border-border/60 px-3 py-2.5 text-base text-primary placeholder:text-muted" />
-            </div>
-            <div>
-              <label htmlFor="ht-in" className="text-xs text-muted">Inches</label>
-              <input id="ht-in" inputMode="numeric" placeholder="2"
-                value={heightIn} onChange={(e) => setHeightIn(e.target.value)}
-                className="mt-1 w-full rounded-xl bg-surface border border-border/60 px-3 py-2.5 text-base text-primary placeholder:text-muted" />
-            </div>
+      <form onSubmit={handleSubmit}>
+        <div className="inline-fields">
+          <div className="field">
+            <label htmlFor="ht-ft">Height · feet</label>
+            <input id="ht-ft" inputMode="numeric" placeholder="5"
+              value={heightFt} onChange={(e) => setHeightFt(e.target.value)} />
+          </div>
+          <div className="field">
+            <label htmlFor="ht-in">Inches</label>
+            <input id="ht-in" inputMode="numeric" placeholder="8"
+              value={heightIn} onChange={(e) => setHeightIn(e.target.value)} />
           </div>
         </div>
 
-        {/* Weight + Age */}
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label htmlFor="wt" className="text-xs text-muted">Current weight (kg)</label>
-            <input id="wt" inputMode="decimal" placeholder="95"
-              value={weightKg} onChange={(e) => setWeightKg(e.target.value)}
-              className="mt-1 w-full rounded-xl bg-surface border border-border/60 px-3 py-2.5 text-base text-primary" />
-          </div>
-          <div>
-            <label htmlFor="age" className="text-xs text-muted">Age</label>
-            <input id="age" inputMode="numeric" placeholder="24"
-              value={age} onChange={(e) => setAge(e.target.value)}
-              className="mt-1 w-full rounded-xl bg-surface border border-border/60 px-3 py-2.5 text-base text-primary" />
-          </div>
+        <div className="field">
+          <label htmlFor="wt">Current weight · kg</label>
+          <input id="wt" inputMode="decimal" placeholder="76"
+            value={weightKg} onChange={(e) => setWeightKg(e.target.value)} />
         </div>
 
-        {/* Sex */}
-        <div>
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">Sex</p>
-          <div className="flex gap-2">
-            {(['male', 'female'] as Sex[]).map((s) => (
-              <button key={s} type="button" onClick={() => setSex(s)}
-                className={`flex-1 rounded-full py-2.5 text-sm font-medium capitalize transition-colors ${
-                  sex === s ? 'bg-primary text-background' : 'border border-border/60 text-primary'}`}>
-                {s}
+        <div className="field">
+          <label htmlFor="age">Age</label>
+          <input id="age" inputMode="numeric" placeholder="28"
+            value={age} onChange={(e) => setAge(e.target.value)} />
+        </div>
+
+        <div className="section">
+          <span className="caps">Sex used for calorie calculation</span>
+          <div className="tile-grid">
+            {SEX_OPTIONS.map((opt) => (
+              <button key={opt.value} type="button" onClick={() => setSex(opt.value)}
+                className={`tile ${sex === opt.value ? 'sel' : ''}`} aria-pressed={sex === opt.value}>
+                <span className="icon">{opt.icon}</span>
+                <b>{opt.label}</b>
+                <small>{sex === opt.value ? 'Selected' : 'Tap to choose'}</small>
               </button>
             ))}
           </div>
         </div>
 
-        {error && <p className="text-sm text-error">{error}</p>}
+        {error && <p className="error-text">{error}</p>}
 
-        <button type="submit"
-          className="rounded-full bg-primary py-3 text-base font-semibold text-background">
-          Continue
-        </button>
+        <button type="submit" className="btn">Continue</button>
       </form>
     </div>
   )

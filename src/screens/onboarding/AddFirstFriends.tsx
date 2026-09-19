@@ -5,7 +5,8 @@ import { supabase } from '../../lib/supabase'
 import { useSession } from '../../hooks/useSession'
 import { useOnboardingStore } from '../../store/onboardingStore'
 import { completeOnboarding } from '../../lib/completeOnboarding'
-import { OnboardingProgress } from '../../components/OnboardingProgress'
+import { TopBar } from '../../components/TopBar'
+import { Avatar } from '../../components/Avatar'
 
 interface FoundUser {
   id: string
@@ -13,16 +14,6 @@ interface FoundUser {
   name: string
   photo_url: string | null
   recentLogs?: number
-}
-
-function Avatar({ user }: { user: Pick<FoundUser, 'name' | 'photo_url'> }) {
-  return user.photo_url ? (
-    <img src={user.photo_url} alt={user.name} className="h-10 w-10 rounded-full object-cover shrink-0" />
-  ) : (
-    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-surface border border-border/40 text-sm font-bold text-muted">
-      {user.name.charAt(0).toUpperCase()}
-    </div>
-  )
 }
 
 export default function AddFirstFriends() {
@@ -139,151 +130,118 @@ export default function AddFirstFriends() {
 
   if (calorieGoal === null) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center">
-        <p className="text-base font-semibold text-primary">Session issue</p>
-        <p className="text-sm text-muted">
-          Your plan details weren't saved — this can happen if you confirmed
-          your email in a different browser tab. Please re-enter them now.
-        </p>
-        <button
-          onClick={() => navigate('/onboarding/basics')}
-          className="rounded-full bg-primary px-6 py-3 text-base font-semibold text-background"
-        >
-          Re-enter my plan
-        </button>
+      <div className="screen min-h-screen">
+        <TopBar title="Your plan" back={null} />
+        <div className="text-center" style={{ padding: '80px 10px' }}>
+          <div style={{ fontSize: 60, lineHeight: 1 }}>◌</div>
+          <h2 style={{ marginTop: 16 }}>Session issue</h2>
+          <p className="muted">
+            Your plan details weren't saved — this can happen if you confirmed
+            your email in a different browser tab. Please re-enter them now.
+          </p>
+          <button type="button" onClick={() => navigate('/onboarding/basics')} className="btn" style={{ marginTop: 30 }}>
+            Re-enter my plan
+          </button>
+        </div>
       </div>
     )
   }
 
   const addedSet = new Set(friendUsernamesToRequest)
 
-  return (
-    <div className="flex min-h-screen flex-col px-5 py-8">
-      <button
-        onClick={() => navigate('/onboarding/privacy')}
-        aria-label="Back"
-        className="mb-6 flex h-9 w-9 items-center justify-center rounded-full bg-surface shadow-[var(--shadow-card)] text-primary"
-      >
-        ←
-      </button>
-      <OnboardingProgress step={3} total={3} />
+  function renderPerson(user: FoundUser, desc: string) {
+    const alreadyAdded = addedSet.has(user.username)
+    return (
+      <li key={user.id} className="choice">
+        <Avatar name={user.name} photoUrl={user.photo_url} />
+        <span className="min-w-0 flex-1">
+          <b>{user.name}</b>
+          <small className="truncate">@{user.username} · {desc}</small>
+        </span>
+        <button
+          type="button"
+          disabled={alreadyAdded}
+          onClick={() => addFriendUsername(user.username)}
+          className={`pill ${alreadyAdded ? 'tint' : 'sel'}`}
+        >
+          {alreadyAdded ? 'Added ✓' : 'Follow'}
+        </button>
+      </li>
+    )
+  }
 
-      <h1 className="mb-1 text-xl font-bold text-primary">Add your first friends</h1>
-      <p className="mb-6 text-sm text-muted">A feed is better with people in it.</p>
+  return (
+    <div className="screen flex min-h-screen flex-col">
+      <TopBar title="Your plan" back="/onboarding/privacy" />
+
+      <h2>Add your first friends</h2>
+      <p className="muted">Find people to share your progress with</p>
+      <div style={{ height: 15 }} />
 
       {/* ── Search ─────────────────────────────────────────────── */}
-      <div className="mb-4 flex gap-2">
-        <div className="relative flex-1">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"
-            className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted pointer-events-none">
-            <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
-          </svg>
-          <input
-            placeholder="Search by username"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-            className="w-full rounded-full bg-surface border border-border/60 pl-9 pr-4 py-2.5 text-base text-primary placeholder:text-muted"
-          />
-        </div>
-        <button
-          onClick={handleSearch}
-          className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-background"
-        >
+      <div className="flex items-center gap-2.5">
+        <input
+          className="input flex-1"
+          placeholder="Search by username"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+          autoCapitalize="none"
+        />
+        <button type="button" onClick={handleSearch} className="pill sel" style={{ padding: '12px 16px' }}>
           Search
         </button>
       </div>
 
       {/* ── Search results ─────────────────────────────────────── */}
       {results.length > 0 && (
-        <ul className="mb-5 flex flex-col divide-y divide-border/40">
-          {results.map((user) => {
-            const alreadyAdded = addedSet.has(user.username)
-            return (
-              <li key={user.id} className="flex items-center gap-3 py-3">
-                <Avatar user={user} />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-primary">@{user.username}</p>
-                  <p className="text-xs text-muted truncate">{user.name}</p>
-                </div>
-                <button
-                  disabled={alreadyAdded}
-                  onClick={() => addFriendUsername(user.username)}
-                  className="shrink-0 rounded-full bg-primary px-4 py-1.5 text-xs font-semibold text-background disabled:opacity-40"
-                >
-                  {alreadyAdded ? 'Added ✓' : 'Follow'}
-                </button>
-              </li>
-            )
-          })}
-        </ul>
+        <div className="section">
+          <span className="caps">Results</span>
+          <ul className="list">
+            {results.map((user) => renderPerson(user, 'On Spork'))}
+          </ul>
+        </div>
       )}
 
       {/* ── Suggested accounts ─────────────────────────────────── */}
       {suggestions.length > 0 && results.length === 0 && (
-        <div className="mb-5">
-          <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted">Suggested</p>
-          <p className="mb-3 text-xs text-muted">Active users to follow — your feed will show their meals</p>
-          <ul className="flex flex-col divide-y divide-border/40">
-            {suggestions.map((user) => {
-              const alreadyAdded = addedSet.has(user.username)
-              return (
-                <li key={user.id} className="flex items-center gap-3 py-3">
-                  <Avatar user={user} />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-primary">@{user.username}</p>
-                    <p className="text-xs text-muted">
-                      {(user.recentLogs ?? 0) > 0
-                        ? `${user.recentLogs} meal${user.recentLogs! > 1 ? 's' : ''} this week`
-                        : 'Active user'}
-                    </p>
-                  </div>
-                  <button
-                    disabled={alreadyAdded}
-                    onClick={() => addFriendUsername(user.username)}
-                    className="shrink-0 rounded-full bg-primary px-4 py-1.5 text-xs font-semibold text-background disabled:opacity-40"
-                  >
-                    {alreadyAdded ? 'Added ✓' : 'Follow'}
-                  </button>
-                </li>
-              )
-            })}
+        <div className="section">
+          <span className="caps">Suggested people</span>
+          <ul className="list">
+            {suggestions.map((user) =>
+              renderPerson(
+                user,
+                (user.recentLogs ?? 0) > 0
+                  ? `${user.recentLogs} meal${user.recentLogs! > 1 ? 's' : ''} this week`
+                  : 'Active user',
+              ),
+            )}
           </ul>
         </div>
       )}
 
       {/* ── Added list ─────────────────────────────────────────── */}
-      {friendUsernamesToRequest.length > 0 && (
-        <div className="mb-5">
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">
-            Following after sign-up · {friendUsernamesToRequest.length}
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {friendUsernamesToRequest.map((un) => (
-              <span key={un} className="rounded-full bg-surface border border-border/60 px-3 py-1 text-xs font-medium text-primary">
-                @{un} ✓
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
+      <p className="small muted" style={{ marginTop: 16 }}>
+        Following after sign-up · {friendUsernamesToRequest.length}
+        {friendUsernamesToRequest.length > 0 && (
+          <span className="mt-2 flex flex-wrap gap-1.5">
+            {friendUsernamesToRequest.map((un) => <span key={un} className="pill">@{un} ✓</span>)}
+          </span>
+        )}
+      </p>
 
-      {error && <p className="mb-4 text-sm text-error">{error}</p>}
+      {error && <p className="error-text">{error}</p>}
 
-      <div className="mt-auto flex flex-col gap-3 pt-4">
-        <button
-          onClick={finish}
-          disabled={submitting}
-          className="rounded-full bg-primary py-3 text-base font-semibold text-background disabled:opacity-50"
-        >
+      <div className="mt-auto pt-4">
+        <button type="button" onClick={finish} disabled={submitting} className="btn">
           {submitting
             ? 'Finishing…'
             : friendUsernamesToRequest.length > 0
-            ? `Finish & follow ${friendUsernamesToRequest.length}`
-            : 'Skip for now'}
+            ? `Start using Spork · follow ${friendUsernamesToRequest.length}`
+            : 'Start using Spork'}
         </button>
         {friendUsernamesToRequest.length === 0 && (
-          <p className="text-center text-xs text-muted">You can always find friends later from the Feed tab.</p>
+          <p className="hint">You can always find friends later from the Home tab</p>
         )}
       </div>
     </div>

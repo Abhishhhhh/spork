@@ -1,40 +1,52 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useOnboardingStore, type PrivacyDefault as PrivacyDefaultValue } from '../../store/onboardingStore'
-import { OnboardingProgress } from '../../components/OnboardingProgress'
+import { TopBar } from '../../components/TopBar'
+
+const OPTIONS: { value: PrivacyDefaultValue; icon: string; label: string; sub: string }[] = [
+  { value: 'public',  icon: '◎', label: 'Public by default',  sub: 'Visible in the friend feed' },
+  { value: 'private', icon: '▣', label: 'Private by default', sub: 'Only you can see them' },
+]
 
 export default function PrivacyDefault() {
   const navigate = useNavigate()
+  const stored = useOnboardingStore((s) => s.privacyDefault)
   const setPrivacyDefault = useOnboardingStore((s) => s.setPrivacyDefault)
+  const [value, setValue] = useState<PrivacyDefaultValue>(stored ?? 'public')
 
-  function choose(value: PrivacyDefaultValue) {
+  function handleContinue() {
     setPrivacyDefault(value)
     navigate('/onboarding/friends')
   }
 
   return (
-    <div className="flex min-h-screen flex-col px-6 py-8">
-      <button
-        onClick={() => navigate('/onboarding/profile')}
-        aria-label="Back"
-        className="mb-6 flex h-9 w-9 items-center justify-center rounded-full bg-surface shadow-[var(--shadow-card)] text-primary"
-      >
-        ←
-      </button>
-      <OnboardingProgress step={2} total={3} />
+    <div className="screen min-h-screen">
+      <TopBar title="Your plan" back="/onboarding/profile" />
 
-      <h1 className="mb-2 text-xl font-bold text-primary">Who sees your meals?</h1>
-      <p className="mb-8 text-sm text-muted">Every log can still be flipped individually.</p>
+      <h2>Who sees your meals?</h2>
+      <p className="muted">Choose the default for meals you log</p>
+      <div style={{ height: 28 }} />
 
-      <div className="flex flex-col gap-3">
-        <button onClick={() => choose('public')} className="rounded-2xl border border-primary p-4 text-left">
-          <p className="font-semibold text-primary">Public by default</p>
-          <p className="text-sm text-muted">Friends see your meals in their feed.</p>
-        </button>
-        <button onClick={() => choose('private')} className="card p-4 text-left">
-          <p className="font-semibold text-primary">Private by default</p>
-          <p className="text-sm text-muted">Only you. Nothing shows up on the feed or in stats.</p>
-        </button>
+      <div className="list">
+        {OPTIONS.map((opt) => {
+          const sel = value === opt.value
+          return (
+            <button key={opt.value} type="button" onClick={() => setValue(opt.value)}
+              className={`choice ${sel ? 'sel' : ''}`} aria-pressed={sel}>
+              <span className="icon">{opt.icon}</span>
+              <span className="min-w-0 flex-1">
+                <b>{opt.label}</b>
+                <small>{opt.sub}</small>
+              </span>
+              {sel && <span className="check">✓</span>}
+            </button>
+          )
+        })}
       </div>
+
+      <p className="hint">You can still choose visibility for each meal before saving</p>
+
+      <button type="button" onClick={handleContinue} className="btn">Continue</button>
     </div>
   )
 }

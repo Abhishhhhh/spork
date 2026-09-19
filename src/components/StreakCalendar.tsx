@@ -1,6 +1,6 @@
 /**
- * StreakCalendar — shows the last `days` calendar days as a dot grid.
- * Logged day dots use the teal tracking accent (matching design spec).
+ * StreakCalendar — the last `days` calendar days as a 7-column dot grid.
+ * Logged days use the teal tracking accent; today is highlighted in soft grey.
  * Tappable when onDayTap is provided.
  */
 
@@ -8,11 +8,12 @@ interface StreakCalendarProps {
   logDates: Set<string>          // set of yyyy-mm-dd strings
   days?: number                  // how many days to show (default 14)
   onDayTap?: (date: string) => void
+  selectedDay?: string | null
 }
 
 const DAY_LABELS = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
 
-export function StreakCalendar({ logDates, days = 14, onDayTap }: StreakCalendarProps) {
+export function StreakCalendar({ logDates, days = 14, onDayTap, selectedDay }: StreakCalendarProps) {
   const cells: { dateStr: string; logged: boolean; dayLabel: string; isToday: boolean }[] = []
 
   for (let i = days - 1; i >= 0; i--) {
@@ -27,33 +28,26 @@ export function StreakCalendar({ logDates, days = 14, onDayTap }: StreakCalendar
     })
   }
 
+  // Header labels follow the first row's weekdays (columns repeat every 7 days)
+  const header = cells.slice(0, 7).map((c) => c.dayLabel)
+
   return (
-    <div className="flex gap-1 flex-wrap">
-      {cells.map(({ dateStr, logged, dayLabel, isToday }) => {
-        const base =
-          'flex flex-col items-center gap-0.5 rounded-lg p-1 w-[calc((100%-6*0.25rem)/7)]'
-        return (
+    <div className="calendar">
+      {header.map((l, i) => <span key={i}>{l}</span>)}
+      {cells.map(({ dateStr, logged, isToday }) => {
+        const cls = `${logged ? 'on' : ''} ${isToday ? 'today' : ''} ${selectedDay === dateStr ? 'ring-2 ring-ink ring-offset-2 ring-offset-canvas' : ''}`
+        const title = new Date(dateStr + 'T12:00:00').toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })
+        return onDayTap ? (
           <button
             key={dateStr}
             type="button"
-            onClick={() => onDayTap?.(dateStr)}
-            disabled={!onDayTap}
-            className={`${base} ${onDayTap ? 'cursor-pointer' : 'cursor-default'} border-0`}
-          >
-            <span className="text-[9px] text-muted uppercase">{dayLabel}</span>
-            <span
-              className={`h-5 w-5 rounded-full text-[10px] flex items-center justify-center font-semibold ${
-                logged
-                  ? 'text-background'        /* teal bg via inline style */
-                  : isToday
-                  ? 'border-2 border-primary text-primary'
-                  : 'bg-background text-muted'
-              }`}
-              style={logged ? { backgroundColor: 'var(--color-teal)' } : undefined}
-            >
-              {logged ? '●' : '○'}
-            </span>
-          </button>
+            onClick={() => onDayTap(dateStr)}
+            className={`no-press ${cls}`}
+            aria-label={`${title}${logged ? ' · logged' : ''}`}
+            aria-pressed={selectedDay === dateStr}
+          />
+        ) : (
+          <i key={dateStr} className={cls} title={title} />
         )
       })}
     </div>
