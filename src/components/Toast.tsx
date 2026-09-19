@@ -66,13 +66,11 @@ function Toaster({ toasts }: { toasts: ToastItem[] }) {
       {toasts.map((t) => (
         <div
           key={t.id}
-          className={`flex items-center gap-2 rounded-full px-5 py-3 text-sm font-semibold shadow-lg pointer-events-auto bg-surface-elevated
-            ${t.type === 'success' ? 'text-primary border border-border/60' :
-              t.type === 'error'   ? 'bg-error text-background' :
-                                     'text-muted border border-border'}
+          className={`flex items-center gap-2 rounded-full px-5 py-3 text-[13px] font-semibold pointer-events-auto shadow-[0_8px_30px_#00000020]
+            ${t.type === 'error' ? 'bg-error text-white' : 'bg-inverse text-inverse-ink'}
             ${t.leaving ? 'animate-toast-out' : 'animate-toast-in'}`}
         >
-          <span className="text-xs font-bold">{TOAST_ICONS[t.type]}</span>
+          <span className="text-xs">{TOAST_ICONS[t.type]}</span>
           {t.message}
         </div>
       ))}
