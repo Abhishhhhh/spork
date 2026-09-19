@@ -1,14 +1,13 @@
 /**
- * ThemeToggle — Light · Dark · Pink segmented pill
+ * ThemeToggle — Light · Dark segmented pill
  * Self-contained: reads and writes theme directly.
  */
 import { useTheme } from '../hooks/useTheme'
 import type { Theme } from '../lib/theme'
 
 const OPTIONS: { value: Theme; label: string }[] = [
-  { value: 'light', label: '☀️ Light' },
-  { value: 'dark',  label: '🌙 Dark'  },
-  { value: 'pink',  label: '🌸 Pink'  },
+  { value: 'light', label: 'Light' },
+  { value: 'dark',  label: 'Dark'  },
 ]
 
 export function ThemeToggle() {
