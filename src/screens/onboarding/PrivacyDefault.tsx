@@ -2,10 +2,11 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useOnboardingStore, type PrivacyDefault as PrivacyDefaultValue } from '../../store/onboardingStore'
 import { TopBar } from '../../components/TopBar'
+import { OptionIcon, type IconName } from '../../components/OptionIcon'
 
-const OPTIONS: { value: PrivacyDefaultValue; icon: string; label: string; sub: string }[] = [
-  { value: 'public',  icon: '◎', label: 'Public by default',  sub: 'Visible in the friend feed' },
-  { value: 'private', icon: '▣', label: 'Private by default', sub: 'Only you can see them' },
+const OPTIONS: { value: PrivacyDefaultValue; icon: IconName; label: string; sub: string }[] = [
+  { value: 'public',  icon: 'public', label: 'Public by default',  sub: 'Visible in the friend feed' },
+  { value: 'private', icon: 'private', label: 'Private by default', sub: 'Only you can see them' },
 ]
 
 export default function PrivacyDefault() {
@@ -33,7 +34,7 @@ export default function PrivacyDefault() {
           return (
             <button key={opt.value} type="button" onClick={() => setValue(opt.value)}
               className={`choice ${sel ? 'sel' : ''}`} aria-pressed={sel}>
-              <span className="icon">{opt.icon}</span>
+              <span className="icon"><OptionIcon name={opt.icon} /></span>
               <span className="min-w-0 flex-1">
                 <b>{opt.label}</b>
                 <small>{opt.sub}</small>

@@ -3,18 +3,19 @@ import { useNavigate } from 'react-router-dom'
 import { useOnboardingStore } from '../../store/onboardingStore'
 import { OnboardingProgress } from '../../components/OnboardingProgress'
 import { TopBar } from '../../components/TopBar'
+import { OptionIcon, type IconName } from '../../components/OptionIcon'
 import type { GoalType, Pace } from '../../lib/calorieGoal'
 
-const GOAL_OPTIONS: { value: GoalType; icon: string; label: string }[] = [
-  { value: 'lose',     icon: '↘', label: 'Lose weight' },
-  { value: 'maintain', icon: '≈', label: 'Stay the same' },
-  { value: 'gain',     icon: '↗', label: 'Build muscle' },
+const GOAL_OPTIONS: { value: GoalType; icon: IconName; label: string }[] = [
+  { value: 'lose',     icon: 'lose', label: 'Lose weight' },
+  { value: 'maintain', icon: 'maintain', label: 'Stay the same' },
+  { value: 'gain',     icon: 'gain', label: 'Build muscle' },
 ]
 
-const PACE_OPTIONS: { value: Pace; icon: string; label: string; sub: string }[] = [
-  { value: 'slow',        icon: '◌', label: 'Relaxed',    sub: '~0.25 kg/wk' },
-  { value: 'recommended', icon: '➝', label: 'Moderate',   sub: '~0.5 kg/wk' },
-  { value: 'fast',        icon: '⚡︎', label: 'Aggressive', sub: '~0.75 kg/wk' },
+const PACE_OPTIONS: { value: Pace; icon: IconName; label: string; sub: string }[] = [
+  { value: 'slow',        icon: 'slow', label: 'Relaxed',    sub: '~0.25 kg/wk' },
+  { value: 'recommended', icon: 'moderate', label: 'Moderate',   sub: '~0.5 kg/wk' },
+  { value: 'fast',        icon: 'fast', label: 'Aggressive', sub: '~0.75 kg/wk' },
 ]
 
 export default function Goal() {
@@ -69,7 +70,7 @@ export default function Goal() {
             {GOAL_OPTIONS.map((opt) => (
               <button key={opt.value} type="button" onClick={() => setGoalType(opt.value)}
                 className={`tile compact ${goalType === opt.value ? 'sel' : ''}`} aria-pressed={goalType === opt.value}>
-                <span className="icon">{opt.icon}</span>
+                <span className="icon"><OptionIcon name={opt.icon} /></span>
                 <b>{opt.label}</b>
               </button>
             ))}
@@ -96,7 +97,7 @@ export default function Goal() {
               {PACE_OPTIONS.map((opt) => (
                 <button key={opt.value} type="button" onClick={() => setPace(opt.value)}
                   className={`tile compact ${pace === opt.value ? 'sel' : ''}`} aria-pressed={pace === opt.value}>
-                  <span className="icon">{opt.icon}</span>
+                  <span className="icon"><OptionIcon name={opt.icon} /></span>
                   <span>
                     <b>{opt.label}</b>
                     <small className="block">{opt.sub}</small>

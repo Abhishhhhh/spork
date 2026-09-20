@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useOnboardingStore } from '../../store/onboardingStore'
 import { OnboardingProgress } from '../../components/OnboardingProgress'
 import { TopBar } from '../../components/TopBar'
+import { OptionIcon } from '../../components/OptionIcon'
 import { computeTimeline, PACE_RATES } from '../../lib/calorieGoal'
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -109,9 +110,9 @@ export default function YourPlan() {
   }
 
   const macros = [
-    { label: 'Protein', value: `${proteinGoal}g` },
-    { label: 'Carbs',   value: `${Math.round((calorieGoal * 0.4) / 4)}g` },
-    { label: 'Fat',     value: `${Math.round((calorieGoal * 0.3) / 9)}g` },
+    { label: 'Protein', icon: 'protein' as const, value: `${proteinGoal}g` },
+    { label: 'Carbs',   icon: 'carbs' as const,   value: `${Math.round((calorieGoal * 0.4) / 4)}g` },
+    { label: 'Fat',     icon: 'fat' as const,     value: `${Math.round((calorieGoal * 0.3) / 9)}g` },
   ]
 
   return (
@@ -156,7 +157,7 @@ export default function YourPlan() {
         <div className="tile-grid three">
           {macros.map((m) => (
             <div key={m.label} className="tile compact">
-              <span className="icon">●</span>
+              <span className="icon"><OptionIcon name={m.icon} /></span>
               <span>
                 <b>{m.value}</b>
                 <small className="block">{m.label}</small>

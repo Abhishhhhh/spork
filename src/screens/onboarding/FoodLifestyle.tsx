@@ -3,18 +3,19 @@ import { useNavigate } from 'react-router-dom'
 import { useOnboardingStore, type MealPrepTime, type DietaryPattern } from '../../store/onboardingStore'
 import { OnboardingProgress } from '../../components/OnboardingProgress'
 import { TopBar } from '../../components/TopBar'
+import { OptionIcon, type IconName } from '../../components/OptionIcon'
 
-const DIETARY_OPTIONS: { value: DietaryPattern; icon: string; label: string }[] = [
-  { value: 'no_restrictions', icon: '✳', label: 'No restrictions' },
-  { value: 'vegetarian',      icon: '♧', label: 'Vegetarian' },
-  { value: 'vegan',           icon: '♧', label: 'Vegan' },
-  { value: 'other',           icon: '✎︎', label: 'Other' },
+const DIETARY_OPTIONS: { value: DietaryPattern; icon: IconName; label: string }[] = [
+  { value: 'no_restrictions', icon: 'no_restrictions', label: 'No restrictions' },
+  { value: 'vegetarian',      icon: 'vegetarian', label: 'Vegetarian' },
+  { value: 'vegan',           icon: 'vegan', label: 'Vegan' },
+  { value: 'other',           icon: 'other', label: 'Other' },
 ]
 
-const PREP_OPTIONS: { value: MealPrepTime; icon: string; label: string; sub: string }[] = [
-  { value: 'quick',          icon: '⚡︎', label: 'Quick',          sub: 'Under 15 min' },
-  { value: 'moderate',       icon: '♨', label: 'Happy to cook',  sub: '15–45 min' },
-  { value: 'enjoys_cooking', icon: '✦', label: 'Love cooking',   sub: '45 min+' },
+const PREP_OPTIONS: { value: MealPrepTime; icon: IconName; label: string; sub: string }[] = [
+  { value: 'quick',          icon: 'quick', label: 'Quick',          sub: 'Under 15 min' },
+  { value: 'moderate',       icon: 'cook', label: 'Happy to cook',  sub: '15–45 min' },
+  { value: 'enjoys_cooking', icon: 'chef', label: 'Love cooking',   sub: '45 min+' },
 ]
 
 const MEAL_COUNTS = [1, 2, 3, 4, 5, 6]
@@ -56,7 +57,7 @@ export default function FoodLifestyle() {
           {DIETARY_OPTIONS.map((opt) => (
             <button key={opt.value} type="button" onClick={() => setDietary(opt.value)}
               className={`tile compact ${dietary === opt.value ? 'sel' : ''}`} aria-pressed={dietary === opt.value}>
-              <span className="icon">{opt.icon}</span>
+              <span className="icon"><OptionIcon name={opt.icon} /></span>
               <b>{opt.label}</b>
             </button>
           ))}
@@ -78,7 +79,7 @@ export default function FoodLifestyle() {
           {PREP_OPTIONS.map((opt) => (
             <button key={opt.value} type="button" onClick={() => setPrepTime(opt.value)}
               className={`tile compact ${prepTime === opt.value ? 'sel' : ''}`} aria-pressed={prepTime === opt.value}>
-              <span className="icon">{opt.icon}</span>
+              <span className="icon"><OptionIcon name={opt.icon} /></span>
               <span>
                 <b>{opt.label}</b>
                 <small className="block">{opt.sub}</small>

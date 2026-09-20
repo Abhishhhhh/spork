@@ -1,11 +1,12 @@
 import { useNavigate } from 'react-router-dom'
 import { useSession } from '../../hooks/useSession'
 import { Navigate } from 'react-router-dom'
+import { OptionIcon } from '../../components/OptionIcon'
 
 const FEATURES = [
-  { icon: '▣', title: 'Photo-first logging', subtitle: 'Snap a meal, get a calorie estimate in seconds' },
-  { icon: '♨', title: 'Daily streaks',        subtitle: 'Milestones at 7, 30 and 100 days' },
-  { icon: '♧', title: 'A friend feed',        subtitle: 'See what your circle is eating' },
+  { icon: 'camera' as const, title: 'Photo-first logging', subtitle: 'Snap a meal, get a calorie estimate in seconds' },
+  { icon: 'flame' as const, title: 'Daily streaks',        subtitle: 'Milestones at 7, 30 and 100 days' },
+  { icon: 'friends' as const, title: 'A friend feed',        subtitle: 'See what your circle is eating' },
 ]
 
 export default function Welcome() {
@@ -36,7 +37,7 @@ export default function Welcome() {
       <ul className="list">
         {FEATURES.map(({ icon, title, subtitle }) => (
           <li key={title} className="choice">
-            <span className="icon">{icon}</span>
+            <span className="icon"><OptionIcon name={icon} /></span>
             <span className="min-w-0 flex-1">
               <b>{title}</b>
               <small>{subtitle}</small>

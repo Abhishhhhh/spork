@@ -3,12 +3,13 @@ import { useNavigate } from 'react-router-dom'
 import { useOnboardingStore } from '../../store/onboardingStore'
 import { OnboardingProgress } from '../../components/OnboardingProgress'
 import { TopBar } from '../../components/TopBar'
+import { OptionIcon, type IconName } from '../../components/OptionIcon'
 
 type Sex = 'male' | 'female'
 
-const SEX_OPTIONS: { value: Sex; icon: string; label: string }[] = [
-  { value: 'female', icon: '♀', label: 'Female' },
-  { value: 'male',   icon: '♂', label: 'Male' },
+const SEX_OPTIONS: { value: Sex; icon: IconName; label: string }[] = [
+  { value: 'female', icon: 'female', label: 'Female' },
+  { value: 'male',   icon: 'male', label: 'Male' },
 ]
 
 export default function Basics() {
@@ -88,7 +89,7 @@ export default function Basics() {
             {SEX_OPTIONS.map((opt) => (
               <button key={opt.value} type="button" onClick={() => setSex(opt.value)}
                 className={`tile ${sex === opt.value ? 'sel' : ''}`} aria-pressed={sex === opt.value}>
-                <span className="icon">{opt.icon}</span>
+                <span className="icon"><OptionIcon name={opt.icon} /></span>
                 <b>{opt.label}</b>
                 <small>{sex === opt.value ? 'Selected' : 'Tap to choose'}</small>
               </button>

@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { Navigate, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { useSession } from '../../hooks/useSession'
 import { useOnboardingStore } from '../../store/onboardingStore'
 import { TopBar } from '../../components/TopBar'
@@ -83,7 +83,7 @@ export default function CreateAccount() {
         Already have an account? Sign in
       </button>
 
-      <p className="hint">We’ll email you a 6-digit code — no password to remember · By continuing you agree to our Terms of Service and Privacy Policy</p>
+      <p className="hint">We’ll email you a 6-digit code — no password to remember · By continuing you agree to our <Link to="/terms">Terms of Service</Link> and <Link to="/privacy">Privacy Policy</Link></p>
     </div>
   )
 }

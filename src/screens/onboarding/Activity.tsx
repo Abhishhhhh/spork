@@ -13,18 +13,19 @@ import {
 import { useOnboardingStore } from '../../store/onboardingStore'
 import { OnboardingProgress } from '../../components/OnboardingProgress'
 import { TopBar } from '../../components/TopBar'
+import { OptionIcon, type IconName } from '../../components/OptionIcon'
 
-const JOB_OPTIONS: { value: JobActivity; icon: string; label: string; sub: string }[] = [
-  { value: 'desk',     icon: '▣', label: 'Desk job',      sub: 'Sitting most of the day' },
-  { value: 'on_feet',  icon: '♧', label: 'On my feet',    sub: 'Retail, teaching, service' },
-  { value: 'physical', icon: '✳', label: 'Physical job',  sub: 'Manual labour, construction' },
+const JOB_OPTIONS: { value: JobActivity; icon: IconName; label: string; sub: string }[] = [
+  { value: 'desk',     icon: 'desk', label: 'Desk job',      sub: 'Sitting most of the day' },
+  { value: 'on_feet',  icon: 'on_feet', label: 'On my feet',    sub: 'Retail, teaching, service' },
+  { value: 'physical', icon: 'physical', label: 'Physical job',  sub: 'Manual labour, construction' },
 ]
 
-const WORKOUT_TYPE_OPTIONS: { value: WorkoutType; icon: string; label: string }[] = [
-  { value: 'none',     icon: '◌', label: 'No workouts' },
-  { value: 'cardio',   icon: '↗', label: 'Cardio' },
-  { value: 'strength', icon: '✦', label: 'Strength' },
-  { value: 'mixed',    icon: '∞', label: 'Mixed' },
+const WORKOUT_TYPE_OPTIONS: { value: WorkoutType; icon: IconName; label: string }[] = [
+  { value: 'none',     icon: 'none', label: 'No workouts' },
+  { value: 'cardio',   icon: 'cardio', label: 'Cardio' },
+  { value: 'strength', icon: 'strength', label: 'Strength' },
+  { value: 'mixed',    icon: 'mixed', label: 'Mixed' },
 ]
 
 const DAYS = [0, 1, 2, 3, 4, 5, 6, 7]
@@ -86,7 +87,7 @@ export default function Activity() {
             return (
               <button key={opt.value} type="button" onClick={() => setJobActivity(opt.value)}
                 className={`choice ${sel ? 'sel' : ''}`} aria-pressed={sel}>
-                <span className="icon">{opt.icon}</span>
+                <span className="icon"><OptionIcon name={opt.icon} /></span>
                 <span className="min-w-0 flex-1">
                   <b>{opt.label}</b>
                   <small>{opt.sub}</small>
@@ -105,7 +106,7 @@ export default function Activity() {
           {WORKOUT_TYPE_OPTIONS.map((opt) => (
             <button key={opt.value} type="button" onClick={() => setWorkoutType(opt.value)}
               className={`tile compact ${workoutType === opt.value ? 'sel' : ''}`} aria-pressed={workoutType === opt.value}>
-              <span className="icon">{opt.icon}</span>
+              <span className="icon"><OptionIcon name={opt.icon} /></span>
               <b>{opt.label}</b>
             </button>
           ))}
