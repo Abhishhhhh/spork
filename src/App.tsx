@@ -1,6 +1,8 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import Welcome from './screens/onboarding/Welcome'
 import SignIn from './screens/onboarding/SignIn'
+import VerifyCode from './screens/onboarding/VerifyCode'
+import AuthCallback from './screens/auth/AuthCallback'
 // Pre-auth onboarding (no session required)
 import Basics from './screens/onboarding/Basics'
 import Goal from './screens/onboarding/Goal'
@@ -42,6 +44,8 @@ export default function App() {
         {/* ── Public entry points ─────────────────────────────────── */}
         <Route path="/welcome"  element={<Welcome />} />
         <Route path="/sign-in"  element={<SignIn />} />
+        <Route path="/sign-in/code" element={<VerifyCode />} />
+        <Route path="/auth/callback" element={<AuthCallback />} />
 
         {/* ── Pre-auth onboarding — NO session required ────────────
             Users fill these out BEFORE creating an account.
