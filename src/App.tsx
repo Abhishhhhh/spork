@@ -3,6 +3,7 @@ import Welcome from './screens/onboarding/Welcome'
 import SignIn from './screens/onboarding/SignIn'
 import VerifyCode from './screens/onboarding/VerifyCode'
 import AuthCallback from './screens/auth/AuthCallback'
+import { Privacy, Terms } from './screens/legal/Legal'
 // Pre-auth onboarding (no session required)
 import Basics from './screens/onboarding/Basics'
 import Goal from './screens/onboarding/Goal'
@@ -46,6 +47,8 @@ export default function App() {
         <Route path="/sign-in"  element={<SignIn />} />
         <Route path="/sign-in/code" element={<VerifyCode />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
+        <Route path="/privacy" element={<Privacy />} />
+        <Route path="/terms" element={<Terms />} />
 
         {/* ── Pre-auth onboarding — NO session required ────────────
             Users fill these out BEFORE creating an account.

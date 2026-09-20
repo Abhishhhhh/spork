@@ -193,6 +193,12 @@
   }
   .tile.sel { background: var(--color-soft); box-shadow: inset 0 0 0 1.5px var(--color-ink); }
   .tile .icon { font-size: 25px; line-height: 1; color: var(--color-ink); }
+  .tile .icon:has(svg) {
+    width: 42px; height: 42px; border-radius: 999px; background: var(--color-soft);
+    display: grid; place-items: center;
+  }
+  .tile.sel .icon:has(svg) { background: var(--color-paper); }
+  .tile .icon svg { width: 22px; height: 22px; }
   .tile b { font-family: var(--font-display); font-weight: 500; font-size: 19px; line-height: 1.1; letter-spacing: -0.02em; }
   .tile small { color: var(--color-quiet); font-size: 10px; }
   .tile.compact { min-height: 96px; padding: 14px; }
@@ -206,7 +212,12 @@
   }
   .choice.sel { background: var(--color-soft); box-shadow: inset 0 0 0 1.5px var(--color-ink); }
   .choice .icon { color: var(--color-ink); font-size: 21px; width: 26px; text-align: center; flex: none; }
-  .choice .icon svg { width: 22px; height: 22px; margin: auto; }
+  .choice .icon:has(svg) {
+    width: 40px; height: 40px; border-radius: 999px; background: var(--color-soft);
+    display: grid; place-items: center;
+  }
+  .choice.sel .icon:has(svg) { background: var(--color-paper); }
+  .choice .icon svg { width: 20px; height: 20px; margin: auto; }
   .choice b { font-weight: 600; font-size: 13px; display: block; }
   .choice small { display: block; color: var(--color-quiet); font-size: 11px; margin-top: 2px; }
   .choice .check { margin-left: auto; font-size: 17px; color: var(--color-ink); }
@@ -399,6 +410,11 @@
   .habit-row > strong { margin-left: auto; font-family: var(--font-display); font-weight: 500; font-size: 18px; }
 
   /* Misc */
+  /* Legal pages */
+  .legal h3 { margin-top: 22px; margin-bottom: 6px; }
+  .legal p { color: var(--color-muted); font-size: 14px; line-height: 1.55; }
+  .legal a { text-decoration: underline; color: var(--color-ink); }
+
   .icon-box { border-radius: 42px; background: var(--color-soft); display: grid; place-items: center; font-family: var(--font-display); font-weight: 500; color: var(--color-ink); }
   .editable { border-bottom: 1px dashed var(--color-ink); }
   .error-text { color: var(--color-error); font-size: 12px; margin-top: 10px; }
