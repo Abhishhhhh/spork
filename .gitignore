@@ -4,3 +4,6 @@ dist-ssr
 .env.local
 *.local
 *.tsbuildinfo
+
+# graphify knowledge graph (local tool output)
+graphify-out/
