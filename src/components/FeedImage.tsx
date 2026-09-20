@@ -9,26 +9,25 @@ interface FeedImageProps {
 }
 
 /**
- * FeedImage — a lazy-loaded image that:
- * 1. Shows a shimmer placeholder while loading
- * 2. Fades the image in smoothly on load
- *
- * Pass `className="photo"` (or `photo tall`) to get the rounded Spork photo shape.
+ * FeedImage — a lazy-loaded photo shown at its real aspect ratio (no cropping):
+ * 1. Reserves a 4:3 shimmer box until the image has loaded
+ * 2. Then renders the image at natural height (capped by `.photo.natural`)
  */
 export function FeedImage({ src, alt, className = '', style, onClick }: FeedImageProps) {
   const [loaded, setLoaded] = useState(false)
 
   return (
-    <div className={`relative overflow-hidden ${className}`} style={style}>
-      {!loaded && <div className="skeleton absolute inset-0 z-10 !rounded-none" aria-hidden="true" />}
+    <div className="relative" style={style}>
+      {!loaded && <div className={`skeleton ${className}`} style={{ aspectRatio: '4 / 3', height: 'auto' }} aria-hidden="true" />}
       <img
         src={src}
         alt={alt}
         decoding="async"
         loading="lazy"
-        className={`h-full w-full object-cover transition-opacity duration-300 ${loaded ? 'opacity-100' : 'opacity-0'}`}
+        className={`${className} natural transition-opacity duration-300 ${loaded ? 'opacity-100' : 'absolute inset-0 opacity-0'}`}
         onLoad={() => setLoaded(true)}
         onClick={onClick}
+        style={onClick ? { cursor: 'zoom-in' } : undefined}
       />
     </div>
   )

@@ -7,6 +7,7 @@ import { computeLikeDelta } from '../lib/likeDelta'
 import { getEffectiveStreak } from '../lib/streak'
 import { ShareModal } from './ShareModal'
 import { FeedImage } from './FeedImage'
+import { PhotoViewer } from './PhotoViewer'
 import { Avatar } from './Avatar'
 import { useToast } from './Toast'
 import { hapticLight } from '../lib/haptics'
@@ -46,6 +47,7 @@ export function PostCard({ item, index = 0, viewerId, optimisticLiked, likeAnima
   const { log, author, photoSignedUrl, likeCount, likedByViewer, commentCount } = item
 
   const [showShare, setShowShare]   = useState(false)
+  const [showPhoto, setShowPhoto]   = useState(false)
   const [showMenu,  setShowMenu]    = useState(false)
 
   const displayLiked     = optimisticLiked ?? likedByViewer
@@ -132,7 +134,7 @@ export function PostCard({ item, index = 0, viewerId, optimisticLiked, likeAnima
             alt={log.name ?? 'Meal photo'}
             className="photo"
             style={{ marginTop: 13 }}
-            onClick={() => navigate(detailPath)}
+            onClick={() => setShowPhoto(true)}
           />
         )}
 
@@ -165,6 +167,11 @@ export function PostCard({ item, index = 0, viewerId, optimisticLiked, likeAnima
           </button>
         </div>
       </article>
+
+      {/* ── Full-screen photo ── */}
+      {showPhoto && photoSignedUrl && (
+        <PhotoViewer src={photoSignedUrl} alt={log.name ?? 'Meal photo'} onClose={() => setShowPhoto(false)} />
+      )}
 
       {/* ── Share modal ── */}
       {showShare && (
