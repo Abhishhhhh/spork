@@ -10,6 +10,8 @@ import {
   type CommentWithAuthor,
 } from '../../hooks/useMealDetail'
 import { computeLikeDelta } from '../../lib/likeDelta'
+import { likedByLabel } from '../../lib/likedBy'
+import { useFriendUsernames } from '../../hooks/useFriendUsernames'
 import { relativeTime } from '../../lib/relativeTime'
 import { TopBar } from '../../components/TopBar'
 import { Avatar } from '../../components/Avatar'
@@ -23,6 +25,7 @@ export default function MealDetail() {
   const toggleLike = useToggleLike()
   const addComment = useAddComment()
   const deleteComment = useDeleteComment()
+  const friendUsernameById = useFriendUsernames()
 
   const [optimisticLiked, setOptimisticLiked] = useState<boolean | null>(null)
   const [commentBody, setCommentBody] = useState('')
@@ -55,10 +58,11 @@ export default function MealDetail() {
     )
   }
 
-  const { log, author, photoSignedUrl, likeCount, likedByViewer, comments } = data
+  const { log, author, photoSignedUrl, likeCount, likedByViewer, likerIds, comments } = data
   const viewerId = session?.user.id
   const displayLiked = optimisticLiked ?? likedByViewer
   const displayLikeCount = likeCount + computeLikeDelta(optimisticLiked, likedByViewer)
+  const likedBy = likedByLabel({ likerIds, total: displayLikeCount, viewerId, viewerLiked: displayLiked, friendUsernameById })
   const caption  = (log as { caption?: string | null }).caption
   const calories = log.calories_final ?? log.calories_estimate
   const proteinG = log.protein_final_g ?? log.protein_estimate_g
@@ -130,7 +134,7 @@ export default function MealDetail() {
       <div className="flex items-center gap-4" style={{ margin: '17px 0' }}>
         <button type="button" onClick={handleToggleLike} className={`flex items-center gap-1.5 ${displayLiked ? 'liked font-semibold' : ''}`}>
           <span style={{ fontSize: 16, lineHeight: 1 }}>{displayLiked ? '♥' : '♡'}</span>
-          {displayLikeCount} {displayLikeCount === 1 ? 'like' : 'likes'}
+          {likedBy ?? 'Like'}
         </button>
         <span className="flex items-center gap-1.5">
           <span style={{ fontSize: 16, lineHeight: 1 }}>◌</span>
