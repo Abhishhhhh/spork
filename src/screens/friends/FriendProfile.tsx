@@ -11,6 +11,7 @@ import { PostCard } from '../../components/PostCard'
 import { Skeleton, FeedCardSkeleton } from '../../components/Skeleton'
 import { TopBar } from '../../components/TopBar'
 import { Avatar } from '../../components/Avatar'
+import { PhotoViewer } from '../../components/PhotoViewer'
 import { useToast } from '../../components/Toast'
 import type { FeedItem } from '../../hooks/useFeed'
 
@@ -24,6 +25,7 @@ export default function FriendProfile() {
 
   const [optimisticLikes, setOptimisticLikes] = useState<Record<string, boolean>>({})
   const [likeAnimating,   setLikeAnimating]   = useState<Record<string, boolean>>({})
+  const [showAvatar, setShowAvatar] = useState(false)
 
   function handleLike(logId: string, ownerId: string, currentlyLiked: boolean) {
     const next = !currentlyLiked
@@ -97,7 +99,11 @@ export default function FriendProfile() {
 
       {/* ── Identity row ─────────────────────────────────────────── */}
       <div className="flex items-center gap-3.5">
-        <Avatar name={user.name} photoUrl={user.photo_url} size="big" />
+        <button type="button" className="no-press flex-none" disabled={!user.photo_url} aria-label={user.photo_url ? 'View profile photo' : undefined}
+          onClick={() => setShowAvatar(true)}>
+          <Avatar name={user.name} photoUrl={user.photo_url} size="big" />
+        </button>
+        {showAvatar && user.photo_url && <PhotoViewer src={user.photo_url} alt={user.name} onClose={() => setShowAvatar(false)} />}
         <span className="min-w-0">
           <h3 className="truncate">@{user.username}</h3>
           <p className="muted small">{user.name}</p>
