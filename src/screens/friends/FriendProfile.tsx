@@ -90,6 +90,7 @@ export default function FriendProfile() {
     photoSignedUrl: log.photoSignedUrl,
     likeCount:      log.likeCount,
     likedByViewer:  log.likedByViewer,
+    likerIds:       log.likerIds,
     commentCount:   log.commentCount,
   }))
 
