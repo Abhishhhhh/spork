@@ -44,7 +44,7 @@ export default function Capture({ onGetEstimate, onSkipPhoto, onRepeat, recentMe
       {/* ── Photo area ──────────────────────────────────────────── */}
       {previewUrl ? (
         <div className="relative">
-          <img src={previewUrl} alt="Meal preview" className="photo tall" />
+          <img src={previewUrl} alt="Meal preview" className="photo natural" />
           <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-2">
             <button type="button" onClick={() => cameraInputRef.current?.click()} className="pill photo-pill">Retake</button>
             <button type="button" onClick={() => galleryInputRef.current?.click()} className="pill photo-pill">Change</button>

@@ -13,6 +13,7 @@ import { computeLikeDelta } from '../../lib/likeDelta'
 import { relativeTime } from '../../lib/relativeTime'
 import { TopBar } from '../../components/TopBar'
 import { Avatar } from '../../components/Avatar'
+import { PhotoViewer } from '../../components/PhotoViewer'
 
 export default function MealDetail() {
   const { logId } = useParams<{ logId: string }>()
@@ -26,6 +27,7 @@ export default function MealDetail() {
   const [optimisticLiked, setOptimisticLiked] = useState<boolean | null>(null)
   const [commentBody, setCommentBody] = useState('')
   const [replyingTo, setReplyingTo] = useState<string | null>(null)
+  const [viewer, setViewer] = useState<{ src: string; alt: string } | null>(null)
 
   useEffect(() => {
     setOptimisticLiked(null)
@@ -92,20 +94,23 @@ export default function MealDetail() {
       <TopBar title="Meal detail" />
 
       {/* Author row */}
-      <button
-        type="button"
-        onClick={() => navigate(viewerId === author.id ? '/home/profile' : `/home/friend/${author.username}`)}
-        className="no-press flex w-full items-center gap-2.5 text-left"
-      >
-        <Avatar name={author.name} photoUrl={author.photo_url} />
-        <span className="min-w-0 flex-1">
+      <div className="flex w-full items-center gap-2.5 text-left">
+        <button type="button" className="no-press" aria-label={author.photo_url ? 'View profile photo' : 'View profile'}
+          onClick={() => author.photo_url ? setViewer({ src: author.photo_url, alt: author.name }) : navigate(viewerId === author.id ? '/home/profile' : `/home/friend/${author.username}`)}>
+          <Avatar name={author.name} photoUrl={author.photo_url} />
+        </button>
+        <button type="button" onClick={() => navigate(viewerId === author.id ? '/home/profile' : `/home/friend/${author.username}`)} className="no-press min-w-0 flex-1 text-left">
           <b className="block font-semibold">@{author.username}</b>
           <small className="muted block">{mealTypeLabel} · {relativeTime(log.created_at)}</small>
-        </span>
-      </button>
+        </button>
+      </div>
       <div style={{ height: 15 }} />
 
-      {photoSignedUrl && <img src={photoSignedUrl} alt="" className="photo tall" />}
+      {photoSignedUrl && (
+        <img src={photoSignedUrl} alt={log.name ?? 'Meal photo'} className="photo natural" style={{ cursor: 'zoom-in' }}
+          onClick={() => setViewer({ src: photoSignedUrl, alt: log.name ?? 'Meal photo' })} />
+      )}
+      {viewer && <PhotoViewer src={viewer.src} alt={viewer.alt} onClose={() => setViewer(null)} />}
 
       <h3 style={{ marginTop: 17 }}>{log.name || mealTypeLabel}</h3>
       {caption && <p className="small muted">{caption}</p>}

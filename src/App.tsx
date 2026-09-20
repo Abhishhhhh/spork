@@ -15,6 +15,7 @@ import PrivacyDefault from './screens/onboarding/PrivacyDefault'
 import AddFirstFriends from './screens/onboarding/AddFirstFriends'
 // App
 import Feed from './screens/feed/Feed'
+import InsightsScreen from './screens/insights/Insights'
 import LogFlow from './screens/log/LogFlow'
 import MealDetail from './screens/log/MealDetail'
 import StreaksRewards from './screens/rewards/StreaksRewards'
@@ -67,6 +68,8 @@ export default function App() {
           {/* Default: /home → feed */}
           <Route index element={<Navigate to="feed" replace />} />
           <Route path="feed"             element={<Feed />} />
+          <Route path="insights"         element={<InsightsScreen />} />
+          <Route path="insights/:view"   element={<InsightsScreen />} />
           <Route path="log"              element={<LogFlow />} />
           <Route path="rewards"          element={<StreaksRewards />} />
           <Route path="friends"          element={<Friends />} />
