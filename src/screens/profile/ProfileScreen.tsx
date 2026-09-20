@@ -15,6 +15,7 @@ import { PostCard } from '../../components/PostCard'
 import { ProfileHeaderSkeleton, Skeleton, FeedCardSkeleton } from '../../components/Skeleton'
 import { useToast } from '../../components/Toast'
 import { Avatar } from '../../components/Avatar'
+import { PhotoViewer } from '../../components/PhotoViewer'
 import {
   computeWeeklyAvgCalories,
   computeWeeklyLoggedDays,
@@ -38,6 +39,7 @@ export default function ProfileScreen() {
   const { toast }     = useToast()
   const [uploadingAvatar, setUploadingAvatar] = useState(false)
   const avatarInputRef = useRef<HTMLInputElement>(null)
+  const [showAvatar, setShowAvatar] = useState(false)
 
   const [selectedDay, setSelectedDay] = useState<string | null>(null)
   const { data: dayLogs = [] }        = useLogsForDay(selectedDay ?? '')
@@ -160,9 +162,9 @@ export default function ProfileScreen() {
       <div className="flex items-center gap-3.5">
         <button
           type="button"
-          onClick={() => avatarInputRef.current?.click()}
+          onClick={() => (user.photo_url ? setShowAvatar(true) : avatarInputRef.current?.click())}
           disabled={uploadingAvatar}
-          aria-label="Change profile photo"
+          aria-label={user.photo_url ? 'View profile photo' : 'Add profile photo'}
           className="no-press relative flex-none"
         >
           <Avatar name={user.name} photoUrl={user.photo_url} size="big" />
@@ -178,6 +180,14 @@ export default function ProfileScreen() {
           </span>
         </button>
         <input ref={avatarInputRef} id="avatar-upload" type="file" accept="image/*" className="sr-only" onChange={handleAvatarChange} />
+        {showAvatar && user.photo_url && (
+          <PhotoViewer
+            src={user.photo_url}
+            alt={user.name}
+            onClose={() => setShowAvatar(false)}
+            actions={[{ label: 'Change photo', onClick: () => { setShowAvatar(false); avatarInputRef.current?.click() } }]}
+          />
+        )}
 
         <span className="min-w-0 flex-1">
           {editingName ? (
