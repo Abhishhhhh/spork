@@ -84,7 +84,7 @@ export default function EstimateEdit({ onBack, onPost, posting, postError }: Est
       </div>
 
       {/* Photo preview */}
-      {previewUrl && <img src={previewUrl} alt="" className="photo" style={{ height: 175 }} />}
+      {previewUrl && <img src={previewUrl} alt="" className="photo natural" style={{ maxHeight: 260 }} />}
 
       {/* Estimate summary */}
       <div className="card tint">
