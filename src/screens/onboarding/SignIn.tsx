@@ -3,9 +3,12 @@ import { useNavigate, Navigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { useSession } from '../../hooks/useSession'
 import { TopBar } from '../../components/TopBar'
+import { GoogleButton } from '../../components/GoogleButton'
+import { isValidEmail, routeAfterSignIn, sendEmailCode } from '../../lib/auth'
 
 /**
- * Sign-in screen for RETURNING users only.
+ * Sign-in for RETURNING users: email → 6-digit code (or Google).
+ * A password fallback stays for accounts created before codes existed.
  * New users go through /onboarding/basics → /onboarding/create-account instead.
  */
 export default function SignIn() {
@@ -13,96 +16,97 @@ export default function SignIn() {
   const { session, loading } = useSession()
   const [email, setEmail]         = useState('')
   const [password, setPassword]   = useState('')
-  const [showPassword, setShowPassword] = useState(false)
+  const [usePassword, setUsePassword] = useState(false)
   const [error, setError]         = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
   // Already signed in — no need to sign in again
   if (!loading && session) return <Navigate to="/home/feed" replace />
 
-  async function handleSubmit(e: FormEvent) {
+  async function handleSendCode(e: FormEvent) {
+    e.preventDefault()
+    const addr = email.trim().toLowerCase()
+    if (!isValidEmail(addr)) { setError('Enter a valid email address.'); return }
+    setError(null)
+    setSubmitting(true)
+    const { error: sendError } = await sendEmailCode(addr)
+    setSubmitting(false)
+    if (sendError) { setError(sendError); return }
+    navigate('/sign-in/code', { state: { email: addr } })
+  }
+
+  async function handlePassword(e: FormEvent) {
     e.preventDefault()
     setError(null)
     setSubmitting(true)
-
-    const { data, error: authError } = await supabase.auth.signInWithPassword({ email, password })
-
+    const { data, error: authError } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password })
     if (authError) {
       setSubmitting(false)
-      setError(
-        authError.message.toLowerCase().includes('invalid')
-          ? 'Incorrect email or password. Try again.'
-          : authError.message
-      )
+      setError(authError.message.toLowerCase().includes('invalid') ? 'Incorrect email or password. Try again.' : authError.message)
       return
     }
-
-    // Check if they've completed onboarding
-    const userId = data.user?.id
-    const { data: existingProfile } = userId
-      ? await supabase.from('users').select('id').eq('id', userId).maybeSingle()
-      : { data: null }
-
+    const next = data.user ? await routeAfterSignIn(data.user.id) : '/home/feed'
     setSubmitting(false)
-    navigate(existingProfile ? '/home/feed' : '/onboarding/profile', { replace: true })
+    navigate(next, { replace: true })
   }
 
   return (
     <div className="screen min-h-screen animate-fade-in">
       <TopBar title="Spork" back="/welcome" />
+
+      <div className="icon-box mx-auto" style={{ width: 120, height: 120, fontSize: 56, marginTop: 24 }}>✳</div>
       <div style={{ height: 28 }} />
 
-      <h2>Welcome back</h2>
-      <p className="muted">Sign in to keep your plan and your people close</p>
-      <div style={{ height: 28 }} />
+      <h2>Your usual?</h2>
+      <p className="muted">Welcome back. Your people are right where you left them</p>
+      <div style={{ height: 20 }} />
 
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={usePassword ? handlePassword : handleSendCode}>
         <div className="field">
-          <label htmlFor="email">Email</label>
+          <label htmlFor="email">Email address</label>
           <input
             id="email"
             type="email"
             required
-            placeholder="you@email.com"
+            placeholder="you@example.com"
             autoComplete="email"
+            inputMode="email"
+            autoCapitalize="none"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
         </div>
 
-        <div className="field">
-          <label htmlFor="password">Password</label>
-          <div className="relative">
+        {usePassword && (
+          <div className="field">
+            <label htmlFor="password">Password</label>
             <input
               id="password"
-              type={showPassword ? 'text' : 'password'}
+              type="password"
               required
               minLength={6}
               placeholder="Password"
               autoComplete="current-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              style={{ paddingRight: 64 }}
             />
-            <button
-              type="button"
-              onClick={() => setShowPassword((v) => !v)}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-[11px] font-semibold muted"
-            >
-              {showPassword ? 'Hide' : 'Show'}
-            </button>
           </div>
-        </div>
+        )}
 
         {error && <p className="error-text">{error}</p>}
 
         <button type="submit" disabled={submitting} className="btn">
-          {submitting ? 'Signing in…' : 'Sign in'}
+          {submitting ? (usePassword ? 'Signing in…' : 'Sending code…') : usePassword ? 'Sign in' : 'Send me a sign-in code →'}
         </button>
       </form>
 
-      <button type="button" onClick={() => navigate('/onboarding/basics')} className="btn ghost">
-        New to Spork? Build my plan
+      <GoogleButton onError={setError} />
+
+      <button type="button" onClick={() => { setUsePassword((v) => !v); setError(null) }} className="btn ghost">
+        {usePassword ? 'Use a sign-in code instead' : 'Use password instead'}
+      </button>
+      <button type="button" onClick={() => navigate('/onboarding/basics')} className="btn ghost" style={{ marginTop: 0 }}>
+        New here? Create an account
       </button>
     </div>
   )
