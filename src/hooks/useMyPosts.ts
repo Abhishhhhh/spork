@@ -46,10 +46,11 @@ export function useMyPosts(limit = 100) {
       const { data: likeRows }    = await supabase.from('log_likes').select('log_id, user_id').in('log_id', logIds)
       const { data: commentRows } = await supabase.from('log_comments').select('log_id').in('log_id', logIds)
 
-      const likesByLog = new Map<string, { count: number; likedByViewer: boolean }>()
+      const likesByLog = new Map<string, { count: number; likedByViewer: boolean; likerIds: string[] }>()
       for (const like of likeRows ?? []) {
-        const entry = likesByLog.get(like.log_id) ?? { count: 0, likedByViewer: false }
+        const entry = likesByLog.get(like.log_id) ?? { count: 0, likedByViewer: false, likerIds: [] }
         entry.count += 1
+        entry.likerIds.push(like.user_id)
         if (like.user_id === userId) entry.likedByViewer = true
         likesByLog.set(like.log_id, entry)
       }
@@ -60,13 +61,14 @@ export function useMyPosts(limit = 100) {
       }
 
       return logs.map((log) => {
-        const likeInfo = likesByLog.get(log.id) ?? { count: 0, likedByViewer: false }
+        const likeInfo = likesByLog.get(log.id) ?? { count: 0, likedByViewer: false, likerIds: [] as string[] }
         return {
           log,
           author,
           photoSignedUrl: log.photo_url ? (signedUrlByPath.get(log.photo_url) ?? null) : null,
           likeCount: likeInfo.count,
           likedByViewer: likeInfo.likedByViewer,
+            likerIds: likeInfo.likerIds,
           commentCount: commentCountByLog.get(log.id) ?? 0,
         }
       })

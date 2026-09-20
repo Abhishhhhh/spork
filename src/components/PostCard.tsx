@@ -4,6 +4,8 @@ import { useQueryClient, useMutation } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import { relativeTime } from '../lib/relativeTime'
 import { computeLikeDelta } from '../lib/likeDelta'
+import { likedByLabel } from '../lib/likedBy'
+import { useFriendUsernames } from '../hooks/useFriendUsernames'
 import { getEffectiveStreak } from '../lib/streak'
 import { ShareModal } from './ShareModal'
 import { FeedImage } from './FeedImage'
@@ -44,7 +46,8 @@ export function PostCard({ item, index = 0, viewerId, optimisticLiked, likeAnima
   const navigate     = useNavigate()
   const { toast }    = useToast()
   const deletePost   = useDeletePost()
-  const { log, author, photoSignedUrl, likeCount, likedByViewer, commentCount } = item
+  const { log, author, photoSignedUrl, likeCount, likedByViewer, likerIds, commentCount } = item
+  const friendUsernameById = useFriendUsernames()
 
   const [showShare, setShowShare]   = useState(false)
   const [showPhoto, setShowPhoto]   = useState(false)
@@ -52,6 +55,7 @@ export function PostCard({ item, index = 0, viewerId, optimisticLiked, likeAnima
 
   const displayLiked     = optimisticLiked ?? likedByViewer
   const displayLikeCount = likeCount + computeLikeDelta(optimisticLiked, likedByViewer)
+  const likedBy          = likedByLabel({ likerIds, total: displayLikeCount, viewerId, viewerLiked: displayLiked, friendUsernameById })
   const isOwnPost        = viewerId === log.user_id
   const caption          = (log as { caption?: string | null }).caption
   const calories         = log.calories_final ?? log.calories_estimate
@@ -156,7 +160,7 @@ export function PostCard({ item, index = 0, viewerId, optimisticLiked, likeAnima
             <span className={likeAnimating ? 'animate-pop inline-block' : 'inline-block'} style={{ fontSize: 16, lineHeight: 1 }}>
               {displayLiked ? '♥' : '♡'}
             </span>
-            {displayLikeCount}
+            {displayLiked ? 'Liked' : 'Like'}
           </button>
           <button type="button" onClick={() => navigate(detailPath)} className="muted flex items-center gap-1.5">
             <span style={{ fontSize: 16, lineHeight: 1 }}>◌</span>
@@ -166,6 +170,11 @@ export function PostCard({ item, index = 0, viewerId, optimisticLiked, likeAnima
             <span style={{ fontSize: 16, lineHeight: 1 }}>↗</span> Share
           </button>
         </div>
+        {likedBy && (
+          <button type="button" onClick={() => navigate(detailPath)} className="no-press small muted block text-left" style={{ marginTop: 8 }}>
+            {likedBy}
+          </button>
+        )}
       </article>
 
       {/* ── Full-screen photo ── */}

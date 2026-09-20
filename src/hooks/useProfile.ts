@@ -62,6 +62,7 @@ export function useUpdateProfile() {
   return useMutation({
     mutationFn: async (fields: {
       name?: string
+      username?: string
       calorie_goal?: number
       protein_goal?: number
       privacy_default?: 'public' | 'private'
@@ -70,8 +71,14 @@ export function useUpdateProfile() {
       const { error } = await supabase.from('users').update(fields).eq('id', userId!)
       if (error) throw error
     },
-    onSuccess: () => {
+    onSuccess: (_data, fields) => {
       queryClient.invalidateQueries({ queryKey: ['currentUser'] })
+      if (fields.username !== undefined) {
+        // @username is denormalised into every post card / comment we cache
+        queryClient.invalidateQueries({ queryKey: ['feed'] })
+        queryClient.invalidateQueries({ queryKey: ['myPosts'] })
+        queryClient.invalidateQueries({ queryKey: ['mealDetail'] })
+      }
     },
   })
 }
