@@ -95,7 +95,9 @@ export default function MealDetail() {
 
   return (
     <div>
-      <TopBar title="Meal detail" />
+      <TopBar title="Meal detail" right={viewerId === author.id ? (
+        <button type="button" onClick={() => navigate(`/home/log/${log.id}/edit`)} className="pill" aria-label="Edit post">Edit</button>
+      ) : undefined} />
 
       {/* Author row */}
       <div className="flex w-full items-center gap-2.5 text-left">

@@ -21,6 +21,7 @@ import Feed from './screens/feed/Feed'
 import InsightsScreen from './screens/insights/Insights'
 import LogFlow from './screens/log/LogFlow'
 import MealDetail from './screens/log/MealDetail'
+import EditPost from './screens/log/EditPost'
 import StreaksRewards from './screens/rewards/StreaksRewards'
 import ProfileScreen from './screens/profile/ProfileScreen'
 import SettingsScreen from './screens/profile/SettingsScreen'
@@ -82,6 +83,7 @@ export default function App() {
           <Route path="friends"          element={<Friends />} />
           <Route path="friend/:username" element={<FriendProfile />} />
           <Route path="log/:logId"       element={<MealDetail />} />
+          <Route path="log/:logId/edit"  element={<EditPost />} />
           <Route path="notifications"    element={<NotificationsInbox />} />
           <Route path="profile"          element={<ProfileScreen />} />
           <Route path="settings"         element={<SettingsScreen />} />

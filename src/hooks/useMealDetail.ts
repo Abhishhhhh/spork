@@ -209,3 +209,36 @@ export function useDeleteComment() {
     },
   })
 }
+
+/** Owner edits an existing log — the same fields the create form exposes. */
+export interface EditLogInput {
+  logId: string
+  name: string | null
+  caption: string | null
+  meal_type: LogRow['meal_type']
+  visibility: LogRow['visibility']
+  satiety: LogRow['satiety']
+  calories_final: number | null
+  protein_final_g: number | null
+  carbs_final_g: number | null
+  fat_final_g: number | null
+}
+
+export function useEditLog() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ logId, ...fields }: EditLogInput) => {
+      // RLS `logs_update_own` guarantees only the owner's row can change.
+      const { error } = await supabase.from('logs').update(fields).eq('id', logId)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['mealDetail'] })
+      queryClient.invalidateQueries({ queryKey: ['feed'] })
+      queryClient.invalidateQueries({ queryKey: ['myPosts'] })
+      queryClient.invalidateQueries({ queryKey: ['todayStats'] })
+      queryClient.invalidateQueries({ queryKey: ['myLogs'] })
+      queryClient.invalidateQueries({ queryKey: ['insights'] })
+    },
+  })
+}
