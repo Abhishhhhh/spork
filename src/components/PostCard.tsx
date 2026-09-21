@@ -38,17 +38,38 @@ function useDeletePost() {
   })
 }
 
+/** ── Edit post mutation ───────────────────────────────────────────────────── */
+function useEditPost() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ logId, name, caption }: { logId: string; name: string; caption: string }) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await supabase.from('logs').update({ name, caption } as any).eq('id', logId)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['feed'] })
+      queryClient.invalidateQueries({ queryKey: ['myPosts'] })
+      queryClient.invalidateQueries({ queryKey: ['mealDetail'] })
+    },
+  })
+}
+
 function capitalize(s: string) { return s.charAt(0).toUpperCase() + s.slice(1) }
 
 export function PostCard({ item, index = 0, viewerId, optimisticLiked, likeAnimating = false, onLike }: PostCardProps) {
   const navigate     = useNavigate()
   const { toast }    = useToast()
   const deletePost   = useDeletePost()
+  const editPost     = useEditPost()
   const { log, author, photoSignedUrl, likeCount, likedByViewer, commentCount } = item
 
-  const [showShare, setShowShare]   = useState(false)
-  const [showPhoto, setShowPhoto]   = useState(false)
-  const [showMenu,  setShowMenu]    = useState(false)
+  const [showShare,    setShowShare]    = useState(false)
+  const [showPhoto,    setShowPhoto]    = useState(false)
+  const [showMenu,     setShowMenu]     = useState(false)
+  const [editing,      setEditing]      = useState(false)
+  const [editName,     setEditName]     = useState('')
+  const [editCaption,  setEditCaption]  = useState('')
 
   const displayLiked     = optimisticLiked ?? likedByViewer
   const displayLikeCount = likeCount + computeLikeDelta(optimisticLiked, likedByViewer)
@@ -68,6 +89,23 @@ export function PostCard({ item, index = 0, viewerId, optimisticLiked, likeAnima
     })
   }
 
+  function openEdit() {
+    setShowMenu(false)
+    setEditName(log.name ?? '')
+    setEditCaption(caption ?? '')
+    setEditing(true)
+  }
+
+  function handleSaveEdit() {
+    editPost.mutate(
+      { logId: log.id, name: editName.trim(), caption: editCaption.trim() },
+      {
+        onSuccess: () => { toast('Post updated ✓'); setEditing(false) },
+        onError:   () => toast('Could not save — try again', 'error'),
+      }
+    )
+  }
+
   function handleLikeWithHaptic() {
     hapticLight()
     onLike(log.id, log.user_id, displayLiked)
@@ -75,10 +113,10 @@ export function PostCard({ item, index = 0, viewerId, optimisticLiked, likeAnima
 
   return (
     <>
-      {/* Backdrop to close menu */}
       {showMenu && <div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)} />}
 
       <article className="feed-card animate-slide-up" style={{ animationDelay: `${index * 30}ms` }}>
+
         {/* ── Author row ──────────────────────────────────── */}
         <div className="flex items-center gap-2.5">
           <button
@@ -105,18 +143,12 @@ export function PostCard({ item, index = 0, viewerId, optimisticLiked, likeAnima
               </button>
               {showMenu && (
                 <div className="absolute right-0 top-9 z-50 w-40 overflow-hidden rounded-[19px] bg-paper shadow-[0_8px_30px_#00000020] animate-slide-down">
-                  <button
-                    type="button"
-                    onClick={() => { setShowMenu(false); navigate(detailPath) }}
-                    className="block w-full px-4 py-3 text-left text-[13px]"
-                  >
-                    Edit caption
+                  <button type="button" onClick={openEdit}
+                    className="block w-full px-4 py-3 text-left text-[13px]">
+                    Edit post
                   </button>
-                  <button
-                    type="button"
-                    onClick={handleDelete}
-                    className="block w-full border-t border-line px-4 py-3 text-left text-[13px] text-error"
-                  >
+                  <button type="button" onClick={handleDelete}
+                    className="block w-full border-t border-line px-4 py-3 text-left text-[13px] text-error">
                     Delete post
                   </button>
                 </div>
@@ -138,42 +170,77 @@ export function PostCard({ item, index = 0, viewerId, optimisticLiked, likeAnima
           />
         )}
 
-        {/* ── Meal name + calories ────────────────────────── */}
-        <button type="button" onClick={() => navigate(detailPath)} className="no-press block w-full text-left" style={{ marginTop: 13 }}>
-          <span className="flex items-start justify-between gap-3">
-            <b className="font-semibold">{log.name || capitalize(log.meal_type)}</b>
-            <span className="flex flex-none gap-1.5">
-              {calories != null && <span className="pill tint">{Number(calories).toLocaleString()} kcal</span>}
-              {proteinG != null && <span className="pill tint">{proteinG}g protein</span>}
+        {/* ── Meal name + caption / inline edit ───────────── */}
+        {editing ? (
+          <div style={{ marginTop: 13 }}>
+            <input
+              value={editName}
+              onChange={(e) => setEditName(e.target.value)}
+              placeholder="Meal name"
+              maxLength={80}
+              autoFocus
+              className="input"
+              style={{ marginBottom: 8 }}
+            />
+            <textarea
+              value={editCaption}
+              onChange={(e) => setEditCaption(e.target.value)}
+              placeholder="Add a caption… (optional)"
+              maxLength={300}
+              rows={3}
+              className="input"
+              style={{ resize: 'none' }}
+            />
+            <div className="flex gap-2" style={{ marginTop: 10 }}>
+              <button type="button" onClick={handleSaveEdit}
+                disabled={editPost.isPending} className="btn flex-1">
+                {editPost.isPending ? 'Saving…' : 'Save'}
+              </button>
+              <button type="button" onClick={() => setEditing(false)} className="btn light flex-1">
+                Cancel
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button type="button" onClick={() => navigate(detailPath)}
+            className="no-press block w-full text-left" style={{ marginTop: 13 }}>
+            <span className="flex items-start justify-between gap-3">
+              <b className="font-semibold">{log.name || capitalize(log.meal_type)}</b>
+              <span className="flex flex-none gap-1.5">
+                {calories != null && <span className="pill tint">{Number(calories).toLocaleString()} kcal</span>}
+                {proteinG != null && <span className="pill tint">{proteinG}g protein</span>}
+              </span>
             </span>
-          </span>
-          {caption && <p className="small muted" style={{ marginTop: 4 }}>{caption}</p>}
-        </button>
+            {caption && <p className="small muted" style={{ marginTop: 4 }}>{caption}</p>}
+          </button>
+        )}
 
         {/* ── Interaction row ─────────────────────────────── */}
-        <div className="flex items-center gap-4" style={{ marginTop: 14 }}>
-          <button type="button" onClick={handleLikeWithHaptic} className={`flex items-center gap-1.5 ${displayLiked ? 'liked font-semibold' : 'muted'}`}>
-            <span className={likeAnimating ? 'animate-pop inline-block' : 'inline-block'} style={{ fontSize: 16, lineHeight: 1 }}>
-              {displayLiked ? '♥' : '♡'}
-            </span>
-            {displayLikeCount}
-          </button>
-          <button type="button" onClick={() => navigate(detailPath)} className="muted flex items-center gap-1.5">
-            <span style={{ fontSize: 16, lineHeight: 1 }}>◌</span>
-            {commentCount} {commentCount === 1 ? 'comment' : 'comments'}
-          </button>
-          <button type="button" onClick={() => setShowShare(true)} className="muted ml-auto flex items-center gap-1.5">
-            <span style={{ fontSize: 16, lineHeight: 1 }}>↗</span> Share
-          </button>
-        </div>
+        {!editing && (
+          <div className="flex items-center gap-4" style={{ marginTop: 14 }}>
+            <button type="button" onClick={handleLikeWithHaptic}
+              className={`flex items-center gap-1.5 ${displayLiked ? 'liked font-semibold' : 'muted'}`}>
+              <span className={likeAnimating ? 'animate-pop inline-block' : 'inline-block'}
+                style={{ fontSize: 16, lineHeight: 1 }}>
+                {displayLiked ? '♥' : '♡'}
+              </span>
+              {displayLikeCount}
+            </button>
+            <button type="button" onClick={() => navigate(detailPath)} className="muted flex items-center gap-1.5">
+              <span style={{ fontSize: 16, lineHeight: 1 }}>◌</span>
+              {commentCount} {commentCount === 1 ? 'comment' : 'comments'}
+            </button>
+            <button type="button" onClick={() => setShowShare(true)} className="muted ml-auto flex items-center gap-1.5">
+              <span style={{ fontSize: 16, lineHeight: 1 }}>↗</span> Share
+            </button>
+          </div>
+        )}
       </article>
 
-      {/* ── Full-screen photo ── */}
       {showPhoto && photoSignedUrl && (
         <PhotoViewer src={photoSignedUrl} alt={log.name ?? 'Meal photo'} onClose={() => setShowPhoto(false)} />
       )}
 
-      {/* ── Share modal ── */}
       {showShare && (
         <ShareModal
           photoUrl={photoSignedUrl}
