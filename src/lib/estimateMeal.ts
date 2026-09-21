@@ -1,31 +1,10 @@
 import { supabase } from './supabase'
 import { parseEstimateResponse } from './parseEstimate'
+import { compressImage } from './compressImage'
 import type { EstimateResult } from '../store/logDraft'
 
-const MAX_DIMENSION_PX = 1024
-const JPEG_QUALITY = 0.8
-
-async function resizeImage(file: File): Promise<Blob> {
-  const bitmap = await createImageBitmap(file)
-  const scale = Math.min(1, MAX_DIMENSION_PX / Math.max(bitmap.width, bitmap.height))
-  const width = Math.round(bitmap.width * scale)
-  const height = Math.round(bitmap.height * scale)
-
-  const canvas = document.createElement('canvas')
-  canvas.width = width
-  canvas.height = height
-  const ctx = canvas.getContext('2d')
-  if (!ctx) throw new Error('Canvas 2D context unavailable')
-  ctx.drawImage(bitmap, 0, 0, width, height)
-
-  return new Promise((resolve, reject) => {
-    canvas.toBlob(
-      (blob) => (blob ? resolve(blob) : reject(new Error('Image compression failed'))),
-      'image/jpeg',
-      JPEG_QUALITY,
-    )
-  })
-}
+// Smaller copy for the model — Gemini doesn't benefit beyond ~1024px.
+const AI_MAX_DIMENSION_PX = 1024
 
 function blobToBase64(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -48,7 +27,7 @@ function blobToBase64(blob: Blob): Promise<string> {
  */
 export async function estimateMeal(photo: File, description: string): Promise<EstimateResult | null> {
   try {
-    const resized = await resizeImage(photo)
+    const resized = await compressImage(photo, AI_MAX_DIMENSION_PX)
     const photoBase64 = await blobToBase64(resized)
 
     const invokePromise = supabase.functions.invoke('estimate-meal', {

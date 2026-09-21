@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import { compressImage } from './compressImage'
 import { computeNextStreak } from './streak'
 import type { EstimateResult, MealType, Visibility, Satiety } from '../store/logDraft'
 
@@ -20,10 +21,11 @@ export interface PostLogInput {
   currentStreakLastLogDate: string | null
 }
 
-async function uploadMealPhoto(userId: string, logId: string, file: File): Promise<string> {
+async function uploadMealPhoto(userId: string, logId: string, original: File): Promise<string> {
+  const file = await compressImage(original)
   const extension = file.name.split('.').pop() ?? 'jpg'
   const path = `${userId}/${logId}.${extension}`
-  const { error } = await supabase.storage.from('meal-photos').upload(path, file)
+  const { error } = await supabase.storage.from('meal-photos').upload(path, file, { contentType: file.type })
   if (error) throw error
   return path
 }
