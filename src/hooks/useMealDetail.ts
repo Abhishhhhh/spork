@@ -21,6 +21,7 @@ export interface MealDetailData {
   author: Pick<UserRow, 'id' | 'name' | 'username' | 'photo_url'>
   photoSignedUrl: string | null
   likeCount: number
+  likerIds: string[]
   likedByViewer: boolean
   comments: CommentThread[]
 }
@@ -64,6 +65,7 @@ export function useMealDetail(logId: string | undefined) {
       const likeRows = likes ?? []
       const likeCount = likeRows.length
       const likedByViewer = likeRows.some((l) => l.user_id === viewerId)
+      const likerIds = likeRows.map((l) => l.user_id)
 
       const { data: commentRows, error: commentsError } = await supabase
         .from('log_comments')
@@ -90,7 +92,7 @@ export function useMealDetail(logId: string | undefined) {
 
       const comments = groupComments(rowsWithAuthor)
 
-      return { log, author, photoSignedUrl, likeCount, likedByViewer, comments }
+      return { log, author, photoSignedUrl, likeCount, likerIds, likedByViewer, comments }
     },
     enabled: Boolean(logId) && Boolean(viewerId),
   })

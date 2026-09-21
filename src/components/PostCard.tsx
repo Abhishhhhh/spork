@@ -4,6 +4,8 @@ import { useQueryClient, useMutation } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import { relativeTime } from '../lib/relativeTime'
 import { computeLikeDelta } from '../lib/likeDelta'
+import { likedByLabel } from '../lib/likedBy'
+import { useFriendUsernames } from '../hooks/useFriendUsernames'
 import { getEffectiveStreak } from '../lib/streak'
 import { ShareModal } from './ShareModal'
 import { FeedImage } from './FeedImage'
@@ -62,17 +64,19 @@ export function PostCard({ item, index = 0, viewerId, optimisticLiked, likeAnima
   const { toast }    = useToast()
   const deletePost   = useDeletePost()
   const editPost     = useEditPost()
-  const { log, author, photoSignedUrl, likeCount, likedByViewer, commentCount } = item
+  const { log, author, photoSignedUrl, likeCount, likedByViewer, likerIds, commentCount } = item
+  const friendUsernameById = useFriendUsernames()
 
-  const [showShare,    setShowShare]    = useState(false)
-  const [showPhoto,    setShowPhoto]    = useState(false)
-  const [showMenu,     setShowMenu]     = useState(false)
-  const [editing,      setEditing]      = useState(false)
-  const [editName,     setEditName]     = useState('')
-  const [editCaption,  setEditCaption]  = useState('')
+  const [showShare,   setShowShare]   = useState(false)
+  const [showPhoto,   setShowPhoto]   = useState(false)
+  const [showMenu,    setShowMenu]    = useState(false)
+  const [editing,     setEditing]     = useState(false)
+  const [editName,    setEditName]    = useState('')
+  const [editCaption, setEditCaption] = useState('')
 
   const displayLiked     = optimisticLiked ?? likedByViewer
   const displayLikeCount = likeCount + computeLikeDelta(optimisticLiked, likedByViewer)
+  const likedBy          = likedByLabel({ likerIds, total: displayLikeCount, viewerId, viewerLiked: displayLiked, friendUsernameById })
   const isOwnPost        = viewerId === log.user_id
   const caption          = (log as { caption?: string | null }).caption
   const calories         = log.calories_final ?? log.calories_estimate
@@ -170,7 +174,7 @@ export function PostCard({ item, index = 0, viewerId, optimisticLiked, likeAnima
           />
         )}
 
-        {/* ── Meal name + caption / inline edit ───────────── */}
+        {/* ── Meal name + caption / inline edit form ──────── */}
         {editing ? (
           <div style={{ marginTop: 13 }}>
             <input
@@ -224,7 +228,7 @@ export function PostCard({ item, index = 0, viewerId, optimisticLiked, likeAnima
                 style={{ fontSize: 16, lineHeight: 1 }}>
                 {displayLiked ? '♥' : '♡'}
               </span>
-              {displayLikeCount}
+              {displayLiked ? 'Liked' : 'Like'}
             </button>
             <button type="button" onClick={() => navigate(detailPath)} className="muted flex items-center gap-1.5">
               <span style={{ fontSize: 16, lineHeight: 1 }}>◌</span>
@@ -234,6 +238,13 @@ export function PostCard({ item, index = 0, viewerId, optimisticLiked, likeAnima
               <span style={{ fontSize: 16, lineHeight: 1 }}>↗</span> Share
             </button>
           </div>
+        )}
+
+        {!editing && likedBy && (
+          <button type="button" onClick={() => navigate(detailPath)}
+            className="no-press small muted block text-left" style={{ marginTop: 8 }}>
+            {likedBy}
+          </button>
         )}
       </article>
 
