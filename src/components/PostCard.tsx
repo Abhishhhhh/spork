@@ -45,17 +45,11 @@ function useEditPost() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async ({ logId, name, caption }: { logId: string; name: string; caption: string }) => {
-      // Try with caption first; if the column doesn't exist yet (0006 migration
-      // not applied), fall back to name-only so editing still works.
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const full = await supabase.from('logs').update({ name, caption } as any).eq('id', logId)
-      if (full.error?.code === '42703') {
-        // 42703 = undefined_column — caption column not yet in DB, update name only
-        const { error } = await supabase.from('logs').update({ name }).eq('id', logId)
-        if (error) throw error
-      } else if (full.error) {
-        throw full.error
-      }
+      const { error } = await supabase
+        .from('logs')
+        .update({ name, caption })
+        .eq('id', logId)
+      if (error) throw new Error(`Update failed: ${error.message} (code: ${error.code})`)
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['feed'] })
@@ -113,7 +107,7 @@ export function PostCard({ item, index = 0, viewerId, optimisticLiked, likeAnima
       { logId: log.id, name: editName.trim(), caption: editCaption.trim() },
       {
         onSuccess: () => { toast('Post updated ✓'); setEditing(false) },
-        onError:   () => toast('Could not save — try again', 'error'),
+        onError: (err) => toast(err instanceof Error ? err.message : 'Could not save — try again', 'error'),
       }
     )
   }
