@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
+import { compressImage } from '../../lib/compressImage'
 import { useCurrentUser } from '../../hooks/useCurrentUser'
 import { useSession } from '../../hooks/useSession'
 import { useTodayStats } from '../../hooks/useTodayStats'
@@ -63,14 +64,15 @@ export default function ProfileScreen() {
   }
 
   async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file || !session?.user.id) return
+    const original = e.target.files?.[0]
+    if (!original || !session?.user.id) return
     setUploadingAvatar(true)
     try {
+      const file = await compressImage(original, 512)
       const ext  = file.name.split('.').pop() ?? 'jpg'
       const path = `${session.user.id}/avatar.${ext}`
       const { error: uploadErr } = await supabase.storage
-        .from('avatars').upload(path, file, { upsert: true })
+        .from('avatars').upload(path, file, { upsert: true, contentType: file.type })
       if (uploadErr) throw uploadErr
 
       // Same storage path every time (upsert), so bust the cache or the

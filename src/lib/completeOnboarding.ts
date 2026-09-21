@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import { compressImage } from './compressImage'
 
 export interface CompleteOnboardingInput {
   userId: string
@@ -11,11 +12,12 @@ export interface CompleteOnboardingInput {
   friendUsernamesToRequest: string[]
 }
 
-async function uploadAvatar(userId: string, file: File): Promise<string> {
+async function uploadAvatar(userId: string, original: File): Promise<string> {
+  const file = await compressImage(original, 512)
   const extension = file.name.split('.').pop() ?? 'jpg'
   const path = `${userId}/avatar.${extension}`
 
-  const { error } = await supabase.storage.from('avatars').upload(path, file, { upsert: true })
+  const { error } = await supabase.storage.from('avatars').upload(path, file, { upsert: true, contentType: file.type })
   if (error) throw error
 
   const { data } = supabase.storage.from('avatars').getPublicUrl(path)
