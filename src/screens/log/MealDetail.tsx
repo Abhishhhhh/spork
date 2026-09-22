@@ -8,6 +8,7 @@ import {
   useToggleLike,
   type CommentThread,
   type CommentWithAuthor,
+  useToggleCommentLike,
 } from '../../hooks/useMealDetail'
 import { computeLikeDelta } from '../../lib/likeDelta'
 import { likedByLabel } from '../../lib/likedBy'
@@ -25,6 +26,7 @@ export default function MealDetail() {
   const toggleLike = useToggleLike()
   const addComment = useAddComment()
   const deleteComment = useDeleteComment()
+  const toggleCommentLike = useToggleCommentLike()
   const friendUsernameById = useFriendUsernames()
 
   const [optimisticLiked, setOptimisticLiked] = useState<boolean | null>(null)
@@ -58,7 +60,7 @@ export default function MealDetail() {
     )
   }
 
-  const { log, author, photoSignedUrl, likeCount, likedByViewer, likerIds, comments } = data
+  const { log, author, photoSignedUrl, likeCount, likedByViewer, likerIds, comments, commentLikes } = data
   const viewerId = session?.user.id
   const displayLiked = optimisticLiked ?? likedByViewer
   const displayLikeCount = likeCount + computeLikeDelta(optimisticLiked, likedByViewer)
@@ -153,6 +155,12 @@ export default function MealDetail() {
           <CommentRow
             comment={comment}
             canDelete={viewerId === comment.user_id || viewerId === log.user_id}
+            likeCount={commentLikes?.counts.get(comment.id) ?? 0}
+            liked={commentLikes?.mine.has(comment.id) ?? false}
+            onLike={commentLikes ? () => toggleCommentLike.mutate({
+              commentId: comment.id,
+              currentlyLiked: commentLikes.mine.has(comment.id),
+            }) : undefined}
             onReply={() => setReplyingTo(comment.id)}
             onDelete={() => deleteComment.mutate(comment.id)}
           />
@@ -163,6 +171,12 @@ export default function MealDetail() {
                   key={reply.id}
                   comment={reply}
                   canDelete={viewerId === reply.user_id || viewerId === log.user_id}
+                  likeCount={commentLikes?.counts.get(reply.id) ?? 0}
+                  liked={commentLikes?.mine.has(reply.id) ?? false}
+                  onLike={commentLikes ? () => toggleCommentLike.mutate({
+                    commentId: reply.id,
+                    currentlyLiked: commentLikes.mine.has(reply.id),
+                  }) : undefined}
                   onDelete={() => deleteComment.mutate(reply.id)}
                 />
               ))}
@@ -203,29 +217,44 @@ export default function MealDetail() {
 function CommentRow({
   comment,
   canDelete,
+  likeCount,
+  liked,
+  onLike,
   onReply,
   onDelete,
 }: {
   comment: CommentWithAuthor
   canDelete: boolean
+  likeCount: number
+  liked: boolean
+  /** undefined while migration 0010 isn't deployed — the heart is hidden */
+  onLike?: () => void
   onReply?: () => void
   onDelete: () => void
 }) {
   const navigate = useNavigate()
   const goToAuthor = () => navigate(`/home/friend/${comment.author.username}`)
   return (
-    <div className="meal-row">
+    <div className="meal-row comment-row">
       <button type="button" onClick={goToAuthor} aria-label={`View ${comment.author.username}'s profile`} className="no-press">
-        <Avatar name={comment.author.name} photoUrl={comment.author.photo_url} />
+        <Avatar name={comment.author.name} photoUrl={comment.author.photo_url} size="sm" />
       </button>
       <span className="min-w-0 flex-1">
         <button type="button" onClick={goToAuthor} className="font-semibold">@{comment.author.username}</button>
-        <p className="small">{comment.body}</p>
-        <span className="flex gap-3">
-          {onReply && <button type="button" onClick={onReply} className="muted tiny">Reply</button>}
-          {canDelete && <button type="button" onClick={onDelete} className="tiny text-error">Delete</button>}
+        <p className="small" style={{ marginTop: 2 }}>{comment.body}</p>
+        <span className="comment-actions">
+          {onLike && (
+            <button type="button" onClick={onLike} className={liked ? 'liked' : 'muted'}
+              aria-pressed={liked} aria-label={liked ? 'Unlike comment' : 'Like comment'}>
+              <span style={{ fontSize: 13, lineHeight: 1 }}>{liked ? '♥' : '♡'}</span>
+              {likeCount > 0 && <span>{likeCount}</span>}
+            </button>
+          )}
+          {onReply && <button type="button" onClick={onReply} className="muted">Reply</button>}
+          {canDelete && <button type="button" onClick={onDelete} className="text-error">Delete</button>}
         </span>
       </span>
     </div>
   )
+
 }

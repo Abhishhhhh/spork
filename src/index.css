@@ -294,6 +294,16 @@
   .meal-row { display: flex; gap: 11px; align-items: flex-start; margin: 13px 0; }
   .meal-row + .meal-row { border-top: 1px solid var(--color-line); padding-top: 13px; }
 
+  /* Comments — roomier rows and real tap targets on the actions */
+  .comment-row { align-items: flex-start; gap: 10px; margin: 6px 0; padding: 9px 0; }
+  .comment-row + .comment-row { padding-top: 12px; }
+  .comment-row p { line-height: 1.45; }
+  .comment-actions { display: flex; align-items: center; gap: 14px; margin-top: 6px; }
+  .comment-actions button {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 11px; line-height: 1; padding: 5px 0; min-height: 26px;
+  }
+
   /* Tracking bars + ring (the only colour in the UI) */
   .bar { height: 7px; border-radius: 7px; background: var(--color-line); overflow: hidden; }
   .bar i { display: block; background: var(--color-ink); height: 100%; border-radius: 7px; transition: width 0.4s ease; }

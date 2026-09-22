@@ -86,6 +86,17 @@ export interface Database {
         Update: Partial<Database['public']['Tables']['logs']['Row']>
         Relationships: []
       }
+      comment_likes: {
+        Row: {
+          id: string
+          comment_id: string
+          user_id: string
+          created_at: string
+        }
+        Insert: { comment_id: string; user_id: string; id?: string; created_at?: string }
+        Update: Partial<Database['public']['Tables']['comment_likes']['Row']>
+        Relationships: []
+      }
       rewards: {
         Row: {
           id: string
