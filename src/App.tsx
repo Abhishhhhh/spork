@@ -22,6 +22,7 @@ import InsightsScreen from './screens/insights/Insights'
 import LogFlow from './screens/log/LogFlow'
 import MealDetail from './screens/log/MealDetail'
 import EditPost from './screens/log/EditPost'
+import Connections from './screens/friends/Connections'
 import StreaksRewards from './screens/rewards/StreaksRewards'
 import ProfileScreen from './screens/profile/ProfileScreen'
 import SettingsScreen from './screens/profile/SettingsScreen'
@@ -82,6 +83,7 @@ export default function App() {
           <Route path="rewards"          element={<StreaksRewards />} />
           <Route path="friends"          element={<Friends />} />
           <Route path="friend/:username" element={<FriendProfile />} />
+          <Route path="connections/:username" element={<Connections />} />
           <Route path="log/:logId"       element={<MealDetail />} />
           <Route path="log/:logId/edit"  element={<EditPost />} />
           <Route path="notifications"    element={<NotificationsInbox />} />
