@@ -1,6 +1,7 @@
 import { useNavigate, useParams } from 'react-router-dom'
 import { useState } from 'react'
 import { useFriendProfile } from '../../hooks/useFriendProfile'
+import { useConnections } from '../../hooks/useConnections'
 import { useSession } from '../../hooks/useSession'
 import { getEffectiveStreak } from '../../lib/streak'
 import { computeAverageCalories, computeWeeklyLoggedDays } from '../../lib/friendStats'
@@ -21,6 +22,7 @@ export default function FriendProfile() {
   const { session }    = useSession()
   const { toast }      = useToast()
   const { data, isLoading, isError } = useFriendProfile(username)
+  const { data: connections } = useConnections(username)
   const toggleLike     = useToggleLike()
 
   const [optimisticLikes, setOptimisticLikes] = useState<Record<string, boolean>>({})
@@ -108,7 +110,15 @@ export default function FriendProfile() {
         <span className="min-w-0">
           <h3 className="truncate">@{user.username}</h3>
           <p className="muted small">{user.name}</p>
-          <p className="small">{logs.length} post{logs.length === 1 ? '' : 's'} · {effectiveStreak} day streak</p>
+          <span className="flex flex-wrap items-center gap-x-3 gap-y-1 small" style={{ marginTop: 4 }}>
+            <span><b>{logs.length}</b> post{logs.length === 1 ? '' : 's'}</span>
+            {connections?.visible && (
+              <button type="button" onClick={() => navigate(`/home/connections/${user.username}`)}>
+                <b>{connections.count}</b> friend{connections.count === 1 ? '' : 's'}
+              </button>
+            )}
+            <span><b>{effectiveStreak}</b> day streak</span>
+          </span>
         </span>
       </div>
       <div style={{ height: 15 }} />
