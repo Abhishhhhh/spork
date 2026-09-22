@@ -24,6 +24,14 @@ export interface MealDetailData {
   likerIds: string[]
   likedByViewer: boolean
   comments: CommentThread[]
+  /** null when migration 0010 isn't deployed — UI hides comment hearts */
+  commentLikes: CommentLikes | null
+}
+
+/** Per-comment heart state. */
+export interface CommentLikes {
+  counts: Map<string, number>
+  mine: Set<string>
 }
 
 /**
@@ -92,7 +100,29 @@ export function useMealDetail(logId: string | undefined) {
 
       const comments = groupComments(rowsWithAuthor)
 
-      return { log, author, photoSignedUrl, likeCount, likerIds, likedByViewer, comments }
+      // Comment hearts (migration 0010). If the table isn't there yet the
+      // request 404s (PGRST205 / 42P01) — treat that as "feature not
+      // deployed" and let the UI hide the hearts rather than erroring.
+      let commentLikes: CommentLikes | null = null
+      if (rows.length > 0) {
+        const { data: likeRows, error: clError } = await supabase
+          .from('comment_likes')
+          .select('comment_id, user_id')
+          .in('comment_id', rows.map((c) => c.id))
+        if (!clError) {
+          const counts = new Map<string, number>()
+          const mine = new Set<string>()
+          for (const row of (likeRows ?? []) as { comment_id: string; user_id: string }[]) {
+            counts.set(row.comment_id, (counts.get(row.comment_id) ?? 0) + 1)
+            if (row.user_id === viewerId) mine.add(row.comment_id)
+          }
+          commentLikes = { counts, mine }
+        }
+      } else {
+        commentLikes = { counts: new Map(), mine: new Set() }
+      }
+
+      return { log, author, photoSignedUrl, likeCount, likerIds, likedByViewer, comments, commentLikes }
     },
     enabled: Boolean(logId) && Boolean(viewerId),
   })
@@ -101,6 +131,31 @@ export function useMealDetail(logId: string | undefined) {
     ...query,
     isLoading: sessionLoading || (Boolean(viewerId) && query.isLoading),
   }
+}
+
+/** Toggles a heart on a single comment (comment_likes, migration 0010). */
+export function useToggleCommentLike() {
+  const { session } = useSession()
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (input: { commentId: string; currentlyLiked: boolean }) => {
+      if (!session) throw new Error('Not signed in')
+      const userId = session.user.id
+      if (input.currentlyLiked) {
+        const { error } = await supabase.from('comment_likes').delete()
+          .eq('comment_id', input.commentId).eq('user_id', userId)
+        if (error) throw error
+        return
+      }
+      const { error } = await supabase.from('comment_likes')
+        .insert({ comment_id: input.commentId, user_id: userId })
+      // 23505 = already liked (double tap); nothing to do.
+      if (error && error.code !== '23505') throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['mealDetail'] })
+    },
+  })
 }
 
 /**
