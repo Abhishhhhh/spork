@@ -122,12 +122,11 @@ export default function ProfileScreen() {
   const logDates       = streakData?.recentLogDates ?? buildLogDateSet(recentLogs)
   const effectiveStreak = streakData?.effectiveStreak ?? user.streak_count
 
-  // Real following/followers counts from friendships
-  const followingCount = friendships?.accepted.length ?? 0
-  // Outgoing pending are people you follow who haven't accepted yet
-  const followingTotal = followingCount + (friendships?.outgoing.length ?? 0)
-  // Followers = people who follow you (accepted from their side = accepted on ours)
-  const followersCount = followingCount // accepted is mutual — both sides accepted
+  // Friendships here are mutual (both sides accepted), so there is one
+  // count rather than separate followers/following. Incoming requests get
+  // their own chip so they don't inflate it.
+  const friendCount  = friendships?.accepted.length ?? 0
+  const pendingCount = friendships?.incoming.length ?? 0
 
   function saveField(fields: Parameters<typeof updateProfile.mutate>[0]) {
     updateProfile.mutate(fields, {
@@ -206,10 +205,16 @@ export default function ProfileScreen() {
             </button>
           )}
           <p className="small muted">Tap name or photo to edit</p>
-          <span className="flex gap-3 small" style={{ marginTop: 8 }}>
+          <span className="flex flex-wrap gap-x-3 gap-y-1 small" style={{ marginTop: 8 }}>
             <span><b>{posts.length}</b> posts</span>
-            <button type="button" onClick={() => navigate('/home/friends')}><b>{followingTotal}</b> following</button>
-            <button type="button" onClick={() => navigate('/home/friends')}><b>{followersCount}</b> followers</button>
+            <button type="button" onClick={() => navigate(`/home/connections/${user.username}`)}>
+              <b>{friendCount}</b> friend{friendCount === 1 ? '' : 's'}
+            </button>
+            {pendingCount > 0 && (
+              <button type="button" onClick={() => navigate('/home/friends')} className="font-semibold">
+                {pendingCount} request{pendingCount === 1 ? '' : 's'}
+              </button>
+            )}
           </span>
         </span>
       </div>
