@@ -4,6 +4,7 @@ import { useOnboardingStore } from '../../store/onboardingStore'
 import { OnboardingProgress } from '../../components/OnboardingProgress'
 import { TopBar } from '../../components/TopBar'
 import { OptionIcon } from '../../components/OptionIcon'
+import { SporkLoader } from '../../components/brand/SporkLoader'
 import { computeTimeline, PACE_RATES } from '../../lib/calorieGoal'
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -66,7 +67,7 @@ function PlanLoader({ onDone }: { onDone: () => void }) {
     <div className="screen min-h-screen animate-fade-in">
       <TopBar title="Your plan" back={null} />
       <div className="flex flex-col items-center justify-center text-center" style={{ minHeight: 'calc(100vh - 160px)' }}>
-        <div className="icon-box" style={{ width: 120, height: 120, fontSize: 56 }}>✳</div>
+        <div className="icon-box" style={{ width: 120, height: 120 }}><SporkLoader size={60} /></div>
         <div style={{ height: 28 }} />
         <h2>Building your plan</h2>
         <p className="muted">{LOADING_STEPS[stepIdx]}</p>

@@ -1,0 +1,18 @@
+.wk{animation:wk-fade 3.8s infinite}
+.wk-clip{display:inline-block;overflow:hidden;padding:0.12em 0 0.3em;margin:-0.12em 0 -0.3em}
+.wk-l{display:inline-block;animation:wk-l 3.8s cubic-bezier(.22,1,.36,1) infinite}
+.wk-r{display:inline-block;animation:wk-r 3.8s cubic-bezier(.22,1,.36,1) infinite}
+@keyframes wk-l{0%,30%{transform:translateX(105%)}58%,100%{transform:translateX(0)}}
+@keyframes wk-r{0%,34%{transform:translateX(-105%)}62%,100%{transform:translateX(0)}}
+.wk-ring{stroke-dasharray:1 2;stroke-dashoffset:1;animation:wk-ring 3.8s cubic-bezier(.65,0,.35,1) infinite}
+@keyframes wk-ring{0%{stroke-dashoffset:1;opacity:0}2%{opacity:1}24%,100%{stroke-dashoffset:0;opacity:1}}
+.wk-t{opacity:0;animation:wk-t 3.8s cubic-bezier(.34,1.56,.64,1) infinite}
+.wk-t1{animation-delay:.1s}.wk-t2{animation-delay:.2s}
+@keyframes wk-t{0%,16%{opacity:0;transform:translateY(-18px)}30%,100%{opacity:1;transform:translateY(0)}}
+.wk-orb{animation:wk-orb 3.8s cubic-bezier(.22,1,.36,1) infinite;transform-origin:50% 50%}
+@keyframes wk-orb{0%,24%{transform:scale(1.35)}40%,100%{transform:scale(1)}}
+@keyframes wk-fade{0%{opacity:0}3%,90%{opacity:1}100%{opacity:0}}
+.wk-once{animation:none}
+.wk-once .wk-l,.wk-once .wk-r,.wk-once .wk-ring,.wk-once .wk-t,.wk-once .wk-orb{animation-iteration-count:1;animation-fill-mode:both}
+@media (prefers-reduced-motion:reduce){.wk,.wk-l,.wk-r,.wk-ring,.wk-t,.wk-orb{animation:none!important;opacity:1;transform:none;stroke-dashoffset:0}}
+.wk-still,.wk-still .wk-l,.wk-still .wk-r,.wk-still .wk-ring,.wk-still .wk-t,.wk-still .wk-orb{animation:none!important;opacity:1;transform:none;stroke-dashoffset:0}
