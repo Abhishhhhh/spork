@@ -4,7 +4,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import Capture from './Capture'
 import EstimateEdit from './EstimateEdit'
 import { useLogDraftStore } from '../../store/logDraft'
-import { estimateMeal } from '../../lib/estimateMeal'
+import { estimateMeal, type ConfirmedItem } from '../../lib/estimateMeal'
 import { suggestMealType } from '../../lib/mealType'
 import { postLog } from '../../lib/postLog'
 import { useSession } from '../../hooks/useSession'
@@ -50,6 +50,21 @@ export default function LogFlow() {
     if (estimateRequestIdRef.current !== requestId) return
     applyEstimate(result, suggestMealType(new Date()), user?.privacy_default ?? 'public')
     setStep('edit')
+  }
+
+  /**
+   * "Recalculate with AI" on the review screen: re-send the photo with the
+   * user's corrected item list as hard constraints. Returns false on failure
+   * so the screen can say so; the current numbers are left untouched.
+   */
+  async function handleReestimate(confirmedItems: ConfirmedItem[]): Promise<boolean> {
+    if (!photoFile) return false
+    const requestId = ++estimateRequestIdRef.current
+    const result = await estimateMeal(photoFile, useLogDraftStore.getState().description, confirmedItems)
+    if (estimateRequestIdRef.current !== requestId) return false
+    if (!result) return false
+    useLogDraftStore.getState().applyReestimate(result)
+    return true
   }
 
   function handleSkipPhoto() {
@@ -137,7 +152,7 @@ export default function LogFlow() {
   }
 
   if (step === 'edit') {
-    return <EstimateEdit onBack={() => setStep('capture')} onPost={handlePost} posting={posting} postError={postError} />
+    return <EstimateEdit onBack={() => setStep('capture')} onPost={handlePost} posting={posting} postError={postError} onReestimate={photoFile ? handleReestimate : undefined} />
   }
 
   if (step === 'celebration' && celebData) {
