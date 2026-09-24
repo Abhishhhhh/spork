@@ -11,7 +11,7 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       // Include the apple touch icon in the precache
-      includeAssets: ['apple-touch-icon.png', 'pwa-192x192.png', 'pwa-512x512.png'],
+      includeAssets: ['apple-touch-icon.png', 'favicon-32x32.png', 'favicon-16x16.png', 'pwa-192x192.png', 'pwa-512x512.png'],
       manifest: {
         name: 'Spork',
         short_name: 'Spork',
