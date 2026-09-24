@@ -25,13 +25,23 @@ function blobToBase64(blob: Blob): Promise<string> {
  * every failure mode identically: blank manual-entry fields, log never
  * blocked.
  */
-export async function estimateMeal(photo: File, description: string): Promise<EstimateResult | null> {
+export interface ConfirmedItem {
+  name: string
+  quantity?: string
+}
+
+export async function estimateMeal(
+  photo: File,
+  description: string,
+  /** User-corrected items from the review screen ("Recalculate with AI"). */
+  confirmedItems?: ConfirmedItem[],
+): Promise<EstimateResult | null> {
   try {
     const resized = await compressImage(photo, AI_MAX_DIMENSION_PX)
     const photoBase64 = await blobToBase64(resized)
 
     const invokePromise = supabase.functions.invoke('estimate-meal', {
-      body: { photoBase64, description },
+      body: { photoBase64, description, ...(confirmedItems?.length ? { confirmedItems } : {}) },
     })
     const timeoutPromise = new Promise<{ data: null; error: Error }>((resolve) =>
       setTimeout(() => resolve({ data: null, error: new Error('estimate-meal timed out') }), 30_000),
