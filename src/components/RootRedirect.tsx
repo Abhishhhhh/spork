@@ -1,7 +1,7 @@
 import { Navigate } from 'react-router-dom'
 import { useSession } from '../hooks/useSession'
 import { useCurrentUser } from '../hooks/useCurrentUser'
-import { Skeleton } from './Skeleton'
+import { SporkWordmark } from './brand/SporkWordmark'
 
 /**
  * Smart entry-point redirect.
@@ -24,9 +24,8 @@ export function RootRedirect() {
   // Still resolving auth state — don't flash anything
   if (sessionLoading || (session && (userLoading || (isFetching && user === undefined)))) {
     return (
-      <div className="flex min-h-screen items-center justify-center gap-3 flex-col">
-        <Skeleton className="h-5 w-20" />
-        <Skeleton className="h-4 w-32" />
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <SporkWordmark size={64} play="once" />
       </div>
     )
   }
