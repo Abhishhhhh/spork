@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import Capture from './Capture'
 import EstimateEdit from './EstimateEdit'
-import { useLogDraftStore } from '../../store/logDraft'
+import PackagedScanner from './PackagedScanner'
+import { useLogDraftStore, type EstimateResult } from '../../store/logDraft'
 import { estimateMeal, type ConfirmedItem } from '../../lib/estimateMeal'
 import { suggestMealType } from '../../lib/mealType'
 import { postLog } from '../../lib/postLog'
@@ -13,7 +14,7 @@ import { useTodayStats } from '../../hooks/useTodayStats'
 import { computeNextStreak, getEffectiveStreak } from '../../lib/streak'
 import { hapticSuccess, hapticCelebration, hapticError } from '../../lib/haptics'
 
-type Step = 'capture' | 'loading' | 'edit' | 'celebration'
+type Step = 'capture' | 'scan' | 'loading' | 'edit' | 'celebration'
 
 interface CelebrationData {
   logId: string
@@ -37,6 +38,8 @@ export default function LogFlow() {
   const [postError, setPostError] = useState<string | null>(null)
   const [celebData, setCelebData] = useState<CelebrationData | null>(null)
   const estimateRequestIdRef    = useRef(0)
+  /** 'packaged' when the current photo is a wrapper/label — re-estimates keep reading it as one. */
+  const estimateModeRef         = useRef<'meal' | 'packaged'>('meal')
 
   const photoFile    = useLogDraftStore((s) => s.photoFile)
   const applyEstimate = useLogDraftStore((s) => s.applyEstimate)
@@ -45,6 +48,7 @@ export default function LogFlow() {
   async function handleGetEstimate() {
     if (!photoFile) return
     const requestId = ++estimateRequestIdRef.current
+    estimateModeRef.current = 'meal'
     setStep('loading')
     const result = await estimateMeal(photoFile, useLogDraftStore.getState().description)
     if (estimateRequestIdRef.current !== requestId) return
@@ -60,11 +64,37 @@ export default function LogFlow() {
   async function handleReestimate(confirmedItems: ConfirmedItem[]): Promise<boolean> {
     if (!photoFile) return false
     const requestId = ++estimateRequestIdRef.current
-    const result = await estimateMeal(photoFile, useLogDraftStore.getState().description, confirmedItems)
+    const result = await estimateMeal(photoFile, useLogDraftStore.getState().description, confirmedItems, estimateModeRef.current)
     if (estimateRequestIdRef.current !== requestId) return false
     if (!result) return false
     useLogDraftStore.getState().applyReestimate(result)
     return true
+  }
+
+  /** Barcode matched Open Food Facts: exact label numbers, no photo needed. */
+  function handlePackagedProduct(estimate: EstimateResult) {
+    estimateRequestIdRef.current++
+    estimateModeRef.current = 'packaged'
+    reset()
+    applyEstimate(estimate, suggestMealType(new Date()), user?.privacy_default ?? 'public')
+    useLogDraftStore.getState().setMealName(estimate.parsed.items[0]?.name ?? '')
+    setStep('edit')
+  }
+
+  /** No barcode data: the AI reads the photographed pack / nutrition table. */
+  async function handleReadLabel(photo: File, productHint?: string) {
+    reset()
+    useLogDraftStore.getState().setPhoto(photo)
+    if (productHint) useLogDraftStore.getState().setDescription(`Product: ${productHint}`)
+    estimateModeRef.current = 'packaged'
+    const requestId = ++estimateRequestIdRef.current
+    setStep('loading')
+    const result = await estimateMeal(photo, useLogDraftStore.getState().description, undefined, 'packaged')
+    if (estimateRequestIdRef.current !== requestId) return
+    applyEstimate(result, suggestMealType(new Date()), user?.privacy_default ?? 'public')
+    // A product's real name beats a generated fun name.
+    if (result?.parsed.items[0]?.name) useLogDraftStore.getState().setMealName(result.parsed.items[0].name)
+    setStep('edit')
   }
 
   function handleSkipPhoto() {
@@ -140,7 +170,11 @@ export default function LogFlow() {
   }
 
   if (step === 'capture') {
-    return <Capture onGetEstimate={handleGetEstimate} onSkipPhoto={handleSkipPhoto} />
+    return <Capture onGetEstimate={handleGetEstimate} onSkipPhoto={handleSkipPhoto} onScanPackaged={() => setStep('scan')} />
+  }
+
+  if (step === 'scan') {
+    return <PackagedScanner onBack={() => setStep('capture')} onProduct={handlePackagedProduct} onReadLabel={handleReadLabel} />
   }
 
   if (step === 'loading') {

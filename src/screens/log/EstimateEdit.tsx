@@ -78,6 +78,7 @@ export default function EstimateEdit({ onBack, onPost, posting, postError, onRee
   const willExceedGoal = goal > 0 && kcalAfterThisMeal > goal
   const items = useLogDraftStore((s) => s.items)
   const assumptions = estimate?.parsed.assumptions ?? []
+  const fromBarcode = (estimate?.raw as { source?: string } | undefined)?.source === 'barcode'
 
   return (
     <div>
@@ -120,7 +121,9 @@ export default function EstimateEdit({ onBack, onPost, posting, postError, onRee
         <div className="card" style={{ marginTop: 0 }}>
           <button type="button" onClick={() => setShowItemBreakdown((v) => !v)} className="flex w-full items-center justify-between gap-3 text-left">
             <span className="min-w-0">
-              <b className="block font-semibold">AI detected {items.length} item{items.length === 1 ? '' : 's'}</b>
+              <b className="block font-semibold">
+                {fromBarcode ? 'From the barcode' : `AI detected ${items.length} item${items.length === 1 ? '' : 's'}`}
+              </b>
               <small className="muted block truncate">
                 {items.length ? 'Tap an item to fix the dish or amount' : 'Add what’s on the plate'}
               </small>
@@ -128,7 +131,7 @@ export default function EstimateEdit({ onBack, onPost, posting, postError, onRee
             <span className="muted">{showItemBreakdown ? '▴' : '▾'}</span>
           </button>
           {showItemBreakdown && (
-            <ItemBreakdown items={items} assumptions={assumptions} onReestimate={onReestimate} />
+            <ItemBreakdown items={items} assumptions={assumptions} onReestimate={onReestimate} fromBarcode={fromBarcode} />
           )}
         </div>
       )}
@@ -238,18 +241,20 @@ type EditTarget = number | 'new' | null
 interface ItemForm {
   name: string
   quantity: string
+  grams: string
   calories: string
   protein_g: string
   carbs_g: string
   fat_g: string
 }
 
-const EMPTY_FORM: ItemForm = { name: '', quantity: '', calories: '', protein_g: '', carbs_g: '', fat_g: '' }
+const EMPTY_FORM: ItemForm = { name: '', quantity: '', grams: '', calories: '', protein_g: '', carbs_g: '', fat_g: '' }
 
 function toForm(item: ParsedEstimateItem): ItemForm {
   return {
     name: item.name,
-    quantity: formatItemQuantity(item) ?? '',
+    quantity: item.quantity ?? '',
+    grams: item.grams ? String(item.grams) : '',
     calories: String(item.calories),
     protein_g: String(item.protein_g),
     carbs_g: String(item.carbs_g),
@@ -263,10 +268,12 @@ function ItemBreakdown({
   items,
   assumptions,
   onReestimate,
+  fromBarcode = false,
 }: {
   items: (ParsedEstimateItem & { edited?: boolean })[]
   assumptions: string[]
   onReestimate?: (items: ConfirmedItem[]) => Promise<boolean>
+  fromBarcode?: boolean
 }) {
   const updateItem = useLogDraftStore((s) => s.updateItem)
   const removeItem = useLogDraftStore((s) => s.removeItem)
@@ -288,11 +295,8 @@ function ItemBreakdown({
     if (!name) return
     const patch = {
       name,
-      // The user's own wording replaces the AI's; grams no longer apply once they rewrite it.
       quantity: form.quantity.trim() || null,
-      grams: typeof editing === 'number' && form.quantity.trim() === (formatItemQuantity(items[editing]) ?? '')
-        ? items[editing].grams
-        : null,
+      grams: num(form.grams) || null,
       calories: num(form.calories),
       protein_g: num(form.protein_g),
       carbs_g: num(form.carbs_g),
@@ -311,12 +315,34 @@ function ItemBreakdown({
     setStatus(ok ? 'idle' : 'failed')
   }
 
+  /**
+   * Changing the grams rescales the macros proportionally from the item as
+   * it was when editing began — so "label says per 100 g, I had 30 g" is
+   * one edit, no maths.
+   */
+  function setGrams(value: string) {
+    const base = typeof editing === 'number' ? items[editing] : null
+    const g = num(value)
+    if (!base?.grams || !g) { setForm((f) => ({ ...f, grams: value })); return }
+    const k = g / base.grams
+    setForm((f) => ({
+      ...f,
+      grams: value,
+      quantity: `${g} g`,
+      calories: String(Math.round(base.calories * k)),
+      protein_g: String(Math.round(base.protein_g * k)),
+      carbs_g: String(Math.round(base.carbs_g * k)),
+      fat_g: String(Math.round(base.fat_g * k)),
+    }))
+  }
+
   const field = (key: keyof ItemForm, label: string, numeric = false) => (
     <div className="field" style={{ margin: 0 }}>
       <label htmlFor={`item-${key}`}>{label}</label>
       <input
         id={`item-${key}`}
         value={form[key]}
+        placeholder={key === 'quantity' ? 'e.g. 1 katori' : key === 'name' ? 'e.g. Prawn curry' : undefined}
         onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
         {...(numeric ? { type: 'number', min: 0, inputMode: 'numeric' as const } : {})}
       />
@@ -326,7 +352,13 @@ function ItemBreakdown({
   const editor = (
     <div className="item-editor">
       {field('name', 'Dish')}
-      {field('quantity', 'Amount · e.g. 1 katori, 2 eggs, 150 g')}
+      <div className="inline-fields" style={{ marginTop: 10 }}>
+        {field('quantity', 'Amount')}
+        <div className="field" style={{ margin: 0 }}>
+          <label htmlFor="item-grams">Grams{typeof editing === 'number' && items[editing]?.grams ? ' · rescales' : ''}</label>
+          <input id="item-grams" type="number" min={0} inputMode="numeric" value={form.grams} onChange={(e) => setGrams(e.target.value)} />
+        </div>
+      </div>
       <div className="inline-fields" style={{ marginTop: 10 }}>
         {field('calories', 'kcal', true)}
         {field('protein_g', 'Protein · g', true)}
@@ -377,7 +409,7 @@ function ItemBreakdown({
 
       {editing === 'new' ? editor : (
         <button type="button" onClick={() => startEdit('new')} className="small font-semibold" style={{ marginTop: 12 }}>
-          + Add an item the AI missed
+          {fromBarcode ? '+ Add something else you had' : '+ Add an item the AI missed'}
         </button>
       )}
 
