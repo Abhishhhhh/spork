@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { useSession } from '../../hooks/useSession'
 import { Navigate } from 'react-router-dom'
 import { OptionIcon } from '../../components/OptionIcon'
+import { SporkWordmark } from '../../components/brand/SporkWordmark'
 
 const FEATURES = [
   { icon: 'camera' as const, title: 'Photo-first logging', subtitle: 'Snap a meal, get a calorie estimate in seconds' },
@@ -19,7 +20,7 @@ export default function Welcome() {
   return (
     <div className="screen min-h-screen animate-fade-in">
       <div className="topbar">
-        <span className="clay" style={{ fontSize: 30 }}>spork</span>
+        <SporkWordmark size={34} play="once" />
       </div>
 
       {/* Hero card */}
