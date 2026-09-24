@@ -5,6 +5,7 @@ import { useSession } from '../../hooks/useSession'
 import { TopBar } from '../../components/TopBar'
 import { GoogleButton } from '../../components/GoogleButton'
 import { isValidEmail, routeAfterSignIn, sendEmailCode } from '../../lib/auth'
+import { SporkWordmark } from '../../components/brand/SporkWordmark'
 
 /**
  * Sign-in for RETURNING users: email → 6-digit code (or Google).
@@ -54,7 +55,7 @@ export default function SignIn() {
     <div className="screen min-h-screen animate-fade-in">
       <TopBar title="Spork" back="/welcome" />
 
-      <div className="icon-box mx-auto" style={{ width: 120, height: 120, fontSize: 56, marginTop: 24 }}>✳</div>
+      <div className="icon-box mx-auto" style={{ width: 120, height: 120, marginTop: 24 }}><SporkWordmark size={28} play="once" /></div>
       <div style={{ height: 28 }} />
 
       <h2>Your usual?</h2>
