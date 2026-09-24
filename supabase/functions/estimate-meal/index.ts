@@ -58,6 +58,37 @@ Return ONLY JSON of this shape:
 Top-level calories/protein_g/carbs_g/fat_g are the SUM of the items.`
 
 
+// Packaged food: a photo of the wrapper / nutrition label (no barcode, or
+// the barcode isn't in Open Food Facts). Printed numbers win over estimates.
+const PACKAGED_PROMPT = `You are reading a photo of PACKAGED FOOD (a wrapper, box, bottle or its nutrition label). Your job is exact numbers, not estimates, wherever the pack allows.
+
+STEP 1 — NUTRITION TABLE VISIBLE? If a nutrition information / nutrition facts table is visible:
+- Transcribe it EXACTLY. Never estimate a value that is printed.
+- Indian labels usually print "per 100 g" and often "per serve". Use the PER-SERVE column when present, with its printed serve size; otherwise use per 100 g scaled to one serving (see STEP 3).
+- Energy may be in kcal or kJ (kcal = kJ / 4.184). "Total carbohydrate" is carbs; "Total fat" is fat.
+
+STEP 2 — NO TABLE, BUT THE PRODUCT IS RECOGNISABLE (brand + product name visible, e.g. "Yoga Bar Chocolate Brownie Protein Bar", "Amul Masti Dahi 200 g"):
+- Use that product's published nutrition values. Set confidence "medium".
+
+STEP 3 — HOW MUCH WAS EATEN:
+- Single-serve packs (bars, chips/biscuit packets up to ~150 g, single bottles/cups): assume the whole pack.
+- Bigger packs: one printed serving; if none is printed, a typical serving for that product type.
+- If the user's text gives an amount ("had half", "2 bars", "30 g"), use it exactly.
+
+STEP 4 — NOTHING READABLE: identify the product type from the pack and estimate; confidence "low".
+
+Return ONE item: name = brand + product ("Yoga Bar Protein Bar – Chocolate Brownie"), quantity = what was eaten in household terms ("1 bar (60 g)", "1 serving (30 g)", "½ pack (50 g)"), grams = weight eaten, and its calories/protein_g/carbs_g/fat_g. Confidence "high" only when numbers were read off a visible table.
+In "assumptions", say where the numbers came from in under 90 characters, e.g. "Read from the label · per serve (60 g)" or "No table visible — used Yoga Bar's published values".
+
+Return ONLY JSON of this shape:
+{
+  "items": [{ "name": string, "quantity": string, "grams": number, "calories": number, "protein_g": number, "carbs_g": number, "fat_g": number, "confidence": "low"|"medium"|"high" }],
+  "calories": number, "protein_g": number, "carbs_g": number, "fat_g": number,
+  "confidence": "low"|"medium"|"high",
+  "assumptions": [string]
+}
+Top-level calories/protein_g/carbs_g/fat_g equal the single item's values.`
+
 // Gemini structured output — keeps the model on-shape so parse failures
 // (and silent "manual entry" fallbacks) become rare.
 const RESPONSE_SCHEMA = {
@@ -100,6 +131,8 @@ interface EstimateMealRequestBody {
   description?: string
   /** The user's corrected item list from the review screen ("Recalculate with AI"). */
   confirmedItems?: ConfirmedItem[]
+  /** 'packaged' = read a wrapper / nutrition label instead of estimating a plated meal. */
+  mode?: 'meal' | 'packaged'
 }
 
 function jsonResponse(body: unknown, status: number): Response {
@@ -147,14 +180,19 @@ function buildUserContext(description?: string, confirmedItems?: ConfirmedItem[]
  * Everything else — HTTP parsing, CORS, response formatting, the
  * Deno.serve handler — is provider-agnostic and doesn't change.
  */
-async function estimateMeal(photoBase64: string, description?: string, confirmedItems?: ConfirmedItem[]): Promise<unknown> {
+async function estimateMeal(
+  photoBase64: string,
+  description?: string,
+  confirmedItems?: ConfirmedItem[],
+  mode: 'meal' | 'packaged' = 'meal',
+): Promise<unknown> {
   if (!GEMINI_API_KEY) {
     throw new EstimateFailure('Server misconfigured: missing GEMINI_API_KEY', 500)
   }
 
   const parts = [
     { inline_data: { mime_type: 'image/jpeg', data: photoBase64 } },
-    { text: [PROMPT, buildUserContext(description, confirmedItems)].filter(Boolean).join('\n\n') },
+    { text: [mode === 'packaged' ? PACKAGED_PROMPT : PROMPT, buildUserContext(description, confirmedItems)].filter(Boolean).join('\n\n') },
   ]
 
   const requestBody = JSON.stringify({
@@ -230,7 +268,8 @@ Deno.serve(async (req: Request) => {
     }
 
     const confirmedItems = Array.isArray(body.confirmedItems) ? body.confirmedItems : undefined
-    const result = await estimateMeal(body.photoBase64, body.description, confirmedItems)
+    const mode = body.mode === 'packaged' ? 'packaged' : 'meal'
+    const result = await estimateMeal(body.photoBase64, body.description, confirmedItems, mode)
     return jsonResponse(result, 200)
   } catch (err) {
     if (err instanceof EstimateFailure) {
