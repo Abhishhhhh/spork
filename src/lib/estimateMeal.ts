@@ -5,6 +5,7 @@ import type { EstimateResult } from '../store/logDraft'
 
 // Smaller copy for the model — Gemini doesn't benefit beyond ~1024px.
 const AI_MAX_DIMENSION_PX = 1024
+const LABEL_MAX_DIMENSION_PX = 1600
 
 function blobToBase64(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -35,13 +36,16 @@ export async function estimateMeal(
   description: string,
   /** User-corrected items from the review screen ("Recalculate with AI"). */
   confirmedItems?: ConfirmedItem[],
+  /** 'packaged' reads a wrapper / nutrition label instead of estimating a plate. */
+  mode: 'meal' | 'packaged' = 'meal',
 ): Promise<EstimateResult | null> {
   try {
-    const resized = await compressImage(photo, AI_MAX_DIMENSION_PX)
+    // Nutrition labels are small print — give the model a sharper image for those.
+    const resized = await compressImage(photo, mode === 'packaged' ? LABEL_MAX_DIMENSION_PX : AI_MAX_DIMENSION_PX)
     const photoBase64 = await blobToBase64(resized)
 
     const invokePromise = supabase.functions.invoke('estimate-meal', {
-      body: { photoBase64, description, ...(confirmedItems?.length ? { confirmedItems } : {}) },
+      body: { photoBase64, description, ...(confirmedItems?.length ? { confirmedItems } : {}), ...(mode === 'packaged' ? { mode } : {}) },
     })
     const timeoutPromise = new Promise<{ data: null; error: Error }>((resolve) =>
       setTimeout(() => resolve({ data: null, error: new Error('estimate-meal timed out') }), 30_000),
