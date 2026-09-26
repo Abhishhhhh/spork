@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
+import { signMealPhotos } from '../lib/mealPhotos'
 import { useSession } from './useSession'
 import type { Database } from '../lib/database.types'
 
@@ -60,13 +61,7 @@ export function useFeed() {
       const authorsById = new Map((authors ?? []).map((author) => [author.id, author]))
 
       const photoPaths = logs.filter((log) => log.photo_url).map((log) => log.photo_url as string)
-      const signedUrlByPath = new Map<string, string>()
-      if (photoPaths.length > 0) {
-        const { data: signedUrls } = await supabase.storage.from('meal-photos').createSignedUrls(photoPaths, 3600)
-        for (const entry of signedUrls ?? []) {
-          if (entry.signedUrl && entry.path) signedUrlByPath.set(entry.path, entry.signedUrl)
-        }
-      }
+      const signedUrlByPath = await signMealPhotos(photoPaths)
 
       const logIds = logs.map((log) => log.id)
       const { data: likeRows } = await supabase.from('log_likes').select('log_id, user_id').in('log_id', logIds)

@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
+import { signMealPhotos } from '../lib/mealPhotos'
 import { useSession } from './useSession'
 import { groupComments, type CommentRow } from '../lib/commentTree'
 import type { Database } from '../lib/database.types'
@@ -61,8 +62,7 @@ export function useMealDetail(logId: string | undefined) {
 
       let photoSignedUrl: string | null = null
       if (log.photo_url) {
-        const { data: signedUrls } = await supabase.storage.from('meal-photos').createSignedUrls([log.photo_url], 3600)
-        photoSignedUrl = signedUrls?.[0]?.signedUrl ?? null
+        photoSignedUrl = (await signMealPhotos([log.photo_url])).get(log.photo_url) ?? null
       }
 
       const { data: likes, error: likesError } = await supabase
