@@ -39,6 +39,8 @@ export default function LogFlow() {
   const [postError, setPostError] = useState<string | null>(null)
   const [celebData, setCelebData] = useState<CelebrationData | null>(null)
   const [notFoodReason, setNotFoodReason] = useState('')
+  /** True while the review screen shows a typed (photo-less) estimate — Recalculate re-reads the text. */
+  const [typedEstimate, setTypedEstimate] = useState(false)
   const estimateRequestIdRef    = useRef(0)
   /** 'packaged' when the current photo is a wrapper/label — re-estimates keep reading it as one. */
   const estimateModeRef         = useRef<'meal' | 'packaged'>('meal')
@@ -56,7 +58,8 @@ export default function LogFlow() {
   }
 
   async function handleGetEstimate() {
-    if (!photoFile) return
+    // No photo = log by typing (estimate from the description alone).
+    if (!photoFile && !useLogDraftStore.getState().description.trim()) return
     const requestId = ++estimateRequestIdRef.current
     estimateModeRef.current = 'meal'
     setStep('loading')
@@ -64,6 +67,7 @@ export default function LogFlow() {
     if (estimateRequestIdRef.current !== requestId) return
     if (result?.parsed.notFood) { blockNonFood(result.parsed.notFood); return }
     applyEstimate(result, suggestMealType(new Date()), user?.privacy_default ?? 'public')
+    setTypedEstimate(!photoFile && result !== null)
     setStep('edit')
   }
 
@@ -73,7 +77,7 @@ export default function LogFlow() {
    * so the screen can say so; the current numbers are left untouched.
    */
   async function handleReestimate(confirmedItems: ConfirmedItem[]): Promise<boolean> {
-    if (!photoFile) return false
+    if (!photoFile && !typedEstimate) return false
     const requestId = ++estimateRequestIdRef.current
     const result = await estimateMeal(photoFile, useLogDraftStore.getState().description, confirmedItems, estimateModeRef.current)
     if (estimateRequestIdRef.current !== requestId) return false
@@ -85,6 +89,7 @@ export default function LogFlow() {
 
   /** Barcode matched Open Food Facts: exact label numbers, no photo needed. */
   function handlePackagedProduct(estimate: EstimateResult) {
+    setTypedEstimate(false)
     estimateRequestIdRef.current++
     estimateModeRef.current = 'packaged'
     reset()
@@ -95,6 +100,7 @@ export default function LogFlow() {
 
   /** No barcode data: the AI reads the photographed pack / nutrition table. */
   async function handleReadLabel(photo: File, productHint?: string) {
+    setTypedEstimate(false)
     reset()
     useLogDraftStore.getState().setPhoto(photo)
     if (productHint) useLogDraftStore.getState().setDescription(`Product: ${productHint}`)
@@ -111,6 +117,7 @@ export default function LogFlow() {
   }
 
   function handleSkipPhoto() {
+    setTypedEstimate(false)
     applyEstimate(null, suggestMealType(new Date()), user?.privacy_default ?? 'public')
     setStep('edit')
   }
@@ -199,7 +206,7 @@ export default function LogFlow() {
   }
 
   if (step === 'edit') {
-    return <EstimateEdit onBack={() => setStep('capture')} onPost={handlePost} posting={posting} postError={postError} onReestimate={photoFile ? handleReestimate : undefined} />
+    return <EstimateEdit onBack={() => setStep('capture')} onPost={handlePost} posting={posting} postError={postError} onReestimate={photoFile || typedEstimate ? handleReestimate : undefined} />
   }
 
   if (step === 'not-food') {

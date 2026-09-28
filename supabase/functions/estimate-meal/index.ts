@@ -21,7 +21,7 @@ const CORS_HEADERS = {
 // hair oil, soap…) are flagged so the app can refuse to log them.
 const FOOD_CHECK = `FIRST — IS THIS SOMETHING PEOPLE EAT OR DRINK?
 - Food, drinks and dietary supplements (protein powder, vitamins, ORS) count as food — so do cooking oils, ghee, spices and sauces.
-- Set "is_food" to false ONLY when the photo clearly shows something not meant to be eaten: cosmetics or skincare (cream, lotion, lip balm, balm), medicines or ointments, hair oil, massage or essential oil, soap, detergent or cleaning products, pet food, or no food at all (a person, a room, a screenshot).
+- Set "is_food" to false ONLY when the photo (or, with no photo, the description) is clearly about something not meant to be eaten: cosmetics or skincare (cream, lotion, lip balm, balm), medicines or ointments, hair oil, massage or essential oil, soap, detergent or cleaning products, pet food, or no food at all (a person, a room, a screenshot).
 - When "is_food" is false: return "items": [], every number 0, "confidence": "low", and "not_food_reason" saying what it is in under 60 characters (e.g. "Looks like a lip balm").
 - When in doubt, treat it as food and set "is_food" to true.
 
@@ -101,6 +101,27 @@ Return ONLY JSON of this shape:
 }
 Top-level calories/protein_g/carbs_g/fat_g equal the single item's values.`
 
+// Log by typing: no photo, just the user's description ("2 rotis, dal, curd").
+const TEXT_PROMPT = `You are a registered-dietitian-level nutrition estimator specialising in Indian and South Asian home food, with broad knowledge of global cuisine. There is NO photo — estimate the meal only from the user's description below.
+
+- Split the description into distinct items ("2 rotis, dal, 1 katori curd" → 3 items). Keep the user's own dish names, just tidied up.
+- Quantities the user states are FACT — use them exactly. For anything unstated, assume one typical Indian home serving (roti ≈ 40 g, 1 katori dal/sabzi ≈ 150 ml, 1 cup cooked rice ≈ 150 g, 1 egg ≈ 50 g) and say so in "assumptions".
+- "grams" is the as-served weight; "quantity" is a short household measure ("2 medium rotis", "1 katori (~150 ml)").
+- Home-cooked values with typical oil/ghee unless the user says restaurant, fried, takeaway, etc.
+- Macros must be consistent: calories ≈ 4×protein + 4×carbs + 9×fat (within ~10%).
+- Per-item confidence: "high" when the user gave the quantity, "medium" when you assumed a typical serving, "low" when the dish itself is vague ("snacks", "some sweets").
+- In "assumptions", list the 1–3 biggest guesses (under 90 characters each).
+
+Return ONLY JSON of this shape:
+{
+  "is_food": boolean, "not_food_reason": string,
+  "items": [{ "name": string, "quantity": string, "grams": number, "calories": number, "protein_g": number, "carbs_g": number, "fat_g": number, "confidence": "low"|"medium"|"high" }],
+  "calories": number, "protein_g": number, "carbs_g": number, "fat_g": number,
+  "confidence": "low"|"medium"|"high",
+  "assumptions": [string]
+}
+Top-level calories/protein_g/carbs_g/fat_g are the SUM of the items.`
+
 // Gemini structured output — keeps the model on-shape so parse failures
 // (and silent "manual entry" fallbacks) become rare.
 const RESPONSE_SCHEMA = {
@@ -141,12 +162,13 @@ interface ConfirmedItem {
 }
 
 interface EstimateMealRequestBody {
-  photoBase64: string
+  /** Omitted in 'text' mode. */
+  photoBase64?: string
   description?: string
   /** The user's corrected item list from the review screen ("Recalculate with AI"). */
   confirmedItems?: ConfirmedItem[]
-  /** 'packaged' = read a wrapper / nutrition label instead of estimating a plated meal. */
-  mode?: 'meal' | 'packaged'
+  /** 'packaged' = read a wrapper / nutrition label; 'text' = no photo, estimate from the description. */
+  mode?: 'meal' | 'packaged' | 'text'
 }
 
 function jsonResponse(body: unknown, status: number): Response {
@@ -195,18 +217,19 @@ function buildUserContext(description?: string, confirmedItems?: ConfirmedItem[]
  * Deno.serve handler — is provider-agnostic and doesn't change.
  */
 async function estimateMeal(
-  photoBase64: string,
+  photoBase64: string | null,
   description?: string,
   confirmedItems?: ConfirmedItem[],
-  mode: 'meal' | 'packaged' = 'meal',
+  mode: 'meal' | 'packaged' | 'text' = 'meal',
 ): Promise<unknown> {
   if (!GEMINI_API_KEY) {
     throw new EstimateFailure('Server misconfigured: missing GEMINI_API_KEY', 500)
   }
 
+  const prompt = mode === 'packaged' ? PACKAGED_PROMPT : mode === 'text' ? TEXT_PROMPT : PROMPT
   const parts = [
-    { inline_data: { mime_type: 'image/jpeg', data: photoBase64 } },
-    { text: [FOOD_CHECK + (mode === 'packaged' ? PACKAGED_PROMPT : PROMPT), buildUserContext(description, confirmedItems)].filter(Boolean).join('\n\n') },
+    ...(photoBase64 ? [{ inline_data: { mime_type: 'image/jpeg', data: photoBase64 } }] : []),
+    { text: [FOOD_CHECK + prompt, buildUserContext(description, confirmedItems)].filter(Boolean).join('\n\n') },
   ]
 
   const requestBody = JSON.stringify({
@@ -277,13 +300,13 @@ Deno.serve(async (req: Request) => {
   try {
     const body: EstimateMealRequestBody = await req.json()
 
-    if (!body.photoBase64) {
-      return jsonResponse({ error: 'photoBase64 is required' }, 400)
+    const mode = body.mode === 'packaged' ? 'packaged' : body.mode === 'text' ? 'text' : 'meal'
+    if (mode === 'text' ? !body.description?.trim() : !body.photoBase64) {
+      return jsonResponse({ error: mode === 'text' ? 'description is required' : 'photoBase64 is required' }, 400)
     }
 
     const confirmedItems = Array.isArray(body.confirmedItems) ? body.confirmedItems : undefined
-    const mode = body.mode === 'packaged' ? 'packaged' : 'meal'
-    const result = await estimateMeal(body.photoBase64, body.description, confirmedItems, mode)
+    const result = await estimateMeal(mode === 'text' ? null : body.photoBase64 ?? null, body.description, confirmedItems, mode)
     return jsonResponse(result, 200)
   } catch (err) {
     if (err instanceof EstimateFailure) {
