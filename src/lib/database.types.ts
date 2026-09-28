@@ -77,6 +77,8 @@ export interface Database {
           ai_confidence: 'low' | 'medium' | 'high' | null
           ai_raw_response: unknown
           created_at: string
+          /** Set when the owner first shares a public link (migration 0012). */
+          shared_at?: string | null
         }
         Insert: Partial<Database['public']['Tables']['logs']['Row']> & {
           user_id: string
