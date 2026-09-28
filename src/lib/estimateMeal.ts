@@ -32,7 +32,8 @@ export interface ConfirmedItem {
 }
 
 export async function estimateMeal(
-  photo: File,
+  /** null = log by typing: estimate from the description alone. */
+  photo: File | null,
   description: string,
   /** User-corrected items from the review screen ("Recalculate with AI"). */
   confirmedItems?: ConfirmedItem[],
@@ -40,13 +41,18 @@ export async function estimateMeal(
   mode: 'meal' | 'packaged' = 'meal',
 ): Promise<EstimateResult | null> {
   try {
-    // Nutrition labels are small print — give the model a sharper image for those.
-    const resized = await compressImage(photo, mode === 'packaged' ? LABEL_MAX_DIMENSION_PX : AI_MAX_DIMENSION_PX)
-    const photoBase64 = await blobToBase64(resized)
+    const extras = confirmedItems?.length ? { confirmedItems } : {}
+    let body: Record<string, unknown>
+    if (photo) {
+      // Nutrition labels are small print — give the model a sharper image for those.
+      const resized = await compressImage(photo, mode === 'packaged' ? LABEL_MAX_DIMENSION_PX : AI_MAX_DIMENSION_PX)
+      body = { photoBase64: await blobToBase64(resized), description, ...extras, ...(mode === 'packaged' ? { mode } : {}) }
+    } else {
+      if (!description.trim()) return null
+      body = { description, mode: 'text', ...extras }
+    }
 
-    const invokePromise = supabase.functions.invoke('estimate-meal', {
-      body: { photoBase64, description, ...(confirmedItems?.length ? { confirmedItems } : {}), ...(mode === 'packaged' ? { mode } : {}) },
-    })
+    const invokePromise = supabase.functions.invoke('estimate-meal', { body })
     const timeoutPromise = new Promise<{ data: null; error: Error }>((resolve) =>
       setTimeout(() => resolve({ data: null, error: new Error('estimate-meal timed out') }), 30_000),
     )
