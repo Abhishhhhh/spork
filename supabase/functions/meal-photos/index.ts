@@ -51,7 +51,8 @@ const R2_PREFIX = 'r2/'
 const LEGACY_BUCKET = 'meal-photos'
 const MAX_UPLOAD_BYTES = 8 * 1024 * 1024
 const HALF_DAY_MS = 12 * 60 * 60 * 1000
-const TIME_BUDGET_MS = 100_000
+// Short enough that the dashboard's Test window gets a reply before it gives up.
+const TIME_BUDGET_MS = 40_000
 /** "<user uuid>/<log uuid>.<ext>" — the only object keys the app ever writes. */
 const PHOTO_KEY = /^[0-9a-f-]{36}\/[0-9a-f-]{36}\.[a-z0-9]{2,5}$/i
 
@@ -117,10 +118,12 @@ async function migrate(cursor: string) {
   const result = { moved: 0, failed: [] as string[], cursor, done: false }
 
   while (Date.now() - started < TIME_BUDGET_MS) {
-    const { data: rows, error } = await admin
+    let query = admin
       .from('logs').select('id, photo_url')
       .not('photo_url', 'is', null).not('photo_url', 'like', `${R2_PREFIX}%`)
-      .gt('id', result.cursor).order('id').limit(20)
+    // ids are uuids — an empty cursor isn't one, so only filter once we have a real id.
+    if (result.cursor) query = query.gt('id', result.cursor)
+    const { data: rows, error } = await query.order('id').limit(20)
     if (error) throw error
     if (!rows?.length) { result.done = true; break }
 
