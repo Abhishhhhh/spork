@@ -1,5 +1,7 @@
 import { useRef, useState, useEffect, useCallback } from 'react'
 import { createPortal } from 'react-dom'
+import { enableShareLink, shareUrl } from '../lib/shareLink'
+import { useToast } from './Toast'
 
 interface ShareCardProps {
   photoUrl: string | null
@@ -8,6 +10,10 @@ interface ShareCardProps {
   proteinG: number | null
   streak: number
   mealName: string | null
+  /** Set only for the viewer's own posts — adds a public spork.fit/p/… link. */
+  shareLogId?: string
+  /** Private posts never get a public link. */
+  isPrivate?: boolean
   onClose: () => void
 }
 
@@ -33,14 +39,25 @@ function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: numbe
   ctx.closePath()
 }
 
-function loadImage(src: string): Promise<HTMLImageElement | null> {
-  return new Promise((resolve) => {
-    const img = new Image()
-    img.crossOrigin = 'anonymous'
-    img.onload = () => resolve(img)
-    img.onerror = () => resolve(null)
-    img.src = src
-  })
+/**
+ * Downloads the photo as a blob first (CORS request, bypassing the cache —
+ * a copy cached by the feed's plain <img> has no CORS headers and would
+ * taint the canvas), then draws from a local object URL.
+ */
+async function loadImage(src: string): Promise<HTMLImageElement | null> {
+  try {
+    const res = await fetch(src, { mode: 'cors', cache: 'no-store' })
+    if (!res.ok) return null
+    const objectUrl = URL.createObjectURL(await res.blob())
+    return await new Promise((resolve) => {
+      const img = new Image()
+      img.onload = () => { URL.revokeObjectURL(objectUrl); resolve(img) }
+      img.onerror = () => { URL.revokeObjectURL(objectUrl); resolve(null) }
+      img.src = objectUrl
+    })
+  } catch {
+    return null
+  }
 }
 
 function ellipsize(ctx: CanvasRenderingContext2D, text: string, maxW: number): string {
@@ -54,7 +71,7 @@ function ellipsize(ctx: CanvasRenderingContext2D, text: string, maxW: number): s
  * Draws the share card straight onto a canvas — no DOM cloning, so it works
  * the same on iOS Safari as on desktop, and can't hang on fonts or layout.
  */
-async function renderShareCard(p: Omit<ShareCardProps, 'onClose'>): Promise<Blob> {
+async function renderShareCard(p: Omit<ShareCardProps, 'onClose' | 'shareLogId' | 'isPrivate'>): Promise<Blob> {
   const scale = 2
   const canvas = document.createElement('canvas')
   canvas.width = SHARE_CARD_W * scale
@@ -140,7 +157,9 @@ async function renderShareCard(p: Omit<ShareCardProps, 'onClose'>): Promise<Blob
 }
 
 // ── Modal ─────────────────────────────────────────────────────────────────────
-export function ShareModal({ photoUrl, username, calories, proteinG, streak, mealName, onClose }: ShareCardProps) {
+export function ShareModal({ photoUrl, username, calories, proteinG, streak, mealName, shareLogId, isPrivate = false, onClose }: ShareCardProps) {
+  const { toast } = useToast()
+  const link = shareLogId && !isPrivate ? shareUrl(shareLogId) : null
   const [ready,  setReady]  = useState(false)
   const [error,  setError]  = useState<string | null>(null)
   const [canShare, setCanShare]     = useState(false)
@@ -175,16 +194,40 @@ export function ShareModal({ photoUrl, username, calories, proteinG, streak, mea
   useEffect(() => { capture() }, [capture])
   useEffect(() => () => { if (blobUrlRef.current) URL.revokeObjectURL(blobUrlRef.current) }, [])
 
+  /** Turns the link on (owner only) before it leaves the phone. False = couldn't. */
+  async function prepareLink(): Promise<boolean> {
+    if (!shareLogId || !link) return false
+    try {
+      await enableShareLink(shareLogId)
+      return true
+    } catch {
+      toast('Couldn’t create the link — check your connection', 'error')
+      return false
+    }
+  }
+
   async function handleShare() {
     if (!capturedBlob) return
+    const withLink = link ? await prepareLink() : false
     try {
       await navigator.share({
         title: `${username} on Spork`,
-        text: 'Check out my meal 🍴',
+        // The link goes in the text: some apps drop the `url` field when an image is attached.
+        text: withLink ? `Check out my meal on Spork! ${link}` : 'Check out my meal 🍴',
         files: [new File([capturedBlob], `spork-${username}.png`, { type: 'image/png' })],
       })
     } catch (err) {
       if ((err as Error).name !== 'AbortError') console.error(err)
+    }
+  }
+
+  async function handleCopyLink() {
+    if (!link || !(await prepareLink())) return
+    try {
+      await navigator.clipboard.writeText(link)
+      toast('Link copied ✓')
+    } catch {
+      toast('Couldn’t copy — long-press to copy instead', 'error')
     }
   }
 
@@ -220,7 +263,11 @@ export function ShareModal({ photoUrl, username, calories, proteinG, streak, mea
         </div>
 
         <p className="small muted text-center" style={{ margin: '18px 0' }}>
-          Share your meal · tag <b>@sporkapp</b>
+          {link
+            ? <>Anyone with the link can see this post</>
+            : shareLogId && isPrivate
+              ? <>Private posts are shared as an image only</>
+              : <>Share your meal · tag <b>@sporkapp</b></>}
         </p>
 
         {!ready && !error && <p className="small muted text-center" style={{ padding: 8 }}>Preparing…</p>}
@@ -228,6 +275,7 @@ export function ShareModal({ photoUrl, username, calories, proteinG, streak, mea
         {ready && (
           <div className="action-row">
             {canShare && <button type="button" onClick={handleShare} className="pill" style={{ padding: 12 }}>Share</button>}
+            {link && <button type="button" onClick={handleCopyLink} className="pill" style={{ padding: 12 }}>Copy link</button>}
             <button type="button" onClick={handleDownload} className="pill" style={{ padding: 12 }}>Download</button>
             <a href="https://www.instagram.com/" target="_blank" rel="noopener noreferrer" onClick={handleDownload} className="pill no-press" style={{ padding: 12 }}>
               Instagram

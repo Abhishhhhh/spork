@@ -8,6 +8,7 @@ import { likedByLabel } from '../lib/likedBy'
 import { useFriendUsernames } from '../hooks/useFriendUsernames'
 import { getEffectiveStreak } from '../lib/streak'
 import { ShareModal } from './ShareModal'
+import { LikersSheet } from './LikersSheet'
 import { FeedImage } from './FeedImage'
 import { PhotoViewer } from './PhotoViewer'
 import { Avatar } from './Avatar'
@@ -52,6 +53,7 @@ export function PostCard({ item, index = 0, viewerId, optimisticLiked, likeAnima
   const [showShare, setShowShare]   = useState(false)
   const [showPhoto, setShowPhoto]   = useState(false)
   const [showMenu,  setShowMenu]    = useState(false)
+  const [showLikers, setShowLikers] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
 
   // Close the ••• menu on any tap outside it. A full-screen backdrop element
@@ -182,7 +184,7 @@ export function PostCard({ item, index = 0, viewerId, optimisticLiked, likeAnima
           </button>
         </div>
         {likedBy && (
-          <button type="button" onClick={() => navigate(detailPath)} className="no-press small muted block text-left" style={{ marginTop: 8 }}>
+          <button type="button" onClick={() => setShowLikers(true)} className="no-press small muted block text-left" style={{ marginTop: 8 }}>
             {likedBy}
           </button>
         )}
@@ -202,9 +204,14 @@ export function PostCard({ item, index = 0, viewerId, optimisticLiked, likeAnima
           proteinG={proteinG}
           streak={effectiveStreak}
           mealName={log.name}
+          shareLogId={isOwnPost ? log.id : undefined}
+          isPrivate={log.visibility === 'private'}
           onClose={() => setShowShare(false)}
         />
       )}
+
+      {/* ── Who liked this ── */}
+      {showLikers && <LikersSheet logId={log.id} viewerId={viewerId} onClose={() => setShowLikers(false)} />}
     </>
   )
 }
