@@ -85,12 +85,21 @@ export default function Capture({ onGetEstimate, onSkipPhoto, onRepeat, recentMe
 
       {/* ── Optional description ────────────────────────────────── */}
       <label className="card block">
-        <p>Add ingredients or quantities · optional</p>
-        <p className="small muted">Help the estimate with more detail</p>
+        {photoFile ? (
+          <>
+            <p>Add ingredients or quantities · optional</p>
+            <p className="small muted">Help the estimate with more detail</p>
+          </>
+        ) : (
+          <>
+            <p>No photo? Type what you ate</p>
+            <p className="small muted">We’ll estimate it · add amounts for better numbers</p>
+          </>
+        )}
         <input
           value={description}
           onChange={event => setDescription(event.target.value)}
-          placeholder="e.g. 200g chicken, 1 cup rice"
+          placeholder={photoFile ? 'e.g. 200g chicken, 1 cup rice' : 'e.g. 2 rotis, 1 katori dal, curd'}
           className="input bg-soft"
           style={{ marginTop: 12 }}
         />
@@ -101,8 +110,8 @@ export default function Capture({ onGetEstimate, onSkipPhoto, onRepeat, recentMe
       </p>
 
       {/* ── Actions ─────────────────────────────────────────────── */}
-      <button type="button" disabled={!photoFile} onClick={onGetEstimate} className="btn">
-        Estimate nutrition
+      <button type="button" disabled={!photoFile && description.trim().length < 3} onClick={onGetEstimate} className="btn">
+        {photoFile || !description.trim() ? 'Estimate nutrition' : 'Estimate from description'}
       </button>
       <button type="button" onClick={onSkipPhoto} className="btn light">
         Enter manually
