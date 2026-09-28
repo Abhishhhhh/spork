@@ -17,6 +17,7 @@ import { relativeTime } from '../../lib/relativeTime'
 import { TopBar } from '../../components/TopBar'
 import { Avatar } from '../../components/Avatar'
 import { PhotoViewer } from '../../components/PhotoViewer'
+import { LikersSheet } from '../../components/LikersSheet'
 
 export default function MealDetail() {
   const { logId } = useParams<{ logId: string }>()
@@ -33,6 +34,7 @@ export default function MealDetail() {
   const [commentBody, setCommentBody] = useState('')
   const [replyingTo, setReplyingTo] = useState<string | null>(null)
   const [viewer, setViewer] = useState<{ src: string; alt: string } | null>(null)
+  const [showLikers, setShowLikers] = useState(false)
 
   useEffect(() => {
     setOptimisticLiked(null)
@@ -138,13 +140,19 @@ export default function MealDetail() {
       <div className="flex items-center gap-4" style={{ margin: '17px 0' }}>
         <button type="button" onClick={handleToggleLike} className={`flex items-center gap-1.5 ${displayLiked ? 'liked font-semibold' : ''}`}>
           <span style={{ fontSize: 16, lineHeight: 1 }}>{displayLiked ? '♥' : '♡'}</span>
-          {likedBy ?? 'Like'}
+          {displayLiked ? 'Liked' : 'Like'}
         </button>
         <span className="flex items-center gap-1.5">
           <span style={{ fontSize: 16, lineHeight: 1 }}>◌</span>
           {comments.length} {comments.length === 1 ? 'comment' : 'comments'}
         </span>
       </div>
+      {likedBy && (
+        <button type="button" onClick={() => setShowLikers(true)} className="no-press small muted block text-left" style={{ marginTop: -8, marginBottom: 14 }}>
+          {likedBy}
+        </button>
+      )}
+      {showLikers && <LikersSheet logId={log.id} viewerId={viewerId} onClose={() => setShowLikers(false)} />}
 
       <div className="divider" />
 
