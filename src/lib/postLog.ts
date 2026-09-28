@@ -1,5 +1,6 @@
 import { supabase } from './supabase'
 import { compressImage } from './compressImage'
+import { uploadMealPhoto } from './mealPhotos'
 import { computeNextStreak } from './streak'
 import type { EstimateResult, MealType, Visibility, Satiety } from '../store/logDraft'
 
@@ -21,19 +22,10 @@ export interface PostLogInput {
   currentStreakLastLogDate: string | null
 }
 
-async function uploadMealPhoto(userId: string, logId: string, original: File): Promise<string> {
-  const file = await compressImage(original)
-  const extension = file.name.split('.').pop() ?? 'jpg'
-  const path = `${userId}/${logId}.${extension}`
-  const { error } = await supabase.storage.from('meal-photos').upload(path, file, { contentType: file.type })
-  if (error) throw error
-  return path
-}
-
 export async function postLog(input: PostLogInput): Promise<string> {
   const logId = crypto.randomUUID()
 
-  const photoPath = input.photoFile ? await uploadMealPhoto(input.userId, logId, input.photoFile) : null
+  const photoPath = input.photoFile ? await uploadMealPhoto(input.userId, logId, await compressImage(input.photoFile)) : null
 
   // Core log row — columns that exist in every migration version.
   // caption and satiety were added later (migrations 0006); if the column
