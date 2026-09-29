@@ -52,9 +52,10 @@ export async function estimateMeal(
       body = { description, mode: 'text', ...extras }
     }
 
+    // The function may fall back across Gemini models when one is busy (≤ ~40 s).
     const invokePromise = supabase.functions.invoke('estimate-meal', { body })
     const timeoutPromise = new Promise<{ data: null; error: Error }>((resolve) =>
-      setTimeout(() => resolve({ data: null, error: new Error('estimate-meal timed out') }), 30_000),
+      setTimeout(() => resolve({ data: null, error: new Error('estimate-meal timed out') }), 50_000),
     )
 
     const { data, error } = await Promise.race([invokePromise, timeoutPromise])
