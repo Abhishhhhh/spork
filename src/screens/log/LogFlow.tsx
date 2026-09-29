@@ -41,6 +41,8 @@ export default function LogFlow() {
   const [notFoodReason, setNotFoodReason] = useState('')
   /** True while the review screen shows a typed (photo-less) estimate — Recalculate re-reads the text. */
   const [typedEstimate, setTypedEstimate] = useState(false)
+  /** The AI couldn't be reached — the review screen offers "Try again" instead of silently blank fields. */
+  const [estimateFailed, setEstimateFailed] = useState(false)
   const estimateRequestIdRef    = useRef(0)
   /** 'packaged' when the current photo is a wrapper/label — re-estimates keep reading it as one. */
   const estimateModeRef         = useRef<'meal' | 'packaged'>('meal')
@@ -53,6 +55,7 @@ export default function LogFlow() {
   function blockNonFood(reason: string) {
     estimateRequestIdRef.current++
     reset()
+    setEstimateFailed(false)
     setNotFoodReason(reason)
     setStep('not-food')
   }
@@ -68,7 +71,15 @@ export default function LogFlow() {
     if (result?.parsed.notFood) { blockNonFood(result.parsed.notFood); return }
     applyEstimate(result, suggestMealType(new Date()), user?.privacy_default ?? 'public')
     setTypedEstimate(!photoFile && result !== null)
+    setEstimateFailed(result === null)
     setStep('edit')
+  }
+
+  /** "Try again" after a failed estimate — repeats the same kind of estimate (plate/typed or label). */
+  function handleRetryEstimate() {
+    const { photoFile: photo } = useLogDraftStore.getState()
+    if (estimateModeRef.current === 'packaged' && photo) handleReadLabel(photo)
+    else handleGetEstimate()
   }
 
   /**
@@ -90,6 +101,7 @@ export default function LogFlow() {
   /** Barcode matched Open Food Facts: exact label numbers, no photo needed. */
   function handlePackagedProduct(estimate: EstimateResult) {
     setTypedEstimate(false)
+    setEstimateFailed(false)
     estimateRequestIdRef.current++
     estimateModeRef.current = 'packaged'
     reset()
@@ -113,11 +125,13 @@ export default function LogFlow() {
     applyEstimate(result, suggestMealType(new Date()), user?.privacy_default ?? 'public')
     // A product's real name beats a generated fun name.
     if (result?.parsed.items[0]?.name) useLogDraftStore.getState().setMealName(result.parsed.items[0].name)
+    setEstimateFailed(result === null)
     setStep('edit')
   }
 
   function handleSkipPhoto() {
     setTypedEstimate(false)
+    setEstimateFailed(false)
     applyEstimate(null, suggestMealType(new Date()), user?.privacy_default ?? 'public')
     setStep('edit')
   }
@@ -201,12 +215,14 @@ export default function LogFlow() {
     return <LoadingScreen onSkip={() => {
       estimateRequestIdRef.current++
       applyEstimate(null, suggestMealType(new Date()), user?.privacy_default ?? 'public')
+      setEstimateFailed(false)
       setStep('edit')
     }} photoFile={photoFile} />
   }
 
   if (step === 'edit') {
-    return <EstimateEdit onBack={() => setStep('capture')} onPost={handlePost} posting={posting} postError={postError} onReestimate={photoFile || typedEstimate ? handleReestimate : undefined} />
+    return <EstimateEdit onBack={() => setStep('capture')} onPost={handlePost} posting={posting} postError={postError} onReestimate={photoFile || typedEstimate ? handleReestimate : undefined}
+      onRetryEstimate={estimateFailed ? handleRetryEstimate : undefined} />
   }
 
   if (step === 'not-food') {
@@ -229,6 +245,13 @@ function LoadingScreen({ onSkip, photoFile }: { onSkip: () => void; photoFile: F
     return () => { if (previewUrl) URL.revokeObjectURL(previewUrl) }
   }, [previewUrl])
 
+  // Past ~10 s the server is usually hopping to a backup AI model — say so.
+  const [slow, setSlow] = useState(false)
+  useEffect(() => {
+    const timer = setTimeout(() => setSlow(true), 10_000)
+    return () => clearTimeout(timer)
+  }, [])
+
   return (
     <div>
       <div className="topbar">
@@ -243,7 +266,7 @@ function LoadingScreen({ onSkip, photoFile }: { onSkip: () => void; photoFile: F
         </div>
         <div style={{ height: 28 }} />
         <h2>Analysing your meal</h2>
-        <p className="muted">Identifying ingredients and estimating macros</p>
+        <p className="muted">{slow ? 'The AI is busy right now · trying a backup, hang on…' : 'Identifying ingredients and estimating macros'}</p>
         <div style={{ height: 28 }} />
         <button type="button" onClick={onSkip} className="btn light">Skip · enter manually</button>
       </div>
