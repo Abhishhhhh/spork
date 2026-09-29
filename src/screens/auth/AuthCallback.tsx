@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabase'
 import { useSession } from '../../hooks/useSession'
 import { routeAfterSignIn } from '../../lib/auth'
 import { TopBar } from '../../components/TopBar'
+import { SporkLoader } from '../../components/brand/SporkLoader'
 
 /**
  * Landing page for OAuth (Google) redirects. supabase-js exchanges the
@@ -47,7 +48,7 @@ export default function AuthCallback() {
           </>
         ) : (
           <>
-            <div className="icon-box mx-auto" style={{ width: 120, height: 120, fontSize: 56 }}><span className="animate-spin-slow">✳</span></div>
+            <div className="icon-box mx-auto" style={{ width: 120, height: 120 }}><SporkLoader size={60} label="Signing you in" /></div>
             <h2 style={{ marginTop: 28 }}>Signing you in</h2>
             <p className="muted">One moment…</p>
           </>
