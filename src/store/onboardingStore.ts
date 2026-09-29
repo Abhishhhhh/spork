@@ -2,7 +2,6 @@ import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
 import type { GoalType, Pace, ActivityLevel } from '../lib/calorieGoal'
 
-export type PrivacyDefault = 'public' | 'private'
 export type WorkoutType = 'strength' | 'cardio' | 'mixed' | 'none'
 export type DietaryPattern = 'no_restrictions' | 'vegetarian' | 'vegan' | 'other'
 export type MealPrepTime = 'quick' | 'moderate' | 'enjoys_cooking'
@@ -45,9 +44,6 @@ interface OnboardingState {
   trackedBefore: TrackedBefore | null
   trackingChallenges: string[]
 
-  // Step 7: Privacy
-  privacyDefault: PrivacyDefault
-
   // Step 8: Friends
   friendUsernamesToRequest: string[]
 
@@ -70,7 +66,6 @@ interface OnboardingState {
     sleepHours: number
   }) => void
   setExperience: (f: { trackedBefore: TrackedBefore; trackingChallenges: string[] }) => void
-  setPrivacyDefault: (value: PrivacyDefault) => void
   addFriendUsername: (username: string) => void
   // Legacy setters (AddFirstFriends still reads calorieGoal directly)
   setCalorieGoal: (goal: number) => void
@@ -115,8 +110,6 @@ const initialState = {
   // Experience
   trackedBefore: null as TrackedBefore | null,
   trackingChallenges: [] as string[],
-  // Privacy
-  privacyDefault: 'public' as PrivacyDefault,
   // Friends
   friendUsernamesToRequest: [] as string[],
 }
@@ -137,7 +130,6 @@ export const useOnboardingStore = create<OnboardingState>()(persist((set) => ({
   setFoodLifestyle: (f) => set(f),
   setExperience: (f) =>
     set({ trackedBefore: f.trackedBefore, trackingChallenges: f.trackingChallenges }),
-  setPrivacyDefault: (value) => set({ privacyDefault: value }),
   addFriendUsername: (username) =>
     set((s) => ({ friendUsernamesToRequest: [...s.friendUsernamesToRequest, username] })),
   // Legacy setters — kept so AddFirstFriends compiles without changes
