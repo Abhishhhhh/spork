@@ -20,7 +20,7 @@ export default function AddFirstFriends() {
   const navigate     = useNavigate()
   const queryClient  = useQueryClient()
   const { session }  = useSession()
-  const { name, username, avatarFile, calorieGoal, privacyDefault, friendUsernamesToRequest, addFriendUsername, reset } =
+  const { name, username, avatarFile, calorieGoal, friendUsernamesToRequest, addFriendUsername, reset } =
     useOnboardingStore()
   const proteinGoal = useOnboardingStore((s) => s.proteinGoal)
 
@@ -106,7 +106,8 @@ export default function AddFirstFriends() {
         avatarFile,
         calorieGoal,
         proteinGoal,
-        privacyDefault,
+        // Meals are shared with friends by default; each post (and Settings) can still go private.
+        privacyDefault: 'public',
         friendUsernamesToRequest,
       })
       reset()
@@ -172,7 +173,7 @@ export default function AddFirstFriends() {
 
   return (
     <div className="screen flex min-h-screen flex-col">
-      <TopBar title="Your plan" back="/onboarding/privacy" />
+      <TopBar title="Your plan" back="/onboarding/profile" />
 
       <h2>Add your first friends</h2>
       <p className="muted">Find people to share your progress with</p>
