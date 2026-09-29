@@ -7,6 +7,7 @@ import { useToggleLike } from '../../hooks/useMealDetail'
 import { PostCard } from '../../components/PostCard'
 import { FeedCardSkeleton } from '../../components/Skeleton'
 import { useToast } from '../../components/Toast'
+import { SporkOrb } from '../../components/brand/SporkOrb'
 
 export default function Feed() {
   const navigate                          = useNavigate()
@@ -74,7 +75,7 @@ export default function Feed() {
       {/* ── Empty ───────────────────────────────────────────────────── */}
       {!isLoading && !isError && (!items || items.length === 0) && (
         <div className="card text-center" style={{ padding: 40 }}>
-          <div style={{ fontSize: 44, lineHeight: 1 }}>✳</div>
+          <div className="flex justify-center"><SporkOrb size={44} /></div>
           <h4 style={{ marginTop: 12 }}>Your feed is quiet</h4>
           <p className="small muted">Add friends or log your first meal to get started</p>
           <div className="action-row" style={{ marginTop: 18 }}>
