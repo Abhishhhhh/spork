@@ -38,9 +38,11 @@ interface EstimateEditProps {
   postError: string | null
   /** Present when there's a photo to re-analyse. Resolves false if the AI call failed. */
   onReestimate?: (items: ConfirmedItem[]) => Promise<boolean>
+  /** Present when the estimate itself failed (AI busy / offline) — shows a Try again banner. */
+  onRetryEstimate?: () => void
 }
 
-export default function EstimateEdit({ onBack, onPost, posting, postError, onReestimate }: EstimateEditProps) {
+export default function EstimateEdit({ onBack, onPost, posting, postError, onReestimate, onRetryEstimate }: EstimateEditProps) {
   const photoFile   = useLogDraftStore((s) => s.photoFile)
   const mealName    = useLogDraftStore((s) => s.mealName)
   const caption     = useLogDraftStore((s) => s.caption)
@@ -110,6 +112,15 @@ export default function EstimateEdit({ onBack, onPost, posting, postError, onRee
           <input ref={photoInputRef} type="file" accept="image/*" capture="environment" className="sr-only"
             onChange={(e) => { const file = e.target.files?.[0]; e.target.value = ''; if (file) setPhoto(file) }} />
         </>
+      )}
+
+      {/* The AI couldn't be reached — say so instead of silently blank fields */}
+      {onRetryEstimate && (
+        <div className="card" role="alert">
+          <b className="block font-semibold">Couldn’t estimate this one</b>
+          <p className="small muted" style={{ marginTop: 4 }}>The AI is busy right now. Try again, or fill in the numbers below.</p>
+          <button type="button" onClick={onRetryEstimate} className="btn" style={{ marginTop: 12, marginBottom: 0 }}>Try again</button>
+        </div>
       )}
 
       {/* Estimate summary */}

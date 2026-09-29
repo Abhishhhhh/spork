@@ -28,11 +28,17 @@ export async function signMealPhotos(paths: string[]): Promise<Map<string, strin
       for (const entry of data ?? []) if (entry.signedUrl && entry.path) urls.set(entry.path, entry.signedUrl)
     })(),
     ...chunk(r2, SIGN_BATCH).map(async (batch) => {
-      const { data, error } = await supabase.functions.invoke<{ urls: Record<string, string> }>('meal-photos', {
-        body: { action: 'sign', paths: batch },
-      })
-      if (error || !data?.urls) return
-      for (const [path, url] of Object.entries(data.urls)) urls.set(path, url)
+      // One retry: a cold start or a brief hiccup shouldn't leave posts photo-less.
+      for (let attempt = 1; attempt <= 2; attempt++) {
+        const { data, error } = await supabase.functions.invoke<{ urls: Record<string, string> }>('meal-photos', {
+          body: { action: 'sign', paths: batch },
+        })
+        if (!error && data?.urls) {
+          for (const [path, url] of Object.entries(data.urls)) urls.set(path, url)
+          return
+        }
+        if (attempt === 1) await new Promise((resolve) => setTimeout(resolve, 800))
+      }
     }),
   ])
   return urls

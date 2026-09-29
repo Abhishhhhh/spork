@@ -10,7 +10,14 @@ const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY')
 // Model is overridable via the GEMINI_MODEL secret (e.g. 'gemini-flash-latest'
 // for better vision accuracy) without a code change. Default unchanged.
 const GEMINI_MODEL = Deno.env.get('GEMINI_MODEL') || 'gemini-flash-lite-latest'
-const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`
+// Backup models, tried in order when the main one is overloaded (503) or
+// rate-limited (429). Each model has its own capacity, so a demand spike on
+// one rarely hits the others. Overridable via the GEMINI_FALLBACK_MODELS
+// secret (comma-separated).
+const GEMINI_FALLBACK_MODELS = (Deno.env.get('GEMINI_FALLBACK_MODELS') || 'gemini-flash-latest,gemini-2.5-flash-lite')
+  .split(',').map((m) => m.trim()).filter(Boolean)
+const GEMINI_MODELS = [...new Set([GEMINI_MODEL, ...GEMINI_FALLBACK_MODELS])]
+const geminiUrl = (model: string) => `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -211,7 +218,7 @@ function buildUserContext(description?: string, confirmedItems?: ConfirmedItem[]
 /**
  * The single provider-specific function (spec §6/§10) — swapping to a
  * paid Gemini key, a different model, or an entirely different vision
- * API later means changing this function's body (and the GEMINI_URL/
+ * API later means changing this function's body (and the geminiUrl/
  * PROMPT constants above it, which are Gemini-specific by nature).
  * Everything else — HTTP parsing, CORS, response formatting, the
  * Deno.serve handler — is provider-agnostic and doesn't change.
@@ -242,29 +249,46 @@ async function estimateMeal(
     },
   })
 
-  // Gemini's free tier occasionally returns 503 ("high demand") or 429
-  // (rate limit) — both transient, both known/expected (spec §6 AI
-  // provider notes) — that typically clear within a second or two.
-  // Retry those specifically before giving up to manual entry, rather
-  // than treating every momentary blip as a hard failure.
-  const RETRYABLE_STATUSES = new Set([429, 503])
-  const MAX_ATTEMPTS = 3
-  let geminiRes: Response
-  let attempt = 1
-  for (;;) {
-    geminiRes = await fetch(`${GEMINI_URL}?key=${GEMINI_API_KEY}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: requestBody,
-    })
-    if (geminiRes.ok || !RETRYABLE_STATUSES.has(geminiRes.status) || attempt >= MAX_ATTEMPTS) break
-    await new Promise((resolve) => setTimeout(resolve, 1000 * attempt))
-    attempt++
+  // Gemini's free tier returns 503 ("high demand") or 429 (rate limit) at
+  // peak times, sometimes for minutes. Busy (503) / rate-limited (429) → one quick retry on the same model,
+  // then move to the next model. A model that doesn't exist for this key
+  // (404) is skipped. Whole thing stays well inside the app's timeout.
+  const RETRYABLE_STATUSES = new Set([429, 500, 503])
+  const ATTEMPTS_PER_MODEL = 2
+  const PER_CALL_TIMEOUT_MS = 20_000
+  const DEADLINE = Date.now() + 40_000
+  let geminiRes: Response | null = null
+  let lastFailure = ''
+
+  models: for (const model of GEMINI_MODELS) {
+    for (let attempt = 1; attempt <= ATTEMPTS_PER_MODEL; attempt++) {
+      if (Date.now() > DEADLINE - 2_000) break models
+      try {
+        const res = await fetch(`${geminiUrl(model)}?key=${GEMINI_API_KEY}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: requestBody,
+          signal: AbortSignal.timeout(Math.max(1_000, Math.min(PER_CALL_TIMEOUT_MS, DEADLINE - Date.now()))),
+        })
+        if (res.ok) {
+          if (model !== GEMINI_MODEL) console.log(`Gemini: used backup model ${model}`)
+          geminiRes = res
+          break models
+        }
+        lastFailure = `${model} → ${res.status} ${(await res.text()).slice(0, 300)}`
+        console.error('Gemini call failed:', lastFailure)
+        if (res.status === 404) continue models          // model not available → next model
+        if (!RETRYABLE_STATUSES.has(res.status)) break models // e.g. 400 bad request: retrying won't help
+      } catch (err) {
+        lastFailure = `${model} → ${err instanceof Error ? err.name : 'network error'}`
+        console.error('Gemini call failed:', lastFailure)
+      }
+      if (attempt < ATTEMPTS_PER_MODEL) await new Promise((resolve) => setTimeout(resolve, 1500))
+    }
   }
 
-  if (!geminiRes.ok) {
-    console.error('Gemini call failed:', geminiRes.status, await geminiRes.text())
-    throw new EstimateFailure(`Gemini call failed: ${geminiRes.status}`, 502)
+  if (!geminiRes) {
+    throw new EstimateFailure(`Gemini call failed: ${lastFailure.split(' ')[2] ?? 'unknown'}`, 502)
   }
 
   const geminiJson = await geminiRes.json()

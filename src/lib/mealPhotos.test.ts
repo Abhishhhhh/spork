@@ -40,6 +40,16 @@ describe('signMealPhotos', () => {
     expect(invoke).not.toHaveBeenCalled()
   })
 
+  it('retries once when the function hiccups', async () => {
+    createSignedUrls.mockResolvedValue({ data: [] })
+    invoke
+      .mockResolvedValueOnce({ data: null, error: new Error('cold start') })
+      .mockResolvedValueOnce({ data: { urls: { [`r2/${U}/b.jpg`]: 'https://r2/b' } }, error: null })
+    const urls = await signMealPhotos([`r2/${U}/b.jpg`])
+    expect(invoke).toHaveBeenCalledTimes(2)
+    expect(urls.get(`r2/${U}/b.jpg`)).toBe('https://r2/b')
+  })
+
   it('a failing function only hides the R2 photos', async () => {
     createSignedUrls.mockResolvedValue({ data: [{ path: `${U}/a.jpg`, signedUrl: 'https://supabase/a' }] })
     invoke.mockResolvedValue({ data: null, error: new Error('down') })
