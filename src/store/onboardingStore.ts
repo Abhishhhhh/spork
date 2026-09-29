@@ -17,7 +17,7 @@ interface OnboardingState {
   heightCm: number | null
   weightKg: number | null
   age: number | null
-  sex: 'male' | 'female'
+  sex: 'male' | 'female' | 'other'
 
   // Step 3: Goal
   goalType: GoalType
@@ -49,7 +49,7 @@ interface OnboardingState {
 
   // ── Actions ──────────────────────────────────────────────────────────────
   setProfile: (f: { name: string; username: string; avatarFile: File | null }) => void
-  setBasics: (f: { heightCm: number; weightKg: number; age: number; sex: 'male' | 'female' }) => void
+  setBasics: (f: { heightCm: number; weightKg: number; age: number; sex: 'male' | 'female' | 'other' }) => void
   setGoal: (f: { goalType: GoalType; targetWeightKg: number | null; pace: Pace }) => void
   setActivity: (f: {
     activityLevel: ActivityLevel
@@ -76,7 +76,7 @@ interface OnboardingState {
     calorieGoal: number
     proteinGoal: number
   }) => void
-  setBodyStats: (f: { weightKg: number; sex: 'male' | 'female' }) => void
+  setBodyStats: (f: { weightKg: number; sex: 'male' | 'female' | 'other' }) => void
   reset: () => void
 }
 
@@ -89,7 +89,7 @@ const initialState = {
   heightCm: null as number | null,
   weightKg: null as number | null,
   age: null as number | null,
-  sex: 'male' as 'male' | 'female',
+  sex: 'male' as 'male' | 'female' | 'other',
   // Goal
   goalType: 'lose' as GoalType,
   targetWeightKg: null as number | null,

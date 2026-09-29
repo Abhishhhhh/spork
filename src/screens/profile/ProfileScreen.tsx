@@ -24,6 +24,7 @@ import {
   buildLogDateSet,
 } from '../../lib/profileStats'
 import { useQueryClient } from '@tanstack/react-query'
+import { SporkOrb } from '../../components/brand/SporkOrb'
 
 export default function ProfileScreen() {
   const navigate       = useNavigate()
@@ -295,7 +296,7 @@ export default function ProfileScreen() {
           [1, 2].map((i) => <FeedCardSkeleton key={i} />)
         ) : posts.length === 0 ? (
           <div className="card tint text-center" style={{ margin: 0, padding: 40 }}>
-            <div style={{ fontSize: 40, lineHeight: 1 }}>✳</div>
+            <div className="flex justify-center"><SporkOrb size={40} /></div>
             <h4 style={{ marginTop: 12 }}>No meals logged yet</h4>
             <button type="button" onClick={() => navigate('/home/log')} className="btn">Log your first meal</button>
           </div>

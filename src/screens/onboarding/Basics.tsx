@@ -5,11 +5,12 @@ import { OnboardingProgress } from '../../components/OnboardingProgress'
 import { TopBar } from '../../components/TopBar'
 import { OptionIcon, type IconName } from '../../components/OptionIcon'
 
-type Sex = 'male' | 'female'
+type Sex = 'male' | 'female' | 'other'
 
 const SEX_OPTIONS: { value: Sex; icon: IconName; label: string }[] = [
   { value: 'female', icon: 'female', label: 'Female' },
   { value: 'male',   icon: 'male', label: 'Male' },
+  { value: 'other',  icon: 'sex_other', label: 'Other' },
 ]
 
 export default function Basics() {
@@ -27,7 +28,8 @@ export default function Basics() {
   )
   const [weightKg, setWeightKg]   = useState(store.weightKg ? String(store.weightKg) : '')
   const [age, setAge]             = useState(store.age ? String(store.age) : '')
-  const [sex, setSex]             = useState<Sex>(store.sex)
+  // Nothing pre-selected on a first visit; coming back restores the earlier choice.
+  const [sex, setSex]             = useState<Sex | null>(store.heightCm ? store.sex : null)
   const [error, setError]         = useState<string | null>(null)
 
   function handleSubmit(e: FormEvent) {
@@ -41,6 +43,7 @@ export default function Basics() {
     if (ins < 0 || ins > 11)          { setError('Inches must be 0–11.'); return }
     if (!wt || wt < 30 || wt > 300)   { setError('Enter weight in kg (30–300).'); return }
     if (!ag || ag < 10 || ag > 100)   { setError('Enter a valid age (10–100).'); return }
+    if (!sex)                         { setError('Choose Female, Male or Other.'); return }
 
     setError(null)
     const heightCm = (ft * 12 + ins) * 2.54
@@ -61,31 +64,31 @@ export default function Basics() {
         <div className="inline-fields">
           <div className="field">
             <label htmlFor="ht-ft">Height · feet</label>
-            <input id="ht-ft" inputMode="numeric" placeholder="5"
+            <input id="ht-ft" inputMode="numeric" placeholder="ft"
               value={heightFt} onChange={(e) => setHeightFt(e.target.value)} />
           </div>
           <div className="field">
             <label htmlFor="ht-in">Inches</label>
-            <input id="ht-in" inputMode="numeric" placeholder="8"
+            <input id="ht-in" inputMode="numeric" placeholder="in"
               value={heightIn} onChange={(e) => setHeightIn(e.target.value)} />
           </div>
         </div>
 
         <div className="field">
           <label htmlFor="wt">Current weight · kg</label>
-          <input id="wt" inputMode="decimal" placeholder="76"
+          <input id="wt" inputMode="decimal" placeholder="kg"
             value={weightKg} onChange={(e) => setWeightKg(e.target.value)} />
         </div>
 
         <div className="field">
           <label htmlFor="age">Age</label>
-          <input id="age" inputMode="numeric" placeholder="28"
+          <input id="age" inputMode="numeric" placeholder="years"
             value={age} onChange={(e) => setAge(e.target.value)} />
         </div>
 
         <div className="section">
           <span className="caps">Sex used for calorie calculation</span>
-          <div className="tile-grid">
+          <div className="tile-grid three">
             {SEX_OPTIONS.map((opt) => (
               <button key={opt.value} type="button" onClick={() => setSex(opt.value)}
                 className={`tile ${sex === opt.value ? 'sel' : ''}`} aria-pressed={sex === opt.value}>

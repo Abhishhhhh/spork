@@ -57,7 +57,7 @@ export default function Activity() {
   const rawGoal    = computePacedGoal(tdee, store.goalType, store.pace)
   const calorieGoal = clampCalorieGoal(rawGoal, store.sex)
   const wasClamped  = !isSafeCalorieGoal(rawGoal, store.sex)
-  const proteinGoal = suggestProteinGoal(store.weightKg, store.goalType)
+  const proteinGoal = suggestProteinGoal(store.weightKg, store.goalType, store.targetWeightKg)
 
   function handleContinue() {
     store.setActivity({

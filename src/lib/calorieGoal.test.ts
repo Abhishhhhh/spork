@@ -304,6 +304,30 @@ describe('suggestProteinGoal', () => {
 
 // ─── suggestCalorieGoal (convenience wrapper) ───────────────────────────────
 
+describe('suggestProteinGoal — weight loss uses the target weight', () => {
+  it('bases protein on the target weight when losing', () => {
+    expect(suggestProteinGoal(120, 'lose', 85)).toBe(170)   // not 240
+  })
+  it('ignores a target that is not below the current weight, and non-lose goals', () => {
+    expect(suggestProteinGoal(80, 'lose', 90)).toBe(160)
+    expect(suggestProteinGoal(80, 'lose', null)).toBe(160)
+    expect(suggestProteinGoal(70, 'gain', 80)).toBe(126)
+  })
+})
+
+describe('sex = other', () => {
+  it('uses the midpoint of the male and female constants', () => {
+    const male = computeTDEE({ weightKg: 70, heightCm: 175, age: 30, sex: 'male', activityLevel: 'sedentary' })
+    const female = computeTDEE({ weightKg: 70, heightCm: 175, age: 30, sex: 'female', activityLevel: 'sedentary' })
+    const other = computeTDEE({ weightKg: 70, heightCm: 175, age: 30, sex: 'other', activityLevel: 'sedentary' })
+    expect(other).toBeGreaterThan(female)
+    expect(other).toBeLessThan(male)
+  })
+  it('uses the 1200 kcal safety floor', () => {
+    expect(clampCalorieGoal(1000, 'other')).toBe(1200)
+  })
+})
+
 describe('suggestCalorieGoal', () => {
   const baseInputs = { weightKg: 70, heightCm: 175, age: 30, sex: 'male' as const, activityLevel: 'moderate' as const }
 
