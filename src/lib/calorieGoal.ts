@@ -1,5 +1,5 @@
 export type ActivityLevel = 'sedentary' | 'light' | 'moderate' | 'active' | 'very_active'
-export type Sex = 'male' | 'female'
+export type Sex = 'male' | 'female' | 'other'
 export type GoalType = 'lose' | 'maintain' | 'gain'
 export type Pace = 'slow' | 'recommended' | 'fast'
 
@@ -69,6 +69,8 @@ const ACTIVITY_MULTIPLIERS: Record<ActivityLevel, number> = {
 const SEX_CONSTANTS: Record<Sex, number> = {
   male: 5,
   female: -161,
+  // Not specified: midpoint of the two Mifflin-St Jeor constants.
+  other: -78,
 }
 
 /**
@@ -78,6 +80,7 @@ const SEX_CONSTANTS: Record<Sex, number> = {
 export const MIN_SAFE_CALORIES: Record<Sex, number> = {
   male: 1500,
   female: 1200,
+  other: 1200,
 }
 
 /**
@@ -166,11 +169,14 @@ export function computeTimeline(
 }
 
 /**
- * Suggests a daily protein target (grams) based on current bodyweight and goal.
- * Rounded to the nearest whole gram.
+ * Suggests a daily protein target (grams) based on bodyweight and goal.
+ * When losing weight it's based on the TARGET weight — per-kg guidance is
+ * meant for lean mass, and 2 g × a heavy current weight (e.g. 240 g at
+ * 120 kg) is unrealistic. Rounded to the nearest whole gram.
  */
-export function suggestProteinGoal(currentWeightKg: number, goalType: GoalType): number {
-  return Math.round(currentWeightKg * PROTEIN_MULTIPLIERS[goalType])
+export function suggestProteinGoal(currentWeightKg: number, goalType: GoalType, targetWeightKg?: number | null): number {
+  const basisKg = goalType === 'lose' && targetWeightKg && targetWeightKg < currentWeightKg ? targetWeightKg : currentWeightKg
+  return Math.round(basisKg * PROTEIN_MULTIPLIERS[goalType])
 }
 
 /**
