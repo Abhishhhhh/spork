@@ -15,7 +15,6 @@ import YourPlan from './screens/onboarding/YourPlan'
 import CreateAccount from './screens/onboarding/CreateAccount'
 // Post-auth onboarding (session required)
 import ProfileSetup from './screens/onboarding/ProfileSetup'
-import PrivacyDefault from './screens/onboarding/PrivacyDefault'
 import AddFirstFriends from './screens/onboarding/AddFirstFriends'
 // App
 import Feed from './screens/feed/Feed'
@@ -69,8 +68,8 @@ export default function App() {
             User has created an account; store data is still in memory. */}
         <Route path="/onboarding/profile"
           element={<ProtectedRoute><RequireNotOnboarded><ProfileSetup /></RequireNotOnboarded></ProtectedRoute>} />
-        <Route path="/onboarding/privacy"
-          element={<ProtectedRoute><RequireNotOnboarded><PrivacyDefault /></RequireNotOnboarded></ProtectedRoute>} />
+        {/* The "who sees your meals" step was removed — new accounts share with friends. */}
+        <Route path="/onboarding/privacy" element={<Navigate to="/onboarding/friends" replace />} />
         <Route path="/onboarding/friends"
           element={<ProtectedRoute><RequireNotOnboarded><AddFirstFriends /></RequireNotOnboarded></ProtectedRoute>} />
 
