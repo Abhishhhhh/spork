@@ -5,7 +5,7 @@
 import {
   Apple, BatteryLow, CalendarCheck, Camera, ChefHat, CircleCheck, CircleOff,
   CookingPot, Drumstick, Dumbbell, Flame, Footprints, Globe, HardHat, HeartPulse,
-  History, Hourglass, Infinity as InfinityIcon, Laptop, Leaf, Lock, Mars, Nut, Pencil, Puzzle, Rabbit,
+  History, Hourglass, Infinity as InfinityIcon, Laptop, Leaf, Lock, Mars, NonBinary, Nut, Pencil, Puzzle, Rabbit,
   Rocket, Ruler, Scale, Snail, Sparkles, Sprout, TrendingDown, Users, Utensils, Venus,
   Wheat, Zap, type LucideIcon,
 } from 'lucide-react'
@@ -15,7 +15,7 @@ const ICONS = {
   lose: TrendingDown, maintain: Scale, gain: Dumbbell,
   slow: Snail, moderate: Rabbit, fast: Rocket,
   // basics
-  female: Venus, male: Mars,
+  female: Venus, male: Mars, sex_other: NonBinary,
   // activity
   desk: Laptop, on_feet: Footprints, physical: HardHat,
   none: CircleOff, cardio: HeartPulse, strength: Dumbbell, mixed: InfinityIcon,

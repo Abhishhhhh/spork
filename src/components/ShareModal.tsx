@@ -103,11 +103,16 @@ async function renderShareCard(p: Omit<ShareCardProps, 'onClose' | 'shareLogId' 
     const dw = img.naturalWidth * s, dh = img.naturalHeight * s
     ctx.drawImage(img, PAD + (photoW - dw) / 2, PAD + (PHOTO_H - dh) / 2, dw, dh)
   } else {
-    ctx.fillStyle = '#f4f4f3'
-    ctx.font = `500 90px ${DISPLAY}`
-    ctx.textAlign = 'center'
-    ctx.textBaseline = 'middle'
-    ctx.fillText('✳', SHARE_CARD_W / 2, PAD + PHOTO_H / 2)
+    // No photo: the Spork orb (ring + three tines), same geometry as SporkOrb.
+    const cx = SHARE_CARD_W / 2, cy = PAD + PHOTO_H / 2, k = 90 / 100
+    ctx.strokeStyle = '#f4f4f3'
+    ctx.lineCap = 'round'
+    ctx.lineWidth = 12 * k
+    ctx.beginPath(); ctx.arc(cx, cy, 38 * k, 0, Math.PI * 2); ctx.stroke()
+    ctx.lineWidth = 9 * k
+    for (const x of [37, 50, 63]) {
+      ctx.beginPath(); ctx.moveTo(cx + (x - 50) * k, cy + (38 - 50) * k); ctx.lineTo(cx + (x - 50) * k, cy + (60 - 50) * k); ctx.stroke()
+    }
   }
   ctx.restore()
 
