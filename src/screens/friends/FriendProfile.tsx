@@ -15,6 +15,7 @@ import { Avatar } from '../../components/Avatar'
 import { PhotoViewer } from '../../components/PhotoViewer'
 import { useToast } from '../../components/Toast'
 import type { FeedItem } from '../../hooks/useFeed'
+import { SporkOrb } from '../../components/brand/SporkOrb'
 
 export default function FriendProfile() {
   const { username }   = useParams<{ username: string }>()
@@ -156,7 +157,7 @@ export default function FriendProfile() {
         <span className="caps">Recent meals · {logs.length}</span>
         {logs.length === 0 ? (
           <div className="card tint text-center" style={{ margin: 0 }}>
-            <div style={{ fontSize: 34, lineHeight: 1 }}>✳</div>
+            <div className="flex justify-center"><SporkOrb size={34} /></div>
             <p className="small muted" style={{ marginTop: 8 }}>No public posts yet</p>
           </div>
         ) : (
