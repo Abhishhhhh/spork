@@ -56,7 +56,7 @@ export default function ProfileSetup() {
     }
 
     setProfile({ name: name.trim(), username: normalizedUsername, avatarFile })
-    navigate('/onboarding/privacy')
+    navigate('/onboarding/friends')
   }
 
   const initial = (name.trim() || '?').charAt(0).toUpperCase()
