@@ -3,6 +3,8 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { useInsights } from '../../hooks/useInsights'
 import { Avatar } from '../../components/Avatar'
 import { Skeleton } from '../../components/Skeleton'
+import { RecapSheet } from '../../components/RecapSheet'
+import { useWeeklyRecap } from '../../hooks/useWeeklyRecap'
 import type { InsightRange, Insights, InsightCard, Bar } from '../../lib/insights'
 
 type View = 'overview' | 'calories' | 'macros' | 'consistency'
@@ -24,6 +26,8 @@ export default function InsightsScreen() {
   const view: View = (VIEWS.find((v) => v.id === viewParam)?.id ?? 'overview')
   const [range, setRange] = useState<InsightRange>(7)
   const { insights, user, isLoading, isError, refetch } = useInsights(range)
+  const { data: recap } = useWeeklyRecap()
+  const [showRecap, setShowRecap] = useState(false)
 
   return (
     <div>
@@ -34,6 +38,18 @@ export default function InsightsScreen() {
           <Avatar name={user?.name ?? '?'} photoUrl={user?.photo_url} />
         </button>
       </div>
+
+      {/* ── Last week's recap ──────────────────────────────────── */}
+      {recap && (
+        <button type="button" onClick={() => setShowRecap(true)} className="card tint flex w-full items-center justify-between gap-3 text-left" style={{ marginTop: 0 }}>
+          <span className="min-w-0">
+            <b className="block font-semibold">Last week’s recap</b>
+            <small className="muted">{recap.label} · {recap.daysLogged}/7 days logged</small>
+          </span>
+          <span aria-hidden="true">→</span>
+        </button>
+      )}
+      {showRecap && recap && <RecapSheet recap={recap} username={user?.username ?? 'you'} onClose={() => setShowRecap(false)} />}
 
       {/* ── View switcher ──────────────────────────────────────── */}
       <div className="scroll-hide -mx-5 flex gap-1.5 overflow-x-auto px-5" style={{ marginBottom: 12 }}>
