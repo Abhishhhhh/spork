@@ -12,7 +12,6 @@ import {
 } from '../../lib/calorieGoal'
 import { useOnboardingStore } from '../../store/onboardingStore'
 import { OnboardingProgress } from '../../components/OnboardingProgress'
-import { TopBar } from '../../components/TopBar'
 import { OptionIcon, type IconName } from '../../components/OptionIcon'
 
 const JOB_OPTIONS: { value: JobActivity; icon: IconName; label: string; sub: string }[] = [
@@ -71,9 +70,8 @@ export default function Activity() {
   }
 
   return (
-    <div className="screen min-h-screen">
-      <TopBar title="Your plan" back="/onboarding/goal" />
-      <OnboardingProgress step={3} total={6} />
+    <div className="screen onb min-h-screen">
+      <OnboardingProgress step={3} total={6} back="/onboarding/goal" />
 
       <h2>Your activity</h2>
       <p className="muted">Tells us how many calories you actually burn daily</p>
@@ -143,7 +141,11 @@ export default function Activity() {
         <p className="tiny muted" style={{ marginTop: 6 }}>Maintenance · {tdee.toLocaleString()} kcal</p>
       </div>
 
-      <button type="button" onClick={handleContinue} className="btn">Continue</button>
+      <div className="cta-dock">
+
+        <button type="button" onClick={handleContinue} className="btn">Continue</button>
+
+      </div>
     </div>
   )
 }

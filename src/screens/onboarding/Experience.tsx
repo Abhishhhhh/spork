@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useOnboardingStore, type TrackedBefore } from '../../store/onboardingStore'
 import { OnboardingProgress } from '../../components/OnboardingProgress'
-import { TopBar } from '../../components/TopBar'
 import { OptionIcon, type IconName } from '../../components/OptionIcon'
 
 const TRACKED_OPTIONS: { value: TrackedBefore; icon: IconName; label: string; sub: string }[] = [
@@ -42,9 +41,8 @@ export default function Experience() {
   }
 
   return (
-    <div className="screen min-h-screen">
-      <TopBar title="Your plan" back="/onboarding/food" />
-      <OnboardingProgress step={5} total={6} />
+    <div className="screen onb min-h-screen">
+      <OnboardingProgress step={5} total={6} back="/onboarding/food" />
 
       <h2>Your experience</h2>
       <p className="muted">Helps us set the right expectations for you</p>
@@ -89,7 +87,11 @@ export default function Experience() {
 
       {error && <p className="error-text">{error}</p>}
 
-      <button type="button" onClick={handleContinue} className="btn">Continue</button>
+      <div className="cta-dock">
+
+        <button type="button" onClick={handleContinue} className="btn">Continue</button>
+
+      </div>
     </div>
   )
 }
