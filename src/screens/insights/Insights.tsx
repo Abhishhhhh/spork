@@ -133,12 +133,23 @@ function WeekChart({ bars, tall = false }: { bars: Bar[]; tall?: boolean }) {
   return (
     <div className={`week-chart ${tall ? 'tall' : ''}`} style={{ '--goal-y': `${goalY}px` } as React.CSSProperties} role="img" aria-label="Daily calories against target">
       {bars.map((b, idx) => (
-        <span key={idx} className={`day ${b.over ? 'over' : ''} ${b.pct === 0 ? 'empty' : ''}`} title={b.date ? `${b.date} · ${b.pct}% of target` : `${b.pct}% of target`}>
+        <span key={idx} className={`day ${b.pct === 0 ? 'empty' : b.pct > 110 ? 'over' : b.pct >= 90 ? 'hit' : ''}`} title={b.date ? `${b.date} · ${b.pct}% of target` : `${b.pct}% of target`}>
           <i style={{ '--h': `${Math.min(b.pct, 108) / 108 * 100}%` } as React.CSSProperties} />
           <b>{b.label}</b>
           {idx === bars.length - 1 && <em>goal</em>}
         </span>
       ))}
+    </div>
+  )
+}
+
+/** Bar colours: under target · within ±10% · over. */
+function ChartLegend() {
+  return (
+    <div className="legend justify-center" style={{ marginTop: 4 }}>
+      <span><i className="macro-dot" style={{ background: 'var(--chart-under)' }} />Under</span>
+      <span><i className="macro-dot" style={{ background: 'var(--color-teal)' }} />On target</span>
+      <span><i className="macro-dot" style={{ background: 'var(--macro-carbs)' }} />Over</span>
     </div>
   )
 }
@@ -162,10 +173,10 @@ function Overview({ i }: { i: Insights }) {
   const under = o.deltaToGoal >= 0
   return (
     <>
-      <div className="card ink" style={{ marginTop: 0, padding: 20 }}>
+      <div className="card" style={{ marginTop: 0, padding: 20 }}>
         <div className="flex items-start justify-between">
           <div>
-            <div className="caps" style={{ color: 'inherit', opacity: 0.65 }}>Average calories</div>
+            <div className="caps">Average calories</div>
             <div className="value" style={{ marginTop: 8 }}>{fmt(o.avgCalories)} <small>kcal</small></div>
           </div>
           <div className="delta">
@@ -174,6 +185,7 @@ function Overview({ i }: { i: Insights }) {
           </div>
         </div>
         <WeekChart bars={o.bars} />
+        <ChartLegend />
       </div>
 
       <div className="metrics">
@@ -213,7 +225,7 @@ function Calories({ i, goal }: { i: Insights; goal: number }) {
       <div className="section-title"><h3>Daily intake</h3><span>Goal line {fmt(goal)}</span></div>
       <div className="card" style={{ marginTop: 0 }}>
         <WeekChart bars={c.bars} tall />
-        <div className="tiny muted flex justify-between"><span>Lower</span><span>Within target</span><span>Higher</span></div>
+        <ChartLegend />
       </div>
 
       <div className="section-title"><h3>Calories by meal</h3><span>Average share</span></div>

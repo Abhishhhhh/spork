@@ -361,6 +361,10 @@
   .bottomnav a { display: flex; align-items: center; flex-direction: column; gap: 2px; flex: 1 1 0; min-width: 0; color: var(--color-quiet); font-size: 10px; }
   .bottomnav a.active { color: var(--color-ink); }
   .bottomnav svg { width: 20px; height: 20px; }
+  .bottomnav .tab-avatar { width: 21px; height: 21px; margin: -0.5px 0; border-radius: 50%; overflow: hidden; display: grid; place-items: center; background: var(--color-soft); box-shadow: 0 0 0 1.5px var(--color-quiet); }
+  .bottomnav .tab-avatar.on { box-shadow: 0 0 0 1.5px var(--color-paper), 0 0 0 3px var(--color-ink); }
+  .bottomnav .tab-avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .bottomnav .tab-avatar b { font-family: var(--font-display); font-weight: 500; font-size: 12px; color: var(--color-ink); }
   .bottomnav .plus {
     height: 47px; width: 47px; border-radius: 50%; background: var(--color-ink); color: var(--color-on-ink);
     display: grid; place-items: center; margin-top: -5px; box-shadow: 0 0 0 4px var(--color-canvas);
@@ -395,9 +399,11 @@
   .week-chart.tall { height: 183px; }
   .week-chart::before { content: ''; position: absolute; left: 2px; right: 2px; top: var(--goal-y, 49px); border-top: 1px dashed var(--color-quiet); opacity: 0.55; }
   .week-chart .day { flex: 1; height: 100%; display: flex; align-items: center; justify-content: flex-end; flex-direction: column; gap: 5px; position: relative; }
-  .week-chart .day i { width: 100%; max-width: 25px; height: var(--h); min-height: 3px; background: var(--color-teal); border-radius: 9px 9px 4px 4px; display: block; transition: height 0.4s ease; }
-  .week-chart .day.empty i { background: var(--color-line); }
-  .week-chart .day.over i { background: transparent; box-shadow: inset 0 0 0 1.5px var(--color-teal); }
+  .week-chart, .legend { --chart-under: color-mix(in srgb, var(--color-ink) 55%, transparent); }
+  .week-chart .day i { width: 100%; max-width: 25px; height: var(--h); min-height: 3px; background: var(--chart-under); border-radius: 9px 9px 4px 4px; display: block; transition: height 0.4s ease; }
+  .week-chart .day.hit i { background: var(--color-teal); }
+  .week-chart .day.empty i { background: var(--color-soft2); }
+  .week-chart .day.over i { background: var(--macro-carbs); }
   .week-chart .day b { font-size: 8px; color: var(--color-quiet); font-weight: 400; }
   .week-chart .day em { position: absolute; top: calc(var(--goal-y, 49px) - 12px); right: 0; font-style: normal; font-size: 8px; color: var(--color-quiet); }
   .card.ink .week-chart .day b, .card.ink .week-chart .day em { color: var(--color-inverse-ink); opacity: 0.65; }
