@@ -18,6 +18,9 @@ import { TopBar } from '../../components/TopBar'
 import { Avatar } from '../../components/Avatar'
 import { PhotoViewer } from '../../components/PhotoViewer'
 import { LikersSheet } from '../../components/LikersSheet'
+import { MealScoreCard } from '../../components/Accountability'
+import { useCurrentUser } from '../../hooks/useCurrentUser'
+import { dailyGoals } from '../../lib/accountability'
 
 export default function MealDetail() {
   const { logId } = useParams<{ logId: string }>()
@@ -29,6 +32,7 @@ export default function MealDetail() {
   const deleteComment = useDeleteComment()
   const toggleCommentLike = useToggleCommentLike()
   const friendUsernameById = useFriendUsernames()
+  const { data: currentUser } = useCurrentUser()
 
   const [optimisticLiked, setOptimisticLiked] = useState<boolean | null>(null)
   const [commentBody, setCommentBody] = useState('')
@@ -136,6 +140,14 @@ export default function MealDetail() {
           <p className="tiny muted" style={{ marginTop: 8 }}>AI estimate was {log.calories_estimate.toLocaleString()} kcal</p>
         )}
       </div>
+
+      {/* Meal score — private, owner only */}
+      {viewerId === author.id && currentUser && calories != null && (
+        <MealScoreCard goals={dailyGoals(currentUser.calorie_goal, currentUser.protein_goal)} meal={{
+          id: log.id, name: log.name, meal_type: log.meal_type, created_at: log.created_at, photo_url: log.photo_url,
+          calories: Number(calories), protein: Number(proteinG ?? 0), carbs: Number(carbsG ?? 0), fat: Number(fatG ?? 0),
+        }} />
+      )}
 
       <div className="flex items-center gap-4" style={{ margin: '17px 0' }}>
         <button type="button" onClick={handleToggleLike} className={`flex items-center gap-1.5 ${displayLiked ? 'liked font-semibold' : ''}`}>
