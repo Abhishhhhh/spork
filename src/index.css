@@ -575,3 +575,48 @@
   .legend { display: flex; flex-wrap: wrap; gap: 6px 12px; font-size: 11px; color: var(--color-quiet); }
   .legend span { display: inline-flex; align-items: center; gap: 5px; }
 }
+
+/* ── Accountability: meal / day scores ─────────────────────────────────────── */
+@layer components {
+  .tone-good { --tone: var(--color-teal); }
+  .tone-mid  { --tone: var(--macro-carbs); }
+  .tone-low  { --tone: var(--color-error); }
+  .score-chip { display: inline-block; padding: 4px 9px; border-radius: 99px; font-size: 12px; font-weight: 700; white-space: nowrap;
+    color: var(--tone); background: color-mix(in srgb, var(--tone) 18%, transparent); }
+  .score-ring { position: relative; flex: none; }
+  .score-ring svg { display: block; transform: rotate(-90deg); }
+  .score-ring b { position: absolute; inset: 0; display: grid; place-items: center; font-family: var(--font-display); font-weight: 500; line-height: 1; }
+  .reason { display: flex; gap: 10px; align-items: flex-start; padding: 10px 0; border-top: 1px solid var(--color-line); font-size: 13px; line-height: 1.35; }
+  .reason:first-child { border-top: 0; }
+  .reason > i { width: 24px; height: 24px; border-radius: 50%; flex: none; display: grid; place-items: center; font-style: normal; font-weight: 700; font-size: 12px;
+    color: var(--tone); background: color-mix(in srgb, var(--tone) 18%, transparent); }
+  .score-bar { display: flex; gap: 4px; margin-top: 10px; }
+  .score-bar span { flex: 1; height: 6px; border-radius: 4px; background: var(--color-soft2); }
+  .score-bar span.on { background: var(--tone); }
+  .target-row { display: grid; grid-template-columns: 1fr 52px 52px 62px; align-items: center; gap: 8px; padding: 11px 0; border-top: 1px solid var(--color-line); font-size: 14px; }
+  .target-row > :not(:first-child) { text-align: right; }
+  .target-row.head { border-top: 0; padding: 0 0 6px; font-size: 11px; color: var(--color-quiet); }
+  .day-pick { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+  .day-pick button { padding: 8px 0; border-radius: 14px; text-align: center; font-size: 11px; color: var(--color-quiet); }
+  .day-pick button b { display: block; font-family: var(--font-display); font-weight: 500; font-size: 15px; color: var(--color-ink); margin-top: 2px; }
+  .day-pick button i { display: block; width: 7px; height: 7px; border-radius: 50%; margin: 5px auto 0; background: var(--tone, var(--color-soft2)); }
+  .day-pick button.on { background: var(--color-ink); color: var(--color-on-ink); }
+  .day-pick button.on b { color: var(--color-on-ink); }
+  .day-pick button:disabled { opacity: 0.4; }
+  .week-scores { display: grid; grid-template-columns: repeat(7, 1fr); align-items: end; height: 112px; text-align: center; font-size: 11px; color: var(--color-quiet); }
+  .week-scores i { display: block; width: 22px; margin: 4px auto 0; border-radius: 8px; background: var(--tone, var(--color-soft2)); }
+  .mini-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 14px; text-align: center; }
+  .mini-stats div { background: var(--color-soft); border-radius: 16px; padding: 10px 4px; }
+}
+
+/* ── Plan loader ──────────────────────────────────────────────────────────── */
+@layer components {
+  .plan-steps { width: 100%; max-width: 300px; margin: 34px auto 0; text-align: left; }
+  .plan-steps li { display: flex; align-items: center; gap: 12px; padding: 10px 0; font-size: 15px; list-style: none; transition: color 0.3s; }
+  .plan-steps li.todo { color: var(--color-quiet); }
+  .plan-steps .mark { width: 24px; height: 24px; border-radius: 50%; flex: none; display: grid; place-items: center; font-size: 13px; font-weight: 700; border: 2px solid var(--color-soft2); }
+  .plan-steps .done .mark { background: var(--color-ink); border-color: var(--color-ink); color: var(--color-on-ink); }
+  .plan-steps .now .mark { border-color: var(--color-ink); border-right-color: transparent; animation: plan-spin 0.8s linear infinite; }
+  @keyframes plan-spin { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { .plan-steps .now .mark { animation: none; } }
+}
