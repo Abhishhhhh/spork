@@ -19,6 +19,7 @@ import AddFirstFriends from './screens/onboarding/AddFirstFriends'
 // App
 import Feed from './screens/feed/Feed'
 import InsightsScreen from './screens/insights/Insights'
+import DayReview from './screens/insights/DayReview'
 import LogFlow from './screens/log/LogFlow'
 import MealDetail from './screens/log/MealDetail'
 import EditPost from './screens/log/EditPost'
@@ -80,6 +81,7 @@ export default function App() {
           <Route path="feed"             element={<Feed />} />
           <Route path="insights"         element={<InsightsScreen />} />
           <Route path="insights/:view"   element={<InsightsScreen />} />
+          <Route path="insights/review"  element={<DayReview />} />
           <Route path="log"              element={<LogFlow />} />
           <Route path="rewards"          element={<StreaksRewards />} />
           <Route path="friends"          element={<Friends />} />

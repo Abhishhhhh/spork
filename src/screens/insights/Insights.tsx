@@ -5,6 +5,7 @@ import { Avatar } from '../../components/Avatar'
 import { Skeleton } from '../../components/Skeleton'
 import { RecapSheet } from '../../components/RecapSheet'
 import { ProgressSection } from '../../components/ProgressCards'
+import { TodayReviewCard } from '../../components/Accountability'
 import { useWeeklyRecap } from '../../hooks/useWeeklyRecap'
 import type { InsightRange, Insights, InsightCard, Bar } from '../../lib/insights'
 
@@ -63,6 +64,7 @@ export default function InsightsScreen() {
       </div>
 
       {/* ── Weight, streak, calories by macro, BMI (Overview only) ── */}
+      {view === 'overview' && <TodayReviewCard />}
       {view === 'overview' && <ProgressSection />}
 
       {/* ── Range ──────────────────────────────────────────────── */}
