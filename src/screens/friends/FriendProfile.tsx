@@ -16,6 +16,8 @@ import { PhotoViewer } from '../../components/PhotoViewer'
 import { useToast } from '../../components/Toast'
 import type { FeedItem } from '../../hooks/useFeed'
 import { SporkOrb } from '../../components/brand/SporkOrb'
+import { FriendActions, ProfileMenu } from '../../components/FriendActions'
+import { useBlocks, useUnblockUser } from '../../hooks/useBlocks'
 
 export default function FriendProfile() {
   const { username }   = useParams<{ username: string }>()
@@ -25,6 +27,8 @@ export default function FriendProfile() {
   const { data, isLoading, isError } = useFriendProfile(username)
   const { data: connections } = useConnections(username)
   const toggleLike     = useToggleLike()
+  const { data: blocks } = useBlocks()
+  const unblock        = useUnblockUser()
 
   const [optimisticLikes, setOptimisticLikes] = useState<Record<string, boolean>>({})
   const [likeAnimating,   setLikeAnimating]   = useState<Record<string, boolean>>({})
@@ -60,7 +64,10 @@ export default function FriendProfile() {
     )
   }
 
-  if (isError || !data) {
+  // Someone who blocked the viewer looks like a profile that doesn't exist.
+  const hiddenByThem = Boolean(data && blocks?.hidden.has(data.user.id) && !blocks.blockedIds.has(data.user.id))
+
+  if (isError || !data || hiddenByThem) {
     return (
       <div>
         <TopBar title="Profile" />
@@ -74,6 +81,25 @@ export default function FriendProfile() {
   }
 
   const { user, logs } = data
+  const isSelf = user.id === session?.user.id
+  const iBlocked = Boolean(blocks?.blockedIds.has(user.id))
+
+  if (iBlocked) {
+    return (
+      <div className="animate-fade-in">
+        <TopBar title={`@${user.username}`} back="/home/friends" right={<ProfileMenu user={user} blocked />} />
+        <div className="card tint text-center" style={{ padding: 32 }}>
+          <div className="flex justify-center"><Avatar name={user.name} photoUrl={null} size="big" /></div>
+          <h4 style={{ marginTop: 12 }}>You blocked @{user.username}</h4>
+          <p className="small muted">They can’t find you, see your meals or send you requests.</p>
+          <button type="button" className="btn" disabled={unblock.isPending}
+            onClick={() => unblock.mutate(user.id, { onSuccess: () => toast(`Unblocked @${user.username}`), onError: () => toast('Could not unblock — try again', 'error') })}>
+            Unblock
+          </button>
+        </div>
+      </div>
+    )
+  }
   const effectiveStreak = getEffectiveStreak(user.streak_count, user.streak_last_log_date, new Date())
   const avgCalories     = computeAverageCalories(logs)
   const weeklyDays      = computeWeeklyLoggedDays(logs)
@@ -99,7 +125,7 @@ export default function FriendProfile() {
 
   return (
     <div className="animate-fade-in">
-      <TopBar title={`@${user.username}`} back="/home/friends" />
+      <TopBar title={`@${user.username}`} back="/home/friends" right={isSelf ? undefined : <ProfileMenu user={user} blocked={false} onBlocked={() => navigate('/home/friends')} />} />
 
       {/* ── Identity row ─────────────────────────────────────────── */}
       <div className="flex items-center gap-3.5">
@@ -122,6 +148,7 @@ export default function FriendProfile() {
           </span>
         </span>
       </div>
+      {!isSelf && <FriendActions user={user} />}
       <div style={{ height: 15 }} />
 
       {/* ── Streak card ──────────────────────────────────────────── */}
