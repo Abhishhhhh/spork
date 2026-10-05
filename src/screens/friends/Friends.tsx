@@ -5,8 +5,10 @@ import {
   useAcceptFriendRequest,
   useDeclineFriendRequest,
   useFriendships,
+  useRemoveFriendship,
   useSendFriendRequest,
 } from '../../hooks/useFriendships'
+import { useBlocks } from '../../hooks/useBlocks'
 import { useRecommendedUsers } from '../../hooks/useRecommendedUsers'
 import { useSession } from '../../hooks/useSession'
 import { FriendRowSkeleton } from '../../components/Skeleton'
@@ -29,6 +31,8 @@ export default function Friends() {
   const acceptMutation        = useAcceptFriendRequest()
   const declineMutation       = useDeclineFriendRequest()
   const sendMutation          = useSendFriendRequest()
+  const removeMutation        = useRemoveFriendship()
+  const { data: blocks }      = useBlocks()
   const { toast }             = useToast()
 
   const [searchTerm, setSearchTerm]   = useState('')
@@ -79,6 +83,14 @@ export default function Friends() {
     })
   }
 
+  function handleUnsend(userId: string, username: string) {
+    if (!window.confirm(`Unsend your request to @${username}?`)) return
+    removeMutation.mutate(userId, {
+      onSuccess: () => toast('Request unsent'),
+      onError:   () => toast('Could not unsend', 'error'),
+    })
+  }
+
   function handleDecline(id: string) {
     declineMutation.mutate(id, {
       onError: () => toast('Could not decline', 'error'),
@@ -88,7 +100,9 @@ export default function Friends() {
   const showSearch = searchTerm.trim().length > 0
 
   // Suggestions to show = recommendations not already connected
-  const visibleSuggestions = (suggestions ?? []).filter((u) => !connectedIds.has(u.id))
+  const visibleSuggestions = (suggestions ?? []).filter((u) => !connectedIds.has(u.id) && !blocks?.hidden.has(u.id))
+  const visibleResults = results.filter((u) => !blocks?.hidden.has(u.id))
+  const searchMessage = searchError ?? (results.length > 0 && visibleResults.length === 0 ? 'No users found.' : null)
 
   function person(user: FoundUser, desc: string, action: React.ReactNode, onClick?: () => void) {
     const body = (
@@ -128,9 +142,9 @@ export default function Friends() {
       {showSearch && (
         <div className="section animate-slide-down">
           <span className="caps">Results</span>
-          {searchError && !searching && <p className="small muted">{searchError}</p>}
+          {searchMessage && !searching && <p className="small muted">{searchMessage}</p>}
           <div className="list">
-            {results.map((user) => {
+            {visibleResults.map((user) => {
               const connected = connectedIds.has(user.id)
               return (
                 <div key={user.id}>
@@ -187,7 +201,11 @@ export default function Friends() {
               <div className="list">
                 {data.outgoing.map(({ user }) => (
                   <div key={user.id}>
-                    {person(user, user.name, <span className="pill tint">Requested</span>)}
+                    {person(user, user.name, (
+                      <button type="button" onClick={() => handleUnsend(user.id, user.username)} disabled={removeMutation.isPending} className="pill tint">
+                        Unsend
+                      </button>
+                    ))}
                   </div>
                 ))}
               </div>

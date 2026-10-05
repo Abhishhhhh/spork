@@ -119,3 +119,35 @@ export function useSendFriendRequest() {
     },
   })
 }
+
+/** Who `otherId` is to the viewer, from the friendships list. */
+export type Relationship = { kind: 'friends' } | { kind: 'requested' } | { kind: 'incoming'; friendshipId: string } | { kind: 'none' }
+export function relationshipWith(data: FriendshipsData | undefined, otherId: string): Relationship {
+  if (data?.accepted.some((u) => u.id === otherId)) return { kind: 'friends' }
+  if (data?.outgoing.some((r) => r.user.id === otherId)) return { kind: 'requested' }
+  const incoming = data?.incoming.find((r) => r.user.id === otherId)
+  return incoming ? { kind: 'incoming', friendshipId: incoming.friendshipId } : { kind: 'none' }
+}
+
+/** Unsend a pending request or unfollow a friend — removes the row between the two of you. */
+export function useRemoveFriendship() {
+  const { session } = useSession()
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (otherId: string) => {
+      const me = session!.user.id
+      const { data, error } = await supabase.from('friendships').delete()
+        .or(`and(requester_id.eq.${me},recipient_id.eq.${otherId}),and(requester_id.eq.${otherId},recipient_id.eq.${me})`)
+        .select('id')
+      if (error) throw error
+      // RLS turns a disallowed delete into "0 rows" rather than an error.
+      if (!data?.length) throw new Error('Nothing was removed')
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['friendships'] })
+      queryClient.invalidateQueries({ queryKey: ['feed'] })
+      queryClient.invalidateQueries({ queryKey: ['friendProfile'] })
+      queryClient.invalidateQueries({ queryKey: ['recommendedUsers'] })
+    },
+  })
+}
