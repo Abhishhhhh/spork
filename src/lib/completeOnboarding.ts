@@ -10,6 +10,10 @@ export interface CompleteOnboardingInput {
   proteinGoal: number | null
   privacyDefault: 'public' | 'private'
   friendUsernamesToRequest: string[]
+  /** Body stats for Insights (weight chart, BMI). Optional and best-effort. */
+  heightCm?: number | null
+  weightKg?: number | null
+  targetWeightKg?: number | null
 }
 
 async function uploadAvatar(userId: string, original: File): Promise<string> {
@@ -33,8 +37,8 @@ async function uploadAvatar(userId: string, original: File): Promise<string> {
 export async function completeOnboarding(input: CompleteOnboardingInput): Promise<void> {
   const photoUrl = input.avatarFile ? await uploadAvatar(input.userId, input.avatarFile) : null
 
-  // Insert core user row first — protein_goal is persisted separately
-  // so a pending migration on that column doesn't block account creation.
+  // Insert core user row first — optional columns are persisted separately
+  // so a pending migration doesn't block account creation.
   const { error: insertError } = await supabase.from('users').insert({
     id: input.userId,
     username: input.username,
@@ -46,18 +50,19 @@ export async function completeOnboarding(input: CompleteOnboardingInput): Promis
 
   if (insertError) throw insertError
 
-  // Best-effort: save protein_goal.  This column was added in migration
-  // 0005_protein_goal.sql.  If that migration hasn't been applied yet the
-  // update will fail silently — the user row still exists and they proceed
-  // normally.  Once the migration is applied future logins will carry the
-  // correct value.
-  if (input.proteinGoal !== null) {
-    void supabase
-      .from('users')
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .update({ protein_goal: input.proteinGoal } as any)
-      .eq('id', input.userId)
-  }
+  // Best-effort extras: protein_goal (migration 0005) and body stats for
+  // Insights (migration 0013). If a migration hasn't run yet the write just
+  // returns an error, which we ignore — the account is already created.
+  // These must be awaited: a Supabase query only sends when awaited, so the
+  // old `void supabase…update()` here never actually reached the database.
+  // Separate requests, so a missing 0013 column can't take protein_goal down with it.
+  await Promise.all([
+    input.proteinGoal !== null ? supabase.from('users').update({ protein_goal: input.proteinGoal }).eq('id', input.userId) : null,
+    input.heightCm || input.targetWeightKg
+      ? supabase.from('users').update({ height_cm: input.heightCm ?? null, target_weight_kg: input.targetWeightKg ?? null }).eq('id', input.userId)
+      : null,
+    input.weightKg ? supabase.from('weight_logs').insert({ user_id: input.userId, weight_kg: input.weightKg }) : null,
+  ].map((query) => Promise.resolve(query).catch(() => null)))
 
   if (input.friendUsernamesToRequest.length === 0) return
 

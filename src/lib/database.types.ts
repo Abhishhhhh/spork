@@ -14,6 +14,9 @@ export interface Database {
           streak_last_log_date: string | null
           reminder_time: string | null
           created_at: string
+          /** Migration 0013 — may be absent until it runs. */
+          height_cm?: number | null
+          target_weight_kg?: number | null
         }
         Insert: {
           id: string
@@ -35,7 +38,21 @@ export interface Database {
           streak_count?: number
           streak_last_log_date?: string | null
           reminder_time?: string | null
+          height_cm?: number | null
+          target_weight_kg?: number | null
         }
+        Relationships: []
+      }
+      weight_logs: {
+        Row: {
+          id: string
+          user_id: string
+          weight_kg: number
+          logged_on: string
+          created_at: string
+        }
+        Insert: { user_id: string; weight_kg: number; logged_on?: string }
+        Update: { weight_kg?: number }
         Relationships: []
       }
       friendships: {
