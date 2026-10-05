@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useOnboardingStore } from '../../store/onboardingStore'
 import { OnboardingProgress } from '../../components/OnboardingProgress'
-import { TopBar } from '../../components/TopBar'
 import { Ring } from '../../components/Ring'
 import { OptionIcon } from '../../components/OptionIcon'
 import { SporkLoader } from '../../components/brand/SporkLoader'
@@ -29,54 +28,59 @@ const PACE_LABELS  = { slow: 'Relaxed', recommended: 'Moderate', fast: 'Aggressi
 // ── Loading screen ("building your plan") ────────────────────────────────────
 
 const LOADING_STEPS = [
-  'Analysing your body stats',
-  'Calculating your TDEE',
-  'Factoring in your activity',
-  'Setting your macro targets',
-  'Calculating your personalised targets',
+  'Reading your body stats',
+  'Working out daily energy',
+  'Setting protein, carbs & fat',
+  'Your goal date',
 ]
 
+const RING_R = 82
+const RING_C = 2 * Math.PI * RING_R
+
 function PlanLoader({ onDone }: { onDone: () => void }) {
-  const [stepIdx, setStepIdx] = useState(0)
   const [progress, setProgress] = useState(0)
 
   useEffect(() => {
     const totalMs = 2400
-    const stepMs  = totalMs / LOADING_STEPS.length
-
-    const stepTimer = setInterval(() => {
-      setStepIdx((i) => Math.min(i + 1, LOADING_STEPS.length - 1))
-    }, stepMs)
-
     const progressTimer = setInterval(() => {
       setProgress((p) => {
         if (p >= 100) { clearInterval(progressTimer); return 100 }
         return p + 2
       })
     }, totalMs / 50)
-
     const doneTimer = setTimeout(onDone, totalMs + 200)
-
     return () => {
-      clearInterval(stepTimer)
       clearInterval(progressTimer)
       clearTimeout(doneTimer)
     }
   }, [onDone])
 
+  // Each step owns an equal slice of the bar; it ticks off once its slice is full.
+  const current = Math.min(LOADING_STEPS.length - 1, Math.floor((progress / 100) * LOADING_STEPS.length))
+
   return (
-    <div className="screen min-h-screen animate-fade-in">
-      <TopBar title="Your plan" back={null} />
-      <div className="flex flex-col items-center justify-center text-center" style={{ minHeight: 'calc(100vh - 160px)' }}>
-        <div className="icon-box" style={{ width: 120, height: 120 }}><SporkLoader size={60} /></div>
-        <div style={{ height: 28 }} />
-        <h2>Building your plan</h2>
-        <p className="muted">{LOADING_STEPS[stepIdx]}</p>
-        <div className="progress" style={{ width: 220, marginTop: 30 }}>
-          <i style={{ width: `${progress}%` }} />
-        </div>
-        <p className="tiny muted">{progress}%</p>
+    <div className="screen flex min-h-screen flex-col items-center justify-center text-center animate-fade-in">
+      <div className="relative grid place-items-center" style={{ width: 170, height: 170 }}>
+        <svg width={170} height={170} viewBox="0 0 170 170" aria-hidden="true" className="absolute inset-0" style={{ transform: 'rotate(-90deg)' }}>
+          <circle cx={85} cy={85} r={RING_R} fill="none" stroke="var(--color-soft2)" strokeWidth={6} />
+          <circle cx={85} cy={85} r={RING_R} fill="none" stroke="var(--color-ink)" strokeWidth={6} strokeLinecap="round"
+            strokeDasharray={RING_C} strokeDashoffset={RING_C * (1 - progress / 100)} />
+        </svg>
+        <SporkLoader size={64} />
       </div>
+      <div className="kpi" style={{ fontSize: 40, marginTop: 18 }} aria-hidden="true">{progress}%</div>
+      <h2 role="status">Building your plan</h2>
+      <ul className="plan-steps">
+        {LOADING_STEPS.map((step, i) => {
+          const state = progress >= 100 || i < current ? 'done' : i === current ? 'now' : 'todo'
+          return (
+            <li key={step} className={state}>
+              <span className="mark" aria-hidden="true">{state === 'done' ? '✓' : ''}</span>
+              {step}
+            </li>
+          )
+        })}
+      </ul>
     </div>
   )
 }
