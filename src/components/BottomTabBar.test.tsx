@@ -1,11 +1,12 @@
 import { renderToStaticMarkup } from 'react-dom/server'
 import { MemoryRouter } from 'react-router-dom'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { describe, expect, it } from 'vitest'
 import { BottomTabBar } from './BottomTabBar'
 
 describe('BottomTabBar', () => {
   it('has 5 tabs with Log dead-centre: Home, Insights, Log, Friends, Profile', () => {
-    const html = renderToStaticMarkup(<MemoryRouter initialEntries={['/home/feed']}><BottomTabBar /></MemoryRouter>)
+    const html = renderToStaticMarkup(<QueryClientProvider client={new QueryClient()}><MemoryRouter initialEntries={['/home/feed']}><BottomTabBar /></MemoryRouter></QueryClientProvider>)
     expect(html).toContain('aria-label="Main navigation"')
     const order = ['/home/feed', '/home/insights', '/home/log', '/home/friends', '/home/profile'].map((p) => html.indexOf(`href="${p}"`))
     expect(order.every((i) => i >= 0)).toBe(true)
