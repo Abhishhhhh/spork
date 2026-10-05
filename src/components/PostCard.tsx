@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQueryClient, useMutation } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
+import { deleteMealPhotos } from '../lib/mealPhotos'
 import { relativeTime } from '../lib/relativeTime'
 import { computeLikeDelta } from '../lib/likeDelta'
 import { likedByLabel } from '../lib/likedBy'
@@ -29,9 +30,12 @@ interface PostCardProps {
 function useDeletePost() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: async (logId: string) => {
-      const { error } = await supabase.from('logs').delete().eq('id', logId)
+    mutationFn: async ({ logId, photoPath }: { logId: string; photoPath: string | null }) => {
+      const { data, error } = await supabase.from('logs').delete().eq('id', logId).select('id')
       if (error) throw error
+      // RLS turns a disallowed delete into "0 rows" rather than an error.
+      if (!data?.length) throw new Error('Post was not deleted')
+      if (photoPath) await deleteMealPhotos([photoPath]).catch(() => null)
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['feed'] })
@@ -82,7 +86,7 @@ export function PostCard({ item, index = 0, viewerId, optimisticLiked, likeAnima
   function handleDelete() {
     setShowMenu(false)
     if (!window.confirm('Delete this meal post? This cannot be undone.')) return
-    deletePost.mutate(log.id, {
+    deletePost.mutate({ logId: log.id, photoPath: log.photo_url }, {
       onSuccess: () => toast('Post deleted'),
       onError:   () => toast('Could not delete — try again', 'error'),
     })
