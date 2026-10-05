@@ -9,6 +9,7 @@ import { ThemeToggle } from '../../components/ThemeToggle'
 import { Skeleton } from '../../components/Skeleton'
 import { useToast } from '../../components/Toast'
 import { TopBar } from '../../components/TopBar'
+import { BlockedAccounts } from '../../components/FriendActions'
 import { isValidUsernameFormat } from '../../lib/username'
 import { deleteAccount } from '../../lib/deleteAccount'
 
@@ -181,6 +182,8 @@ export default function SettingsScreen() {
             />
           </div>
         </div>
+        <div style={{ height: 10 }} />
+        <BlockedAccounts />
       </div>
 
       {/* ── Reminders ─────────────────────────────────────────── */}
