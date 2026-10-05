@@ -58,3 +58,21 @@ it('handles missing protein_goal gracefully', async () => {
   // protein update should NOT be called when proteinGoal is null
   expect(updateMock).not.toHaveBeenCalled()
 })
+
+it('saves body stats and the first weigh-in, and a failure there never blocks sign-up', async () => {
+  // The 0013 migration hasn't run: the body-stats update and weigh-in both fail.
+  eqMock.mockImplementation(() => Promise.resolve({ error: null }))
+  updateMock.mockImplementation((fields: Record<string, unknown>) =>
+    ({ eq: () => ('height_cm' in fields ? Promise.reject(new Error('column does not exist')) : Promise.resolve({ error: null })) }))
+  insertMock
+    .mockResolvedValueOnce({ error: null })                               // users row
+    .mockRejectedValueOnce(new Error('relation weight_logs does not exist')) // weigh-in
+    .mockResolvedValue({ error: null })                                    // friendships
+
+  await expect(completeOnboarding({ ...input, heightCm: 172, weightKg: 76, targetWeightKg: 70 })).resolves.toBeUndefined()
+
+  expect(updateMock).toHaveBeenCalledWith({ protein_goal: 120 })
+  expect(updateMock).toHaveBeenCalledWith({ height_cm: 172, target_weight_kg: 70 })
+  expect(from).toHaveBeenCalledWith('weight_logs')
+  expect(insertMock).toHaveBeenCalledWith({ user_id: 'user-a', weight_kg: 76 })
+})

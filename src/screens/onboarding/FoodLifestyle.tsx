@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useOnboardingStore, type MealPrepTime, type DietaryPattern } from '../../store/onboardingStore'
 import { OnboardingProgress } from '../../components/OnboardingProgress'
-import { TopBar } from '../../components/TopBar'
 import { OptionIcon, type IconName } from '../../components/OptionIcon'
 
 const DIETARY_OPTIONS: { value: DietaryPattern; icon: IconName; label: string }[] = [
@@ -43,9 +42,8 @@ export default function FoodLifestyle() {
   }
 
   return (
-    <div className="screen min-h-screen">
-      <TopBar title="Your plan" back="/onboarding/activity" />
-      <OnboardingProgress step={4} total={6} />
+    <div className="screen onb min-h-screen">
+      <OnboardingProgress step={4} total={6} back="/onboarding/activity" />
 
       <h2>Food &amp; lifestyle</h2>
       <p className="muted">Helps personalise meal logging and suggestions</p>
@@ -119,7 +117,11 @@ export default function FoodLifestyle() {
         </div>
       </div>
 
-      <button type="button" onClick={handleContinue} className="btn">Continue</button>
+      <div className="cta-dock">
+
+        <button type="button" onClick={handleContinue} className="btn">Continue</button>
+
+      </div>
     </div>
   )
 }

@@ -109,6 +109,9 @@ export default function AddFirstFriends() {
         // Meals are shared with friends by default; each post (and Settings) can still go private.
         privacyDefault: 'public',
         friendUsernamesToRequest,
+        heightCm: useOnboardingStore.getState().heightCm,
+        weightKg: useOnboardingStore.getState().weightKg,
+        targetWeightKg: useOnboardingStore.getState().targetWeightKg,
       })
       reset()
       queryClient.removeQueries({ queryKey: ['currentUser'] })

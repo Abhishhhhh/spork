@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useOnboardingStore } from '../../store/onboardingStore'
 import { OnboardingProgress } from '../../components/OnboardingProgress'
 import { TopBar } from '../../components/TopBar'
+import { Ring } from '../../components/Ring'
 import { OptionIcon } from '../../components/OptionIcon'
 import { SporkLoader } from '../../components/brand/SporkLoader'
 import { computeTimeline, PACE_RATES } from '../../lib/calorieGoal'
@@ -110,59 +111,48 @@ export default function YourPlan() {
     return <PlanLoader onDone={() => setRevealed(true)} />
   }
 
-  const macros = [
-    { label: 'Protein', icon: 'protein' as const, value: `${proteinGoal}g` },
-    { label: 'Carbs',   icon: 'carbs' as const,   value: `${Math.round((calorieGoal * 0.4) / 4)}g` },
-    { label: 'Fat',     icon: 'fat' as const,     value: `${Math.round((calorieGoal * 0.3) / 9)}g` },
+  const proteinKcal = proteinGoal * 4
+  const carbsG = Math.round((calorieGoal * 0.4) / 4)
+  const fatG   = Math.round((calorieGoal * 0.3) / 9)
+  // Each ring shows that macro's share of the day's calories.
+  const rings = [
+    { label: 'Protein', color: 'var(--macro-protein)', value: `${proteinGoal}g`, share: proteinKcal / calorieGoal },
+    { label: 'Carbs',   color: 'var(--macro-carbs)',   value: `${carbsG}g`,      share: 0.4 },
+    { label: 'Fat',     color: 'var(--macro-fat)',     value: `${fatG}g`,        share: 0.3 },
   ]
+  const change = targetKg ? Math.round(Math.abs(weightKg - targetKg) * 10) / 10 : 0
 
   return (
-    <div className="screen min-h-screen animate-slide-up">
-      <TopBar title="Your plan" back="/onboarding/experience" />
-      <OnboardingProgress step={6} total={6} />
+    <div className="screen onb min-h-screen animate-slide-up">
+      <OnboardingProgress step={6} total={6} back="/onboarding/experience" />
 
-      <p className="muted small">Your personalised plan is ready ✦</p>
-      <h2>Here’s what we worked out for you</h2>
-
-      {/* The big plan card */}
-      <div className="card ink">
-        <span className="caps">
+      <div className="text-center" style={{ marginTop: 22 }}>
+        <span className="circle mx-auto" style={{ background: 'var(--color-ink)', color: 'var(--color-on-ink)' }} aria-hidden="true">✓</span>
+        <h2 style={{ marginTop: 14 }}>Your plan is ready</h2>
+        <p className="muted small">
           {GOAL_LABELS[goalType]} · {PACE_LABELS[pace]} pace{weeklyRate > 0 ? ` · ${weeklyRate} kg/wk` : ''}
-        </span>
-        <div style={{ height: 28 }} />
-        <div className="big">{calorieGoal.toLocaleString()}</div>
-        <p>calories per day</p>
-        {proteinGoal > 0 && (
-          <>
-            <div className="divider" />
-            <div className="flex items-center justify-between">
-              <span>Protein goal</span>
-              <b>{proteinGoal}g/day</b>
-            </div>
-          </>
+        </p>
+        {timeline && targetKg && change > 0 && (
+          <span className="pill tint" style={{ marginTop: 12, fontSize: 12.5, padding: '8px 14px' }}>
+            {goalType === 'lose' ? 'Lose' : 'Gain'} {change} kg · {formatWeeks(timeline.weeksToGoal).toLowerCase()}, by {getTargetDate(timeline.weeksToGoal)}
+          </span>
         )}
       </div>
 
-      {/* Timeline — only for lose/gain */}
-      {timeline && targetKg && (
-        <div className="card">
-          <p className="caps">At this pace, you could reach {targetKg} kg in</p>
-          <h3 style={{ marginTop: 8 }}>{formatWeeks(timeline.weeksToGoal)}</h3>
-          <p className="small muted">Estimated by {getTargetDate(timeline.weeksToGoal)}</p>
-        </div>
-      )}
-
-      {/* Macro split */}
-      <div className="section">
-        <span className="caps">Suggested macro split</span>
-        <div className="tile-grid three">
-          {macros.map((m) => (
-            <div key={m.label} className="tile compact">
-              <span className="icon"><OptionIcon name={m.icon} /></span>
-              <span>
-                <b>{m.value}</b>
-                <small className="block">{m.label}</small>
-              </span>
+      <div className="card" style={{ marginTop: 20 }}>
+        <b className="block font-semibold">Your daily targets</b>
+        <p className="tiny muted" style={{ marginBottom: 12 }}>You can change these anytime in Settings</p>
+        <div className="ring-grid">
+          <div className="ring-card">
+            <span className="t"><OptionIcon name="flame" size={15} /> Calories</span>
+            <Ring progress={1} color="var(--color-ink)">{calorieGoal.toLocaleString()}</Ring>
+            <p className="sub">kcal per day</p>
+          </div>
+          {rings.map((r) => (
+            <div key={r.label} className="ring-card">
+              <span className="t"><i className="macro-dot" style={{ background: r.color }} />{r.label}</span>
+              <Ring progress={r.share} color={r.color}>{r.value}</Ring>
+              <p className="sub">per day</p>
             </div>
           ))}
         </div>
@@ -170,9 +160,11 @@ export default function YourPlan() {
 
       <p className="hint">Create a free account to save this plan, log meals and build your streak with friends</p>
 
-      <button type="button" onClick={() => navigate('/onboarding/create-account')} className="btn">
-        Save my plan →
-      </button>
+      <div className="cta-dock">
+        <button type="button" onClick={() => navigate('/onboarding/create-account')} className="btn">
+          Save my plan →
+        </button>
+      </div>
     </div>
   )
 }

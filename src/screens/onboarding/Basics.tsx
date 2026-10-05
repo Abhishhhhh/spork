@@ -1,9 +1,10 @@
-import { useState, type FormEvent } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useOnboardingStore } from '../../store/onboardingStore'
 import { OnboardingProgress } from '../../components/OnboardingProgress'
-import { TopBar } from '../../components/TopBar'
 import { OptionIcon, type IconName } from '../../components/OptionIcon'
+import { WheelPicker } from '../../components/WheelPicker'
+import { cmToFeetInches, feetInchesToCm, kgToLb, lbToKg, loadUnits, saveUnits, type Units } from '../../lib/units'
 
 type Sex = 'male' | 'female' | 'other'
 
@@ -13,97 +14,89 @@ const SEX_OPTIONS: { value: Sex; icon: IconName; label: string }[] = [
   { value: 'other',  icon: 'sex_other', label: 'Other' },
 ]
 
+const range = (from: number, to: number) => Array.from({ length: to - from + 1 }, (_, i) => from + i)
+const CM = range(120, 230)
+const KG = range(30, 250)
+const FT = range(3, 8)
+const IN = range(0, 11)
+const LB = range(66, 550)
+const AGES = range(13, 100)
+
 export default function Basics() {
   const navigate = useNavigate()
   const store = useOnboardingStore()
 
-  // Pre-populate from store (back navigation restores values)
-  const [heightFt, setHeightFt] = useState(
-    store.heightCm ? String(Math.floor(store.heightCm / 30.48)) : ''
-  )
-  const [heightIn, setHeightIn] = useState(
-    store.heightCm
-      ? String(Math.round((store.heightCm / 2.54) % 12))
-      : ''
-  )
-  const [weightKg, setWeightKg]   = useState(store.weightKg ? String(store.weightKg) : '')
-  const [age, setAge]             = useState(store.age ? String(store.age) : '')
+  const [units, setUnits] = useState<Units>(loadUnits)
+  // Back navigation restores the earlier answers; a first visit starts mid-range.
+  const [heightCm, setHeightCm] = useState(Math.round(store.heightCm || 170))
+  const [weightKg, setWeightKg] = useState(Math.round(store.weightKg || 70))
+  const [age, setAge]           = useState(store.age || 25)
   // Nothing pre-selected on a first visit; coming back restores the earlier choice.
-  const [sex, setSex]             = useState<Sex | null>(store.heightCm ? store.sex : null)
-  const [error, setError]         = useState<string | null>(null)
+  const [sex, setSex]           = useState<Sex | null>(store.heightCm ? store.sex : null)
+  const [error, setError]       = useState<string | null>(null)
 
-  function handleSubmit(e: FormEvent) {
-    e.preventDefault()
-    const ft  = Number(heightFt)
-    const ins = Number(heightIn || '0')
-    const wt  = Number(weightKg)
-    const ag  = Number(age)
+  const { ft, inch } = cmToFeetInches(heightCm)
 
-    if (!ft || ft < 3 || ft > 8)      { setError('Enter a valid height (3–8 ft).'); return }
-    if (ins < 0 || ins > 11)          { setError('Inches must be 0–11.'); return }
-    if (!wt || wt < 30 || wt > 300)   { setError('Enter weight in kg (30–300).'); return }
-    if (!ag || ag < 10 || ag > 100)   { setError('Enter a valid age (10–100).'); return }
-    if (!sex)                         { setError('Choose Female, Male or Other.'); return }
+  function switchUnits(next: Units) {
+    setUnits(next)
+    saveUnits(next)
+  }
 
+  function handleContinue() {
+    if (!sex) { setError('Choose Female, Male or Other.'); return }
     setError(null)
-    const heightCm = (ft * 12 + ins) * 2.54
-    store.setBasics({ heightCm, weightKg: wt, age: ag, sex })
+    store.setBasics({ heightCm, weightKg, age, sex })
     navigate('/onboarding/goal')
   }
 
   return (
-    <div className="screen min-h-screen">
-      <TopBar title="Your plan" back="/welcome" />
-      <OnboardingProgress step={1} total={6} />
+    <div className="screen onb min-h-screen">
+      <OnboardingProgress step={1} total={6} back="/welcome" />
 
-      <h2>The basics</h2>
-      <p className="muted">A few details to calculate your daily target</p>
-      <div style={{ height: 28 }} />
+      <h2>Height &amp; weight</h2>
+      <p className="muted">Used to work out your daily calorie target</p>
 
-      <form onSubmit={handleSubmit}>
-        <div className="inline-fields">
-          <div className="field">
-            <label htmlFor="ht-ft">Height · feet</label>
-            <input id="ht-ft" inputMode="numeric" placeholder="ft"
-              value={heightFt} onChange={(e) => setHeightFt(e.target.value)} />
-          </div>
-          <div className="field">
-            <label htmlFor="ht-in">Inches</label>
-            <input id="ht-in" inputMode="numeric" placeholder="in"
-              value={heightIn} onChange={(e) => setHeightIn(e.target.value)} />
-          </div>
+      <div className="units" role="group" aria-label="Units">
+        <button type="button" className={units === 'imperial' ? '' : 'off'} onClick={() => switchUnits('imperial')}>Imperial</button>
+        <button type="button" role="switch" aria-checked={units === 'metric'} aria-label="Use metric units"
+          onClick={() => switchUnits(units === 'metric' ? 'imperial' : 'metric')}
+          className={`switch ${units === 'metric' ? '' : 'off'}`} />
+        <button type="button" className={units === 'metric' ? '' : 'off'} onClick={() => switchUnits('metric')}>Metric</button>
+      </div>
+
+      {units === 'metric' ? (
+        <div className="flex gap-2.5">
+          <WheelPicker label="Height" values={CM} value={heightCm} onChange={setHeightCm} format={(v) => `${v} cm`} />
+          <WheelPicker label="Weight" values={KG} value={Math.min(250, Math.max(30, Math.round(weightKg)))} onChange={setWeightKg} format={(v) => `${v} kg`} />
+          <WheelPicker label="Age" values={AGES} value={age} onChange={setAge} />
         </div>
-
-        <div className="field">
-          <label htmlFor="wt">Current weight · kg</label>
-          <input id="wt" inputMode="decimal" placeholder="kg"
-            value={weightKg} onChange={(e) => setWeightKg(e.target.value)} />
+      ) : (
+        <div className="flex gap-1.5">
+          <WheelPicker label="Feet" values={FT} value={ft} onChange={(v) => setHeightCm(feetInchesToCm(v, inch))} format={(v) => `${v} ft`} />
+          <WheelPicker label="Inches" values={IN} value={inch} onChange={(v) => setHeightCm(feetInchesToCm(ft, v))} format={(v) => `${v} in`} />
+          <WheelPicker label="Weight" values={LB} value={Math.min(550, Math.max(66, kgToLb(weightKg)))} onChange={(v) => setWeightKg(lbToKg(v))} format={(v) => `${v} lb`} />
+          <WheelPicker label="Age" values={AGES} value={age} onChange={setAge} />
         </div>
+      )}
 
-        <div className="field">
-          <label htmlFor="age">Age</label>
-          <input id="age" inputMode="numeric" placeholder="years"
-            value={age} onChange={(e) => setAge(e.target.value)} />
+      <div className="section">
+        <span className="caps">Sex used for calorie calculation</span>
+        <div className="tile-grid three">
+          {SEX_OPTIONS.map((opt) => (
+            <button key={opt.value} type="button" onClick={() => { setSex(opt.value); setError(null) }}
+              className={`tile compact ${sex === opt.value ? 'sel' : ''}`} aria-pressed={sex === opt.value}>
+              <span className="icon"><OptionIcon name={opt.icon} /></span>
+              <b>{opt.label}</b>
+            </button>
+          ))}
         </div>
+      </div>
 
-        <div className="section">
-          <span className="caps">Sex used for calorie calculation</span>
-          <div className="tile-grid three">
-            {SEX_OPTIONS.map((opt) => (
-              <button key={opt.value} type="button" onClick={() => setSex(opt.value)}
-                className={`tile ${sex === opt.value ? 'sel' : ''}`} aria-pressed={sex === opt.value}>
-                <span className="icon"><OptionIcon name={opt.icon} /></span>
-                <b>{opt.label}</b>
-                <small>{sex === opt.value ? 'Selected' : 'Tap to choose'}</small>
-              </button>
-            ))}
-          </div>
-        </div>
+      {error && <p className="error-text">{error}</p>}
 
-        {error && <p className="error-text">{error}</p>}
-
-        <button type="submit" className="btn">Continue</button>
-      </form>
+      <div className="cta-dock">
+        <button type="button" onClick={handleContinue} className="btn">Continue</button>
+      </div>
     </div>
   )
 }
