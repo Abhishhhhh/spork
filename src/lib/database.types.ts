@@ -47,6 +47,18 @@ export interface Database {
         }
         Relationships: []
       }
+      challenges: {
+        Row: { id: string; creator_id: string; type: 'protein' | 'on_target' | 'log_daily' | 'hydration'; name: string; starts_on: string; ends_on: string; created_at: string }
+        Insert: { creator_id: string; type: 'protein' | 'on_target' | 'log_daily' | 'hydration'; name: string; starts_on: string; ends_on: string }
+        Update: never
+        Relationships: []
+      }
+      challenge_members: {
+        Row: { challenge_id: string; user_id: string; status: 'invited' | 'joined' | 'declined'; created_at: string }
+        Insert: { challenge_id: string; user_id: string; status?: 'invited' | 'joined' | 'declined' }
+        Update: { status?: 'invited' | 'joined' | 'declined' }
+        Relationships: []
+      }
       water_logs: {
         Row: { user_id: string; logged_on: string; ml: number; updated_at: string }
         Insert: { user_id: string; logged_on?: string; ml: number; updated_at?: string }
