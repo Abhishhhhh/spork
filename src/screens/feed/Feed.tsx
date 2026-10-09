@@ -8,12 +8,7 @@ import { PostCard } from '../../components/PostCard'
 import { FeedCardSkeleton } from '../../components/Skeleton'
 import { useToast } from '../../components/Toast'
 import { SporkOrb } from '../../components/brand/SporkOrb'
-import { useWeeklyRecap } from '../../hooks/useWeeklyRecap'
-import { useCurrentUser } from '../../hooks/useCurrentUser'
-import { RecapSheet } from '../../components/RecapSheet'
-import { isRecapSeason } from '../../lib/weeklyRecap'
-
-const RECAP_HIDDEN_KEY = 'spork-recap-hidden-week'
+import { WaterCard } from '../../components/WaterCard'
 
 export default function Feed() {
   const navigate                          = useNavigate()
@@ -24,22 +19,6 @@ export default function Feed() {
   const { toast }                         = useToast()
   const [optimisticLikes, setOptimisticLikes] = useState<Record<string, boolean>>({})
   const [likeAnimating,   setLikeAnimating]   = useState<Record<string, boolean>>({})
-  const { data: recap }                   = useWeeklyRecap()
-  const { data: me }                      = useCurrentUser()
-  const [showRecap, setShowRecap]         = useState(false)
-  // Hidden per week, on this device only.
-  const [hiddenWeek, setHiddenWeek]       = useState<string | null>(() => {
-    try { return localStorage.getItem(RECAP_HIDDEN_KEY) } catch { return null }
-  })
-  const recapWeek = recap ? recap.weekStart.toDateString() : null
-  const showRecapCard = recap && isRecapSeason() && hiddenWeek !== recapWeek
-
-  function hideRecapCard() {
-    if (!recapWeek) return
-    setHiddenWeek(recapWeek)
-    try { localStorage.setItem(RECAP_HIDDEN_KEY, recapWeek) } catch { /* private mode */ }
-  }
-
   function handleLike(logId: string, logOwnerId: string, currentlyLiked: boolean) {
     const next = !currentlyLiked
     setOptimisticLikes((p) => ({ ...p, [logId]: next }))
@@ -74,20 +53,8 @@ export default function Feed() {
         </span>
       </div>
 
-      {/* ── Weekly recap (Mon–Wed) ─────────────────────────────────── */}
-      {showRecapCard && (
-        <div className="card tint flex items-center gap-3">
-          <button type="button" onClick={() => setShowRecap(true)} className="no-press min-w-0 flex-1 text-left">
-            <span className="caps block">Week in review · {recap.label}</span>
-            <b className="block font-semibold" style={{ marginTop: 6 }}>
-              {recap.daysLogged}/7 days logged · {recap.meals} meal{recap.meals === 1 ? '' : 's'}
-            </b>
-            <small className="muted">See your recap →</small>
-          </button>
-          <button type="button" onClick={hideRecapCard} aria-label="Hide this week’s recap" className="circle sm flex-none">✕</button>
-        </div>
-      )}
-      {showRecap && recap && <RecapSheet recap={recap} username={me?.username ?? 'you'} onClose={() => setShowRecap(false)} />}
+      {/* ── Water (week in review now lives in Insights) ─────────── */}
+      <WaterCard />
 
       <div className="section">
         <div className="flex items-center justify-between">

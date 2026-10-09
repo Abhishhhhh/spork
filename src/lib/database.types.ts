@@ -17,6 +17,8 @@ export interface Database {
           /** Migration 0013 — may be absent until it runs. */
           height_cm?: number | null
           target_weight_kg?: number | null
+          water_goal_ml?: number | null
+          water_glass_ml?: number | null
         }
         Insert: {
           id: string
@@ -40,7 +42,15 @@ export interface Database {
           reminder_time?: string | null
           height_cm?: number | null
           target_weight_kg?: number | null
+          water_goal_ml?: number | null
+          water_glass_ml?: number | null
         }
+        Relationships: []
+      }
+      water_logs: {
+        Row: { user_id: string; logged_on: string; ml: number; updated_at: string }
+        Insert: { user_id: string; logged_on?: string; ml: number; updated_at?: string }
+        Update: { ml?: number; updated_at?: string }
         Relationships: []
       }
       weight_logs: {
