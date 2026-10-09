@@ -287,6 +287,10 @@
     justify-content: center; flex-direction: column; gap: 15px; text-align: center; padding: 25px;
   }
   .photo-placeholder .icon { font-size: 44px; line-height: 1; color: var(--color-ink); }
+  .scan-box { min-height: 0; gap: 14px; padding: 26px 20px 20px; }
+  .scan-box .scan-icon { width: 64px; height: 64px; border-radius: 22px; display: grid; place-items: center; background: var(--color-paper); color: var(--color-ink); }
+  .scan-box .scan-actions { display: flex; gap: 8px; width: 100%; max-width: 280px; }
+  .scan-box .scan-actions .pill { flex: 1; padding: 12px 14px; font-size: 13px; font-weight: 600; gap: 7px; }
 
   /* Feed */
   .feed-card { background: var(--color-paper); border-radius: 29px; padding: 15px; margin: 12px 0; }

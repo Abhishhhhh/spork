@@ -15,6 +15,9 @@ export function WheelPicker<T extends number | string>({ label, values, value, o
 }) {
   const listRef = useRef<HTMLDivElement>(null)
   const settleTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  /** Row a tap/arrow is scrolling to — the settle check waits for it (iOS smooth-scrolls slowly). */
+  const target = useRef<number | null>(null)
+  const targetTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const index = Math.max(0, values.indexOf(value))
 
   // Keep the scroll position in sync when the value changes from outside (e.g. units switch).
@@ -29,14 +32,28 @@ export function WheelPicker<T extends number | string>({ label, values, value, o
       const el = listRef.current
       if (!el) return
       const i = Math.min(values.length - 1, Math.max(0, Math.round(el.scrollTop / ITEM)))
+      if (target.current !== null) {
+        if (i === target.current) target.current = null
+        return
+      }
       if (values[i] !== value) onChange(values[i])
     }, 90)
   }
 
   function select(i: number) {
-    listRef.current?.scrollTo({ top: i * ITEM, behavior: 'smooth' })
+    const el = listRef.current
+    target.current = i
+    el?.scrollTo({ top: i * ITEM, behavior: 'smooth' })
     onChange(values[i])
+    // If the animation stalls (e.g. snap fights it), land on the row anyway.
+    clearTimeout(targetTimer.current)
+    targetTimer.current = setTimeout(() => {
+      if (el && target.current === i) el.scrollTop = i * ITEM
+      target.current = null
+    }, 600)
   }
+
+  useEffect(() => () => { clearTimeout(settleTimer.current); clearTimeout(targetTimer.current) }, [])
 
   function handleKey(e: React.KeyboardEvent) {
     if (e.key === 'ArrowDown' && index < values.length - 1) { e.preventDefault(); select(index + 1) }
