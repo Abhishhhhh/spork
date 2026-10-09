@@ -3,6 +3,8 @@ import { useLogDraftStore } from '../../store/logDraft'
 import { useTodayStats } from '../../hooks/useTodayStats'
 import { TopBar } from '../../components/TopBar'
 import DailyProgress from './DailyProgress'
+import { SporkOrb } from '../../components/brand/SporkOrb'
+import type { PastMeal } from '../../lib/logAgain'
 
 interface CaptureProps {
   onGetEstimate: () => void
@@ -10,9 +12,12 @@ interface CaptureProps {
   onRepeat?: () => void
   recentMealName?: string
   onScanPackaged?: () => void
+  /** Most-logged meals for the "Log again" row. */
+  usualMeals?: { meal: PastMeal; photo: string | null }[]
+  onLogAgain?: (meal: PastMeal) => void
 }
 
-export default function Capture({ onGetEstimate, onSkipPhoto, onRepeat, recentMealName, onScanPackaged }: CaptureProps) {
+export default function Capture({ onGetEstimate, onSkipPhoto, onRepeat, recentMealName, onScanPackaged, usualMeals, onLogAgain }: CaptureProps) {
   const { photoFile, description, setPhoto, setDescription } = useLogDraftStore()
   const { data: stats, isError, refetch } = useTodayStats()
 
@@ -40,6 +45,31 @@ export default function Capture({ onGetEstimate, onSkipPhoto, onRepeat, recentMe
         <button type="button" onClick={() => refetch()} className="small muted block" style={{ margin: '12px 0' }}>
           Today’s progress couldn’t load · Tap to retry
         </button>
+      )}
+
+      {/* ── Log again: one tap re-opens a usual meal on the review screen ── */}
+      {!photoFile && onLogAgain && usualMeals && usualMeals.length > 0 && (
+        <section style={{ marginTop: 16 }}>
+          <div className="flex items-center justify-between">
+            <span className="caps">Log again</span>
+            <span className="tiny muted">Your usual meals</span>
+          </div>
+          <div className="scroll-hide -mx-5 flex gap-2.5 overflow-x-auto px-5" style={{ marginTop: 10, paddingBottom: 2 }}>
+            {usualMeals.map(({ meal, photo }) => (
+              <button key={meal.id} type="button" onClick={() => onLogAgain(meal)} className="logagain-card no-press"
+                aria-label={`Log ${meal.name} again`}>
+                <span className="logagain-thumb">
+                  {photo ? <img src={photo} alt="" /> : <SporkOrb size={30} />}
+                  <i aria-hidden="true">+</i>
+                </span>
+                <b className="block truncate">{meal.name}</b>
+                <small className="muted block truncate">
+                  {Math.round(meal.calories_final ?? meal.calories_estimate ?? 0)} kcal · {Math.round(meal.protein_final_g ?? meal.protein_estimate_g ?? 0)} g P
+                </small>
+              </button>
+            ))}
+          </div>
+        </section>
       )}
 
       {/* ── Photo area ──────────────────────────────────────────── */}
