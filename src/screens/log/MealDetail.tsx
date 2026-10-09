@@ -21,6 +21,7 @@ import { LikersSheet } from '../../components/LikersSheet'
 import { MealScoreCard } from '../../components/Accountability'
 import { useCurrentUser } from '../../hooks/useCurrentUser'
 import { dailyGoals } from '../../lib/accountability'
+import { startLogAgain, type PastMeal } from '../../lib/logAgain'
 
 export default function MealDetail() {
   const { logId } = useParams<{ logId: string }>()
@@ -140,6 +141,17 @@ export default function MealDetail() {
           <p className="tiny muted" style={{ marginTop: 8 }}>AI estimate was {log.calories_estimate.toLocaleString()} kcal</p>
         )}
       </div>
+
+      {/* Log again — own meals only; opens the review screen pre-filled */}
+      {viewerId === author.id && calories != null && (
+        <button type="button" className="btn flex items-center justify-center gap-2" style={{ marginTop: 4 }}
+          onClick={() => { startLogAgain(log as PastMeal, currentUser?.privacy_default ?? 'public'); navigate('/home/log') }}>
+          <svg aria-hidden="true" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M4 11V9a3 3 0 0 1 3-3h12m-3-3 3 3-3 3M20 13v2a3 3 0 0 1-3 3H5m3 3-3-3 3-3" />
+          </svg>
+          Log this again
+        </button>
+      )}
 
       {/* Meal score — private, owner only */}
       {viewerId === author.id && currentUser && calories != null && (

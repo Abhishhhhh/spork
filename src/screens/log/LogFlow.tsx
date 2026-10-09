@@ -14,6 +14,8 @@ import { useCurrentUser } from '../../hooks/useCurrentUser'
 import { useTodayStats } from '../../hooks/useTodayStats'
 import { computeNextStreak, getEffectiveStreak } from '../../lib/streak'
 import { hapticSuccess, hapticCelebration, hapticError } from '../../lib/haptics'
+import { startLogAgain, type PastMeal } from '../../lib/logAgain'
+import { useUsualMeals } from '../../hooks/useUsualMeals'
 
 type Step = 'capture' | 'scan' | 'loading' | 'edit' | 'not-food' | 'celebration'
 
@@ -33,6 +35,7 @@ export default function LogFlow() {
   const { session }   = useSession()
   const { data: user } = useCurrentUser()
   const { data: stats } = useTodayStats()
+  const { data: usualMeals } = useUsualMeals()
 
   const [step, setStep]         = useState<Step>(() => (useLogDraftStore.getState().estimate ? 'edit' : 'capture'))
   const [posting, setPosting]   = useState(false)
@@ -129,6 +132,16 @@ export default function LogFlow() {
     setStep('edit')
   }
 
+  /** "Log again": a past meal's numbers go straight to the review screen — no photo, no AI call. */
+  function handleLogAgain(meal: PastMeal) {
+    estimateRequestIdRef.current++
+    setTypedEstimate(false)
+    setEstimateFailed(false)
+    estimateModeRef.current = 'meal'
+    startLogAgain(meal, user?.privacy_default ?? 'public')
+    setStep('edit')
+  }
+
   function handleSkipPhoto() {
     setTypedEstimate(false)
     setEstimateFailed(false)
@@ -204,7 +217,7 @@ export default function LogFlow() {
   }
 
   if (step === 'capture') {
-    return <Capture onGetEstimate={handleGetEstimate} onSkipPhoto={handleSkipPhoto} onScanPackaged={() => setStep('scan')} />
+    return <Capture onGetEstimate={handleGetEstimate} onSkipPhoto={handleSkipPhoto} onScanPackaged={() => setStep('scan')} usualMeals={usualMeals} onLogAgain={handleLogAgain} />
   }
 
   if (step === 'scan') {
