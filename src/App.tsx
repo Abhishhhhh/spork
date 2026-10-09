@@ -20,6 +20,8 @@ import AddFirstFriends from './screens/onboarding/AddFirstFriends'
 import Feed from './screens/feed/Feed'
 import InsightsScreen from './screens/insights/Insights'
 import DayReview from './screens/insights/DayReview'
+import NewChallenge from './screens/challenges/NewChallenge'
+import ChallengeDetail from './screens/challenges/ChallengeDetail'
 import LogFlow from './screens/log/LogFlow'
 import MealDetail from './screens/log/MealDetail'
 import EditPost from './screens/log/EditPost'
@@ -86,6 +88,8 @@ export default function App() {
           <Route path="rewards"          element={<StreaksRewards />} />
           <Route path="friends"          element={<Friends />} />
           <Route path="friend/:username" element={<FriendProfile />} />
+          <Route path="challenges/new"   element={<NewChallenge />} />
+          <Route path="challenges/:id"   element={<ChallengeDetail />} />
           <Route path="connections/:username" element={<Connections />} />
           <Route path="log/:logId"       element={<MealDetail />} />
           <Route path="log/:logId/edit"  element={<EditPost />} />
