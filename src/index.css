@@ -627,3 +627,15 @@
   @keyframes plan-spin { to { transform: rotate(360deg); } }
   @media (prefers-reduced-motion: reduce) { .plan-steps .now .mark { animation: none; } }
 }
+
+/* ── Log again ────────────────────────────────────────────────────────────── */
+@layer components {
+  .logagain-card { width: 146px; flex: none; text-align: left; background: var(--color-paper); border-radius: 22px; padding: 9px 9px 11px; }
+  .logagain-card b { font-size: 13px; font-weight: 600; margin-top: 9px; }
+  .logagain-card small { font-size: 11px; }
+  .logagain-thumb { position: relative; display: grid; place-items: center; height: 84px; border-radius: 15px; overflow: hidden; background: var(--color-soft); color: var(--color-quiet); }
+  .logagain-thumb img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .logagain-thumb i { position: absolute; right: 7px; bottom: 7px; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center;
+    background: var(--color-ink); color: var(--color-on-ink); font-style: normal; font-size: 18px; line-height: 1; box-shadow: 0 0 0 2px var(--color-paper), 0 2px 8px #0005; }
+  .logagain-card:active { transform: scale(0.97); }
+}
