@@ -49,7 +49,7 @@ export default function Capture({ onGetEstimate, onSkipPhoto, onRepeat, recentMe
 
       {/* ── Log again: one tap re-opens a usual meal on the review screen ── */}
       {!photoFile && onLogAgain && usualMeals && usualMeals.length > 0 && (
-        <section style={{ marginTop: 16 }}>
+        <section style={{ margin: '16px 0 14px' }}>
           <div className="flex items-center justify-between">
             <span className="caps">Log again</span>
             <span className="tiny muted">Your usual meals</span>
@@ -82,14 +82,33 @@ export default function Capture({ onGetEstimate, onSkipPhoto, onRepeat, recentMe
           </div>
         </div>
       ) : (
-        <div className="photo-placeholder">
-          <span className="icon">▣</span>
-          <h3>Add a meal photo</h3>
-          <div className="action-row w-full max-w-[220px]">
-            <button type="button" onClick={() => cameraInputRef.current?.click()} className="pill">Camera</button>
-            <button type="button" onClick={() => galleryInputRef.current?.click()} className="pill">Gallery</button>
+        <div className="photo-placeholder scan-box">
+          <span className="scan-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3.5 8V6a2.5 2.5 0 0 1 2.5-2.5h2M16 3.5h2A2.5 2.5 0 0 1 20.5 6v2M20.5 16v2a2.5 2.5 0 0 1-2.5 2.5h-2M8 20.5H6A2.5 2.5 0 0 1 3.5 18v-2" />
+              <circle cx="12" cy="12" r="3.6" />
+              <circle cx="12" cy="12" r="0.9" fill="currentColor" stroke="none" />
+            </svg>
+          </span>
+          <span>
+            <h3>Add a meal photo</h3>
+            <p className="small muted" style={{ marginTop: 4 }}>AI estimates the calories in seconds</p>
+          </span>
+          <div className="scan-actions">
+            <button type="button" onClick={() => cameraInputRef.current?.click()} className="pill sel">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" aria-hidden="true">
+                <path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h1.6l1.4-2h5l1.4 2h1.6A2.5 2.5 0 0 1 20 8.5v8A2.5 2.5 0 0 1 17.5 19h-11A2.5 2.5 0 0 1 4 16.5z" /><circle cx="12" cy="12.5" r="3.2" />
+              </svg>
+              Camera
+            </button>
+            <button type="button" onClick={() => galleryInputRef.current?.click()} className="pill">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <rect x="3.5" y="4.5" width="17" height="15" rx="2.5" /><circle cx="9" cy="10" r="1.6" /><path d="m20.5 16-4.5-4.5L6 19.5" />
+              </svg>
+              Gallery
+            </button>
           </div>
-          <p className="small muted">or enter manually below</p>
+          <p className="tiny muted">or enter it manually below</p>
         </div>
       )}
 
