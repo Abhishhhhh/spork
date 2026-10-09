@@ -639,3 +639,16 @@
     background: var(--color-ink); color: var(--color-on-ink); font-style: normal; font-size: 18px; line-height: 1; box-shadow: 0 0 0 2px var(--color-paper), 0 2px 8px #0005; }
   .logagain-card:active { transform: scale(0.97); }
 }
+
+/* ── Water card ───────────────────────────────────────────────────────────── */
+@layer components {
+  :root { --water: #3aa5f0; --water-deep: #d7ecfb; --water-rim: #2a8fd8; --water-shine: #ffffff; --water-soft: #e1f1fc; }
+  :root.dark, .dark { --water: #5fb8ff; --water-deep: #1b3442; --water-rim: #cfe9fb; --water-shine: #bfe4ff; --water-soft: #14293a; }
+  .water-card .water-icon { width: 42px; height: 42px; border-radius: 14px; flex: none; display: grid; place-items: center; background: var(--water-soft); color: var(--water); }
+  .water-card .water-minus { background: transparent; box-shadow: inset 0 0 0 1.5px var(--color-soft2); font-size: 20px; }
+  .water-card .water-minus:disabled { opacity: 0.35; }
+  .water-card .water-plus { background: var(--water); color: #0b2233; font-size: 22px; font-weight: 600; }
+  .water-glasses { display: flex; justify-content: space-between; margin-top: 16px; }
+  .water-glasses button { padding: 2px 0; transition: transform 0.15s ease; }
+  .water-glasses button:active { transform: scale(0.88); }
+}
