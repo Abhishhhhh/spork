@@ -9,6 +9,7 @@ import {
   useSendFriendRequest,
 } from '../../hooks/useFriendships'
 import { useBlocks } from '../../hooks/useBlocks'
+import { ChallengesSection } from '../../components/Challenges'
 import { useRecommendedUsers } from '../../hooks/useRecommendedUsers'
 import { useSession } from '../../hooks/useSession'
 import { FriendRowSkeleton } from '../../components/Skeleton'
@@ -169,6 +170,9 @@ export default function Friends() {
 
       {!showSearch && (
         <>
+          {/* ── Challenges ──────────────────────────────────────────── */}
+          <ChallengesSection />
+
           {/* ── Incoming requests ──────────────────────────────────── */}
           {data && data.incoming.length > 0 && (
             <section className="section">
